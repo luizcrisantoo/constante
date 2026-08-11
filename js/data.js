@@ -74,6 +74,7 @@ function defaultState(){
       cadernos:[]
     },
     progresso: [],
+    lembretes: [],
     days: {},
     gamif: { xpTotal:0, conquistas:[] }
   };

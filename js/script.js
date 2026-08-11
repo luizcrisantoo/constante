@@ -400,6 +400,12 @@ const ACOES={
   'notif-ativar':()=>ativarLembretes(),
   'notif-exemplo':()=>exemploNotificacao(),
   'notif-desativar':()=>desativarLembretes(),
+  'lembrete-add':()=>abrirModalLembrete(null),
+  'lembrete-edit':el=>abrirModalLembrete(el.dataset.id),
+  'lembrete-salvar':el=>salvarLembrete(el.dataset.id||null),
+  'lembrete-del':el=>{ S.lembretes=(S.lembretes||[]).filter(x=>x.id!==el.dataset.id); saveState(); render(); },
+  'lembrete-toggle':el=>{ const l=(S.lembretes||[]).find(x=>x.id===el.dataset.id); if(l){ l.ativo=l.ativo===false; saveState(); render(); } },
+  'lembrete-preset':el=>addPresetLembrete(el.dataset.p),
   'foto-add':()=>{ const f=document.getElementById('foto-file'); if(f) f.click(); },
   'foto-toque':el=>{
     const id=el.dataset.id;

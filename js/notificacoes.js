@@ -98,3 +98,70 @@ async function desativarLembretes(){
     render();
   }catch(e){ toast('❌ '+e.message); }
 }
+
+function secaoLembretes(){
+  if(typeof produtoAtivo!=='function' || !produtoAtivo()) return '';
+  const ls=(S.lembretes||[]).slice().sort((a,b)=>String(a.hora||'').localeCompare(String(b.hora||'')));
+  let html='<section class="card"><h2>Meus lembretes <button class="btn mini sec-btn dir" data-action="lembrete-add">+ novo</button></h2>';
+  if(!ls.length){
+    html+='<p class="muted small">Nenhum lembrete ainda. Crie um (ex.: 22:00 · hora de dormir) — com as notificações ligadas, eles chegam sozinhos na hora certa.</p>';
+  } else {
+    html+='<div class="lista-edit">';
+    ls.forEach(l=>{
+      const dias=(Array.isArray(l.dias)&&l.dias.length&&l.dias.length<7)?l.dias.map(d=>DIAS_ABREV[d]).join(','):'todo dia';
+      html+='<div class="item-edit"'+(l.ativo===false?' style="opacity:0.55"':'')+'><span class="num">'+esc(l.hora||'--:--')+'</span>'
+        +'<span class="nome">'+esc(l.texto||'')+' <span class="muted small">('+esc(dias)+')</span></span>'
+        +'<button class="btn mini sec-btn" data-action="lembrete-toggle" data-id="'+esc(l.id)+'">'+(l.ativo===false?'ligar':'pausar')+'</button>'
+        +'<button class="btn mini sec-btn" data-action="lembrete-edit" data-id="'+esc(l.id)+'">✎</button>'
+        +'<button class="btn mini perigo" data-action="lembrete-del" data-id="'+esc(l.id)+'">✕</button></div>';
+    });
+    html+='</div>';
+  }
+  html+='<div class="acoes mt" style="display:flex;gap:0.4rem;flex-wrap:wrap">'
+    +'<button class="btn mini sec-btn" data-action="lembrete-preset" data-p="dormir">+ dormir</button>'
+    +'<button class="btn mini sec-btn" data-action="lembrete-preset" data-p="agua">+ água</button>'
+    +'<button class="btn mini sec-btn" data-action="lembrete-preset" data-p="estudar">+ estudar</button></div>';
+  html+='<p class="muted small mt">Valem em todos os seus aparelhos com notificação ligada. Horário de Brasília.</p></section>';
+  return html;
+}
+
+function abrirModalLembrete(id){
+  const l=(S.lembretes||[]).find(x=>x.id===id)||{hora:'22:00',texto:'',dias:[],ativo:true};
+  const dd=Array.isArray(l.dias)?l.dias:[];
+  let checks='';
+  for(let i=0;i<7;i++){
+    checks+='<label style="display:inline-flex;align-items:center;gap:2px;margin-right:8px"><input type="checkbox" id="lb-d'+i+'" '+(dd.includes(i)?'checked':'')+' style="width:auto"> '+DIAS_ABREV[i]+'</label>';
+  }
+  abrirModal('<h3>'+(id?'Editar lembrete':'Novo lembrete')+'</h3>'
+    +'<div class="campo"><label>Horário</label><input type="time" id="lb-hora" value="'+esc(l.hora||'22:00')+'"></div>'
+    +'<div class="campo"><label>Mensagem</label><input type="text" id="lb-texto" maxlength="120" value="'+esc(l.texto||'')+'" placeholder="Ex.: Hora de dormir 😴"></div>'
+    +'<div class="campo"><label>Dias (nenhum marcado = todo dia)</label><div style="line-height:2">'+checks+'</div></div>'
+    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+    +'<button class="btn" data-action="lembrete-salvar" data-id="'+esc(id||'')+'">salvar</button></div>');
+}
+
+function salvarLembrete(id){
+  const hora=(document.getElementById('lb-hora')||{}).value||'';
+  const texto=((document.getElementById('lb-texto')||{}).value||'').trim();
+  if(!/^\d{1,2}:\d{2}$/.test(hora)){ toast('Horário inválido'); return; }
+  if(!texto){ toast('Escreve a mensagem do lembrete'); return; }
+  const dias=[]; for(let i=0;i<7;i++){ const c=document.getElementById('lb-d'+i); if(c&&c.checked) dias.push(i); }
+  if(!Array.isArray(S.lembretes)) S.lembretes=[];
+  if(id){
+    const l=S.lembretes.find(x=>x.id===id);
+    if(l){ l.hora=hora; l.texto=texto.slice(0,120); l.dias=dias; }
+  } else {
+    S.lembretes.push({id:'lb'+uid(), hora:hora, texto:texto.slice(0,120), dias:dias, ativo:true});
+  }
+  saveState(); fecharModal(); render();
+}
+
+function addPresetLembrete(p){
+  if(!Array.isArray(S.lembretes)) S.lembretes=[];
+  let novo;
+  if(p==='dormir'){ const h=(S.settings&&S.settings.sono&&S.settings.sono.deitar)||'22:30'; novo={id:'lb'+uid(),hora:h,texto:'Hora de dormir 😴',dias:[],ativo:true}; }
+  else if(p==='agua'){ novo={id:'lb'+uid(),hora:'10:00',texto:'Bebe uma água 💧',dias:[],ativo:true}; }
+  else { novo={id:'lb'+uid(),hora:'19:00',texto:'Bloco de estudo 📚',dias:[1,2,3,4,5],ativo:true}; }
+  S.lembretes.push(novo);
+  saveState(); render(); toast('Lembrete criado — ajusta se quiser ✏️');
+}

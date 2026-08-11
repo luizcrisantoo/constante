@@ -272,6 +272,7 @@ function viewConfig(){
   }
 
   html+=secaoNotificacoes();
+  html+=secaoLembretes();
 
   html+='<section class="card"><h2>Backup & dados</h2>'
     +'<div class="acoes" style="display:flex;gap:0.5rem;flex-wrap:wrap">'

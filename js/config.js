@@ -12,6 +12,6 @@
    ============================================================ */
 'use strict';
 const CONSTANTE_CONFIG = {
-  supabaseUrl: '',   // ex.: 'https://abcd1234.supabase.co'
-  supabaseKey: ''    // chave "anon public" (ou "publishable")
+  supabaseUrl: 'https://piiigvazptshbdfgdngw.supabase.co',   // ex.: 'https://abcd1234.supabase.co'
+  supabaseKey: 'sb_publishable_rakIQQex76e44mPLh-ldnA_7kQw2Snc'    // chave "anon public" (ou "publishable")
 };

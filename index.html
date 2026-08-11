@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Constante — rotina, hábitos, dieta, finanças e foco. Sua vida no ritmo certo.">
+  <meta name="theme-color" content="#0d0d0d">
+  <!-- CSP: bloqueia execução de qualquer script injetado (inline/handler/externo) —
+       só os arquivos do próprio site rodam; rede liberada apenas pro Supabase -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <title>Constante — sua vida no ritmo certo</title>
+
+  <!--
+    Headers de segurança (configurar no servidor, se possível):
+    Content-Security-Policy: default-src 'self'; connect-src 'self' https://*.supabase.co
+    X-Frame-Options: DENY
+    X-Content-Type-Options: nosniff
+    Referrer-Policy: strict-origin-when-cross-origin
+  -->
+
+  <meta property="og:title" content="Constante">
+  <meta property="og:description" content="Rotina, hábitos, dieta, finanças e foco — sem picos, sempre constante.">
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <span class="logo">c<em>o</em>nstante</span>
+    <div class="stats" id="top-stats"></div>
+    <button class="pill" data-nav="config" aria-label="Configurações">⚙️</button>
+  </header>
+
+  <main id="view" aria-live="polite">
+    <noscript><p style="padding:1rem">O Constante precisa de JavaScript pra funcionar.</p></noscript>
+  </main>
+
+  <button class="sos-fab" data-action="sos-abrir" aria-label="SOS impulso — respiração guiada">🌊</button>
+
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <button data-nav="hoje"><span class="ic">☀️</span>Hoje</button>
+    <button data-nav="rotina"><span class="ic">📅</span>Rotina</button>
+    <button data-nav="dieta"><span class="ic">🍽️</span>Dieta</button>
+    <button data-nav="grana"><span class="ic">💰</span>Grana</button>
+    <button data-nav="mente"><span class="ic">🧠</span>Mente</button>
+  </nav>
+
+  <div id="modal-root" class="escondido"></div>
+
+  <script src="js/data.js" defer></script>
+  <script src="js/core.js" defer></script>
+  <script src="js/ui.js" defer></script>
+  <script src="js/views.js" defer></script>
+  <script src="js/views2.js" defer></script>
+  <script src="js/script.js" defer></script>
+</body>
+</html>

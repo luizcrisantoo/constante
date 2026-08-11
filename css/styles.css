@@ -1,0 +1,278 @@
+/* ============================================================
+   CONSTANTE — estilos (mobile-first, GSD PRO)
+   1. Reset/Base  2. Topbar  3. Navegação  4. Cartões/UI
+   5. Hoje  6. Rotina  7. Dieta  8. Grana  9. Mente
+   10. Config  11. Modais/SOS  12. Utilitários  13. Media queries
+   ============================================================ */
+@import url('variables.css');
+
+/* ---------- 1. Reset / Base ---------- */
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+html{ -webkit-text-size-adjust:100%; }
+body{
+  font-family:var(--font); background:var(--bg); color:var(--ink);
+  line-height:1.45; min-height:100dvh;
+  padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 12px);
+}
+img{ max-width:100%; height:auto; }
+button{ font:inherit; color:inherit; background:none; border:none; cursor:pointer; }
+input,select,textarea{
+  font:inherit; color:var(--ink); background:var(--surface-2);
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:0.55rem 0.7rem; width:100%;
+}
+input:focus,select:focus,textarea:focus,button:focus-visible{
+  outline:2px solid var(--brand); outline-offset:1px;
+}
+h1,h2,h3{ line-height:1.2; }
+a{ color:var(--brand-strong); }
+
+/* ---------- 2. Topbar ---------- */
+.topbar{
+  position:sticky; top:0; z-index:40; height:var(--top-h);
+  display:flex; align-items:center; gap:var(--sp-sm);
+  padding:0 var(--sp-md);
+  background:rgba(13,13,13,0.92); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+}
+.topbar .logo{ font-weight:800; letter-spacing:0.4px; font-size:1.05rem; }
+.topbar .logo em{ font-style:normal; color:var(--brand-strong); }
+.topbar .stats{ margin-left:auto; display:flex; gap:var(--sp-sm); align-items:center; }
+.pill{
+  display:inline-flex; align-items:center; gap:0.3rem;
+  background:var(--surface-2); border:1px solid var(--border);
+  border-radius:999px; padding:0.22rem 0.65rem;
+  font-size:0.82rem; font-weight:700; white-space:nowrap;
+}
+.pill.warn{ background:var(--warning-soft); }
+.pill button{ padding:0; }
+
+/* ---------- 3. Navegação inferior ---------- */
+.bottom-nav{
+  position:fixed; left:0; right:0; bottom:0; z-index:40;
+  height:calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  padding-bottom:env(safe-area-inset-bottom, 0px);
+  display:flex; background:rgba(20,20,19,0.97);
+  border-top:1px solid var(--border); backdrop-filter:blur(10px);
+}
+.bottom-nav button{
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px; font-size:0.66rem; color:var(--ink-mute); font-weight:600;
+}
+.bottom-nav button .ic{ font-size:1.25rem; line-height:1; }
+.bottom-nav button.ativo{ color:var(--brand-strong); }
+.bottom-nav button.ativo .ic{ transform:translateY(-1px); }
+
+/* ---------- 4. Cartões / UI ---------- */
+main{ max-width:640px; margin:0 auto; padding:var(--sp-md); display:grid; gap:var(--sp-md); }
+.card{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:var(--sp-md);
+}
+.card h2{ font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em;
+  color:var(--ink-mute); margin-bottom:var(--sp-sm); font-weight:700; }
+.card h2 .dir{ float:right; }
+.muted{ color:var(--ink-mute); font-size:0.85rem; }
+.small{ font-size:0.8rem; }
+.sec{ color:var(--ink-2); }
+.num{ font-variant-numeric:tabular-nums; }
+.linha{ display:flex; align-items:center; gap:var(--sp-sm); }
+.linha .esq{ margin-right:auto; }
+.chip{
+  display:inline-block; border:1px solid var(--border); border-radius:999px;
+  padding:0.15rem 0.6rem; font-size:0.78rem; color:var(--ink-2); background:var(--surface-2);
+}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:0.4rem;
+  background:var(--brand); color:#0d0d0d; font-weight:800;
+  border-radius:var(--radius-sm); padding:0.6rem 1rem; font-size:0.92rem;
+}
+.btn:active{ transform:scale(0.98); }
+.btn.sec-btn{ background:var(--surface-2); color:var(--ink); border:1px solid var(--border); font-weight:700; }
+.btn.perigo{ background:var(--critical-soft); color:#f3a1a1; border:1px solid rgba(208,59,59,0.4); }
+.btn.mini{ padding:0.3rem 0.6rem; font-size:0.8rem; border-radius:8px; }
+.btn.bloco{ width:100%; }
+.progress{
+  height:10px; background:var(--surface-3); border-radius:999px; overflow:hidden;
+}
+.progress > span{ display:block; height:100%; border-radius:999px;
+  background:var(--brand); transition:width 0.4s ease; }
+.progress.azul > span{ background:var(--series-1); }
+.progress.verde > span{ background:var(--good); }
+.progress.fina{ height:6px; }
+
+/* ---------- 5. Hoje ---------- */
+.saudacao h1{ font-size:1.35rem; margin-bottom:2px; }
+.frase{ color:var(--ink-2); font-size:0.9rem; font-style:italic; }
+.agora{
+  border-left:3px solid var(--brand); padding-left:0.7rem; margin-top:var(--sp-sm);
+}
+.hab{
+  display:flex; align-items:center; gap:0.7rem; width:100%;
+  padding:0.6rem 0.4rem; border-radius:var(--radius-sm); text-align:left;
+  border-bottom:1px solid var(--grid);
+}
+.hab:last-child{ border-bottom:none; }
+.hab .ic{ font-size:1.3rem; width:2rem; text-align:center; flex:none; }
+.hab .nome{ flex:1; font-weight:600; font-size:0.95rem; }
+.hab .sub{ display:block; font-weight:400; font-size:0.78rem; color:var(--ink-mute); }
+.hab .streak{ font-size:0.8rem; color:var(--ink-2); font-weight:700; white-space:nowrap; }
+.hab .check{
+  width:1.7rem; height:1.7rem; border-radius:50%; flex:none;
+  border:2px solid var(--baseline); display:grid; place-items:center;
+  font-size:0.95rem; color:transparent; transition:all 0.15s ease;
+}
+.hab.feito .check{ background:var(--good); border-color:var(--good); color:#fff; }
+.hab.falhou{ opacity:0.75; }
+.hab.falhou .check{ background:var(--critical-soft); border-color:var(--critical); color:var(--critical); }
+.hab.feito .nome{ text-decoration:line-through; text-decoration-color:rgba(255,255,255,0.35); }
+.deslize-btn{ font-size:0.72rem; color:var(--ink-mute); text-decoration:underline; padding:0.2rem; }
+.grupo-titulo{ margin:0.6rem 0 0.1rem; font-size:0.75rem; color:var(--ink-mute);
+  text-transform:uppercase; letter-spacing:0.06em; font-weight:700; }
+.agua-controles{ display:flex; gap:var(--sp-sm); align-items:center; flex-wrap:wrap; }
+.check-lista .item{ display:flex; gap:0.6rem; align-items:flex-start; width:100%;
+  text-align:left; padding:0.45rem 0.2rem; border-bottom:1px solid var(--grid); }
+.check-lista .item:last-child{ border-bottom:none; }
+.check-lista .box{ width:1.25rem; height:1.25rem; border-radius:6px; flex:none; margin-top:2px;
+  border:2px solid var(--baseline); display:grid; place-items:center; font-size:0.75rem; color:transparent; }
+.check-lista .item.ok .box{ background:var(--good); border-color:var(--good); color:#fff; }
+.escala{ display:flex; gap:0.4rem; }
+.escala button{
+  flex:1; padding:0.5rem 0; border-radius:var(--radius-sm); font-size:1.15rem;
+  background:var(--surface-2); border:1px solid var(--border);
+}
+.escala button.sel{ background:var(--brand); border-color:var(--brand); }
+
+/* gráfico de barras 7 dias */
+.mini-chart{ display:flex; align-items:flex-end; gap:6px; height:88px; padding-top:14px; }
+.mini-chart .col{ flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end; }
+.mini-chart .bar{ width:100%; max-width:26px; background:var(--series-1); border-radius:4px 4px 0 0; min-height:2px; position:relative; }
+.mini-chart .bar.apagada{ background:var(--surface-3); }
+.mini-chart .col .lbl{ font-size:0.66rem; color:var(--ink-mute); }
+.mini-chart .col .val{ font-size:0.66rem; color:var(--ink-2); font-variant-numeric:tabular-nums; height:0.9em; }
+
+/* ---------- 6. Rotina ---------- */
+.dias-nav{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; }
+.dias-nav button{
+  flex:1; min-width:3.2rem; padding:0.45rem 0.2rem; border-radius:var(--radius-sm);
+  background:var(--surface-2); border:1px solid var(--border);
+  font-size:0.8rem; font-weight:700; color:var(--ink-2);
+}
+.dias-nav button.sel{ background:var(--brand); color:#0d0d0d; border-color:var(--brand); }
+.bloco{
+  display:flex; gap:0.7rem; padding:0.5rem 0.3rem; border-bottom:1px solid var(--grid);
+  align-items:baseline;
+}
+.bloco:last-child{ border-bottom:none; }
+.bloco .hora{ font-variant-numeric:tabular-nums; font-size:0.8rem; color:var(--ink-mute);
+  width:5.4rem; flex:none; }
+.bloco .txt{ flex:1; font-size:0.92rem; }
+.bloco .tag{ width:4px; align-self:stretch; border-radius:2px; flex:none; }
+.bloco.agora-marca{ background:var(--surface-2); border-radius:var(--radius-sm); }
+.bloco .edit{ color:var(--ink-mute); font-size:0.85rem; padding:0 0.3rem; }
+
+/* ---------- 7. Dieta ---------- */
+.refeicao-card{ border-bottom:1px solid var(--grid); padding:0.7rem 0; }
+.refeicao-card:last-child{ border-bottom:none; }
+.refeicao-card ul{ margin:0.3rem 0 0 1.1rem; font-size:0.88rem; color:var(--ink-2); }
+.refeicao-card .subs{ margin-top:0.35rem; }
+.refeicao-card .subs li{ color:var(--ink-mute); font-size:0.8rem; }
+details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin-top:0.3rem; }
+.peso-chart{ width:100%; height:120px; }
+
+/* ---------- 8. Grana ---------- */
+.divida{ padding:0.6rem 0; border-bottom:1px solid var(--grid); }
+.divida:last-child{ border-bottom:none; }
+.divida .topo{ display:flex; align-items:baseline; gap:0.5rem; margin-bottom:0.35rem; }
+.divida .topo .nome{ font-weight:700; }
+.divida .topo .valores{ margin-left:auto; font-size:0.82rem; color:var(--ink-2); }
+.divida.quitada .nome{ text-decoration:line-through; color:var(--ink-mute); }
+.tabela{ width:100%; border-collapse:collapse; font-size:0.85rem; }
+.tabela th{ text-align:left; color:var(--ink-mute); font-weight:600; font-size:0.75rem;
+  text-transform:uppercase; letter-spacing:0.05em; padding:0.35rem 0.4rem;
+  border-bottom:1px solid var(--baseline); }
+.tabela td{ padding:0.4rem; border-bottom:1px solid var(--grid); vertical-align:top; }
+.tabela td.num, .tabela th.num{ text-align:right; }
+.gauge-lbl{ display:flex; justify-content:space-between; font-size:0.8rem; color:var(--ink-2); margin-bottom:4px; }
+
+/* ---------- 9. Mente ---------- */
+.sono-form{ display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-sm); }
+.sono-form label{ font-size:0.75rem; color:var(--ink-mute); display:block; margin-bottom:2px; }
+.linha-chart{ display:flex; align-items:flex-end; gap:3px; height:64px; }
+.linha-chart .b{ flex:1; background:var(--series-1); border-radius:3px 3px 0 0; min-height:2px; }
+.linha-chart .b.vazio{ background:var(--surface-3); }
+.conquista{ display:flex; gap:0.7rem; align-items:center; padding:0.45rem 0; border-bottom:1px solid var(--grid); }
+.conquista:last-child{ border-bottom:none; }
+.conquista .ic{ font-size:1.5rem; width:2.2rem; text-align:center; filter:grayscale(1); opacity:0.4; }
+.conquista.ganha .ic{ filter:none; opacity:1; }
+.conquista .nome{ font-weight:700; font-size:0.9rem; }
+.conquista .desc{ font-size:0.78rem; color:var(--ink-mute); }
+
+/* ---------- 10. Config ---------- */
+.cfg-grid{ display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-sm); }
+.cfg-grid label, .campo label{ font-size:0.75rem; color:var(--ink-mute); display:block; margin-bottom:2px; }
+.campo{ margin-bottom:var(--sp-sm); }
+.lista-edit .item-edit{ display:flex; gap:0.5rem; align-items:center; padding:0.4rem 0;
+  border-bottom:1px solid var(--grid); font-size:0.9rem; }
+.lista-edit .item-edit:last-child{ border-bottom:none; }
+.lista-edit .item-edit .nome{ flex:1; }
+
+/* ---------- 11. Modais / SOS ---------- */
+.modal-fundo{
+  position:fixed; inset:0; z-index:60; background:rgba(0,0,0,0.65);
+  display:grid; place-items:end center; backdrop-filter:blur(3px);
+}
+.modal{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius) var(--radius) 0 0; width:100%; max-width:640px;
+  max-height:88dvh; overflow-y:auto; padding:var(--sp-lg) var(--sp-md) calc(var(--sp-lg) + env(safe-area-inset-bottom,0px));
+  box-shadow:var(--shadow);
+}
+.modal h3{ margin-bottom:var(--sp-sm); }
+.modal .acoes{ display:flex; gap:var(--sp-sm); margin-top:var(--sp-md); }
+.modal .acoes .btn{ flex:1; }
+.sos-fab{
+  position:fixed; right:14px; bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 14px);
+  z-index:45; width:52px; height:52px; border-radius:50%;
+  background:var(--surface-2); border:1px solid var(--border);
+  font-size:1.5rem; box-shadow:var(--shadow); display:grid; place-items:center;
+}
+.respira{
+  width:150px; height:150px; margin:var(--sp-lg) auto; border-radius:50%;
+  background:radial-gradient(circle, rgba(144,133,233,0.5), rgba(144,133,233,0.12));
+  display:grid; place-items:center; font-weight:800; font-size:1.05rem;
+  transition:transform 3.5s ease-in-out; transform:scale(0.62);
+}
+.respira.inspira{ transform:scale(1); }
+.toast{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:calc(var(--nav-h) + 20px); z-index:70;
+  background:var(--surface-2); border:1px solid var(--border); color:var(--ink);
+  border-radius:999px; padding:0.55rem 1.1rem; font-size:0.88rem; font-weight:600;
+  box-shadow:var(--shadow); max-width:92vw; text-align:center;
+}
+
+/* ---------- 12. Utilitários ---------- */
+.grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-sm); }
+.mt{ margin-top:var(--sp-sm); } .mt-lg{ margin-top:var(--sp-md); }
+.centro{ text-align:center; }
+.escondido{ display:none !important; }
+.aviso{
+  background:var(--warning-soft); border:1px solid rgba(250,178,25,0.35);
+  border-radius:var(--radius-sm); padding:0.6rem 0.8rem; font-size:0.82rem; color:var(--ink-2);
+}
+.ok-box{ background:var(--good-soft); border:1px solid rgba(12,163,12,0.35);
+  border-radius:var(--radius-sm); padding:0.6rem 0.8rem; font-size:0.85rem; }
+.hero-num{ font-size:2rem; font-weight:800; }
+.hero-sub{ font-size:0.8rem; color:var(--ink-mute); }
+
+/* ---------- 13. Media queries (mobile-first) ---------- */
+@media (min-width:768px){
+  main{ max-width:720px; padding:var(--sp-lg); }
+  .sono-form{ grid-template-columns:repeat(4,1fr); }
+  .modal-fundo{ place-items:center; }
+  .modal{ border-radius:var(--radius); }
+}
+@media (min-width:1024px){
+  main{ max-width:860px; }
+}

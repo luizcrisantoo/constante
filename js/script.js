@@ -1,0 +1,389 @@
+/* ============================================================
+   CONSTANTE — script principal: eventos (delegação) e boot
+   ============================================================ */
+'use strict';
+
+/* ---------- util: set por caminho ('a.b.c') ---------- */
+function setPath(obj,caminho,valor){
+  const partes=caminho.split('.');
+  let o=obj;
+  for(let i=0;i<partes.length-1;i++) o=o[partes[i]];
+  const k=partes[partes.length-1];
+  const antigo=o[k];
+  o[k]=(typeof antigo==='number')?(Number(String(valor).replace(',','.'))||0):valor;
+}
+
+/* ---------- ações de clique ---------- */
+const ACOES={
+  'fechar-modal':()=>{ fecharModal(); render(); },
+  'sos-abrir':()=>abrirSOS(),
+
+  'habit':el=>{
+    const id=el.dataset.id; const d=getDia();
+    if(d.habitos[id]===false){
+      abrirModal('<h3>Limpar deslize?</h3><p class="sec small">Você registrou um deslize hoje em “'+esc(nomeHabito(id))+'”. Quer desfazer?</p>'
+        +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">deixar como está</button>'
+        +'<button class="btn" data-action="deslize-limpar" data-id="'+esc(id)+'">desfazer deslize</button></div>');
+      return;
+    }
+    if(d.habitos[id]===true) delete d.habitos[id];
+    else d.habitos[id]=true;
+    recalcXP(hojeISO()); saveState(); render();
+  },
+  'deslize-limpar':el=>{ const d=getDia(); delete d.habitos[el.dataset.id]; recalcXP(hojeISO()); saveState(); fecharModal(); render(); },
+  'deslize':el=>{
+    const id=el.dataset.id;
+    if(id==='apostas'){ ACOES['apostar'](); return; }
+    abrirModal('<h3>Registrar deslize — '+esc(nomeHabito(id))+'</h3>'
+      +'<p class="sec small">Sem culpa: registrar é o que transforma deslize em dado. A ofensiva desse hábito reinicia, o resto do dia continua valendo.</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+      +'<button class="btn perigo" data-action="deslize-confirmar" data-id="'+esc(id)+'">registrar</button></div>'
+      +'<p class="muted small mt">Dica: depois de registrar, usa o 🌊 se a vontade continuar.</p>');
+  },
+  'deslize-confirmar':el=>{
+    const d=getDia(); d.habitos[el.dataset.id]=false;
+    recalcXP(hojeISO()); saveState(); fecharModal(); render();
+    toast('Registrado. Amanhã conta de novo 💪');
+  },
+
+  'ref':el=>{ const d=getDia(); const id=el.dataset.id; if(d.refeicoes[id]) delete d.refeicoes[id]; else d.refeicoes[id]=true; recalcXP(hojeISO()); saveState(); render(); },
+  'med':el=>{ const d=getDia(); const id=el.dataset.id; if(d.meds[id]) delete d.meds[id]; else d.meds[id]=true; recalcXP(hojeISO()); saveState(); render(); },
+  'agua':el=>{ const d=getDia(); d.agua=Math.max(0,(d.agua||0)+Number(el.dataset.ml)); recalcXP(hojeISO()); saveState(); render(); },
+  'humor':el=>{ const d=getDia(); d.humor=Number(el.dataset.v); recalcXP(hojeISO()); saveState(); render(); },
+  'energia':el=>{ const d=getDia(); d.energia=Number(el.dataset.v); recalcXP(hojeISO()); saveState(); render(); },
+
+  'rotina-dia':el=>{ UI.rotinaDia=Number(el.dataset.d); render(); },
+  'bloco-add':el=>abrirModalBloco(Number(el.dataset.d),null),
+  'bloco-edit':el=>abrirModalBloco(Number(el.dataset.d),Number(el.dataset.ix)),
+  'bloco-salvar':el=>{
+    const d=Number(el.dataset.d), ix=el.dataset.ix===''?null:Number(el.dataset.ix);
+    const i=val('bl-ini'), f=val('bl-fim'), t=val('bl-titulo'), tipo=val('bl-tipo');
+    if(!i||!t){ toast('Preenche pelo menos início e título'); return; }
+    const blocos=blocosDoDia(d);
+    const novo={d,i,t,tipo}; if(f) novo.f=f;
+    if(ix===null){ S.routine.push(novo); }
+    else{
+      const alvo=blocos[ix]; const pos=S.routine.indexOf(alvo);
+      if(pos>=0) S.routine[pos]=novo;
+    }
+    saveState(); fecharModal(); render();
+  },
+  'bloco-remover':el=>{
+    const d=Number(el.dataset.d), ix=Number(el.dataset.ix);
+    const alvo=blocosDoDia(d)[ix]; const pos=S.routine.indexOf(alvo);
+    if(pos>=0) S.routine.splice(pos,1);
+    saveState(); fecharModal(); render();
+  },
+
+  'ref-edit':el=>{
+    const r=S.diet.refeicoes.find(x=>x.id===el.dataset.id); if(!r) return;
+    abrirModal('<h3>Editar refeição</h3>'
+      +campo('re-nome','Nome','text',r.nome)+campo('re-hora','Horário','text',r.hora)
+      +'<div class="grid-2">'+campo('re-kcal','kcal','number',r.kcal)+campo('re-prot','Proteína (g)','number',r.prot)+'</div>'
+      +'<div class="campo"><label>Itens (um por linha)</label><textarea id="re-itens" rows="4">'+esc(r.itens.join('\n'))+'</textarea></div>'
+      +'<div class="campo"><label>Substituições (uma por linha)</label><textarea id="re-subs" rows="3">'+esc((r.subs||[]).join('\n'))+'</textarea></div>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+      +'<button class="btn" data-action="ref-salvar" data-id="'+esc(r.id)+'">salvar</button></div>');
+  },
+  'ref-salvar':el=>{
+    const r=S.diet.refeicoes.find(x=>x.id===el.dataset.id); if(!r) return;
+    r.nome=val('re-nome'); r.hora=val('re-hora');
+    r.kcal=Number(val('re-kcal'))||0; r.prot=Number(val('re-prot'))||0;
+    r.itens=linhas('re-itens'); r.subs=linhas('re-subs');
+    saveState(); fecharModal(); render();
+  },
+
+  'peso-add':()=>abrirModal('<h3>Registrar peso</h3>'
+    +campo('pe-kg','Peso (kg)','number','')
+    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+    +'<button class="btn" data-action="peso-salvar">salvar</button></div>'),
+  'peso-salvar':()=>{
+    const kg=Number(String(val('pe-kg')).replace(',','.'));
+    if(!kg||kg<30||kg>250){ toast('Peso inválido'); return; }
+    S.pesos=S.pesos.filter(p=>p.data!==hojeISO());
+    S.pesos.push({data:hojeISO(),kg:Math.round(kg*10)/10});
+    S.profile.peso=kg;
+    saveState(); fecharModal(); render(); toast('⚖️ registrado');
+  },
+
+  'aporte-edit':()=>abrirModal('<h3>Aporte mensal pras dívidas</h3>'
+    +'<p class="sec small">Renda garantida: '+fmtBRL(resumoFinanceiro().renda)+'/mês. Sugestão: R$ 600–800 mantém fôlego pro dia a dia.</p>'
+    +campo('ap-valor','Valor (R$)','number',S.finance.aporteMensal)
+    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+    +'<button class="btn" data-action="aporte-salvar">salvar</button></div>'),
+  'aporte-salvar':()=>{ S.finance.aporteMensal=Math.max(0,Number(String(val('ap-valor')).replace(',','.'))||0); saveState(); fecharModal(); render(); },
+
+  'divida-add':()=>abrirModalDivida(null),
+  'divida-edit':el=>abrirModalDivida(el.dataset.id),
+  'divida-salvar':el=>{
+    const id=el.dataset.id;
+    const nome=val('dv-nome'); const total=Number(String(val('dv-total')).replace(',','.'))||0;
+    if(!nome||total<=0){ toast('Preenche nome e valor'); return; }
+    if(id){ const dv=S.finance.dividas.find(x=>x.id===id); if(dv){ dv.nome=nome; dv.total=total; } }
+    else S.finance.dividas.push({id:'dv'+Date.now(),nome,total,pagos:[]});
+    saveState(); fecharModal(); render();
+  },
+  'divida-remover':el=>{
+    S.finance.dividas=S.finance.dividas.filter(x=>x.id!==el.dataset.id);
+    saveState(); fecharModal(); render();
+  },
+  'pagar':el=>{
+    const dv=S.finance.dividas.find(x=>x.id===el.dataset.id); if(!dv) return;
+    abrirModal('<h3>Pagamento — '+esc(dv.nome)+'</h3>'
+      +'<p class="sec small">Falta '+fmtBRL(saldoDivida(dv))+'.</p>'
+      +campo('pg-valor','Valor pago (R$)','number','')
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+      +'<button class="btn" data-action="pagar-salvar" data-id="'+esc(dv.id)+'">registrar 💸</button></div>');
+  },
+  'pagar-salvar':el=>{
+    const dv=S.finance.dividas.find(x=>x.id===el.dataset.id); if(!dv) return;
+    const v=Number(String(val('pg-valor')).replace(',','.'));
+    if(!v||v<=0){ toast('Valor inválido'); return; }
+    dv.pagos.push({id:uid(),valor:round2(v),data:hojeISO()});
+    saveState(); fecharModal(); render();
+    if(saldoDivida(dv)<=0.005) toast('✂️ '+dv.nome+' QUITADA! Próxima da fila 👊');
+    else toast('Pagamento registrado 💸');
+  },
+  'economia-transferir':()=>{
+    const econ=economiaDisponivel();
+    if(econ<=0){ toast('Nada pra transferir ainda'); return; }
+    // distribui em cascata (bola de neve); o que não couber continua disponível
+    let restante=econ; const partes=[];
+    for(const dv of S.finance.dividas){
+      const s=saldoDivida(dv);
+      if(s<=0.005||restante<=0.005) continue;
+      const v=Math.min(s,restante);
+      dv.pagos.push({id:uid(),valor:round2(v),data:hojeISO(),origem:'apostas'});
+      partes.push(dv.nome+' '+fmtBRL(v));
+      restante=round2(restante-v);
+    }
+    const usado=round2(econ-restante);
+    if(usado<=0){ toast('Sem dívidas em aberto 🎉'); return; }
+    S.finance.extras.push({id:uid(),valor:usado,data:hojeISO(),origem:'apostas'});
+    saveState(); render();
+    toast('💰 '+fmtBRL(usado)+' de apostas não feitas → '+partes.join(' · '));
+  },
+
+  'apostar':()=>abrirModal('<h3>Registrar aposta</h3>'
+    +'<p class="sec small">Registrar é coragem, não fracasso. O número entra na semana e a vida segue.</p>'
+    +campo('bt-valor','Valor (R$)','number','')
+    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+    +'<button class="btn perigo" data-action="apostar-salvar">registrar</button></div>'
+    +'<p class="muted small mt">Se ainda der tempo de não apostar: fecha isso e aperta 🌊.</p>'),
+  'apostar-salvar':()=>{
+    const v=Number(String(val('bt-valor')).replace(',','.'));
+    if(!v||v<=0){ toast('Valor inválido'); return; }
+    registrarAposta(Math.round(v*100)/100);
+    fecharModal(); render();
+  },
+  'apostas-reiniciar':()=>{
+    S.bets.inicioPlano=hojeISO();
+    saveState(); render(); toast('Plano de redução reiniciado a partir de hoje');
+  },
+
+  'burnout-abrir':()=>{
+    const Q=['Me sinto esgotado mesmo depois de dormir','Ando irritado ou impaciente com todo mundo',
+      'As coisas que eu gostava perderam a graça','Estou dormindo mal ou adiando a hora de dormir',
+      'Sinto que não dou conta da semana'];
+    abrirModal('<h3>Radar de burnout</h3><p class="sec small">Pensando na última semana:</p>'
+      +Q.map((q,i)=>'<div class="campo"><label>'+esc(q)+'</label><select id="bo-'+i+'">'
+        +'<option value="0">quase nunca</option><option value="1">às vezes</option><option value="2">direto</option></select></div>').join('')
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+      +'<button class="btn" data-action="burnout-salvar">ver resultado</button></div>');
+  },
+  'burnout-salvar':()=>{
+    let score=0; for(let i=0;i<5;i++) score+=Number(val('bo-'+i))||0;
+    getDia().burnout={score};
+    saveState(); fecharModal(); UI.tab='mente'; render();
+    toast(score<=3?'🟢 Radar verde — bora':score<=6?'🟡 Amarelo — pega leve essa semana':'🔴 Vermelho — reduz a carga, tá combinado?');
+  },
+
+  'habito-add':()=>abrirModalHabito(null),
+  'habito-edit':el=>abrirModalHabito(el.dataset.id),
+  'habito-salvar':el=>{
+    const id=el.dataset.id;
+    const nome=val('hb-nome'); if(!nome){ toast('Dá um nome'); return; }
+    const dias=[0,1,2,3,4,5,6].filter(i=>document.getElementById('hb-d'+i).checked);
+    const dados={nome,icone:val('hb-icone')||'⭐',tipo:val('hb-tipo'),dias:dias.length?dias:[0,1,2,3,4,5,6],xp:Number(val('hb-xp'))||10};
+    if(id){ const hb=S.habits.find(x=>x.id===id); if(hb) Object.assign(hb,dados); }
+    else S.habits.push({id:'hb'+Date.now(),...dados});
+    saveState(); fecharModal(); render();
+  },
+  'habito-del':el=>{
+    if(el.dataset.id==='apostas'){ toast('Esse hábito é ligado ao plano de apostas da aba Grana — edita em vez de excluir 😉'); return; }
+    const hb=S.habits.find(x=>x.id===el.dataset.id);
+    abrirModal('<h3>Excluir “'+esc(hb?hb.nome:'')+'”?</h3><p class="sec small">O histórico dos dias fica guardado, mas o hábito some da lista. (Obs.: conquistas ligadas a hábitos padrão param de progredir se eles forem excluídos.)</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+      +'<button class="btn perigo" data-action="habito-del-confirma" data-id="'+esc(el.dataset.id)+'">excluir</button></div>');
+  },
+  'habito-del-confirma':el=>{
+    S.habits=S.habits.filter(x=>x.id!==el.dataset.id);
+    saveState(); fecharModal(); render();
+  },
+
+  'renda-add':()=>abrirModalRenda(null),
+  'renda-edit':el=>abrirModalRenda(Number(el.dataset.ix)),
+  'renda-salvar':el=>{
+    const ix=el.dataset.ix===''?null:Number(el.dataset.ix);
+    const r={nome:val('rd-nome')||'Renda',valor:Number(String(val('rd-valor')).replace(',','.'))||0};
+    if(ix===null) S.finance.rendas.push(r); else S.finance.rendas[ix]=r;
+    saveState(); fecharModal(); render();
+  },
+  'renda-remover':el=>{
+    const ix=Number(el.dataset.ix);
+    S.finance.rendas.splice(ix,1);
+    saveState(); fecharModal(); render();
+  },
+
+  'sync-agora':async()=>{
+    if(!syncConfigurado()){ toast('Preenche URL, chave e código primeiro'); return; }
+    toast('Sincronizando…');
+    try{ await syncAgora(); render(); toast('✅ Sincronizado'); }
+    catch(e){ toast('❌ '+e.message); }
+  },
+  'sync-baixar':async()=>{
+    if(!syncConfigurado()){ toast('Preenche URL, chave e código primeiro'); return; }
+    toast('Baixando…');
+    try{ const ok=await syncPull(); render(); toast(ok?'✅ Dados baixados e mesclados':'Nada na nuvem ainda — usa “sincronizar agora”'); }
+    catch(e){ toast('❌ '+e.message); }
+  },
+
+  'exportar':()=>{
+    const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='constante-backup-'+hojeISO()+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  },
+  'importar':()=>document.getElementById('importar-arquivo').click(),
+  'zerar':()=>abrirModal('<h3>Apagar tudo?</h3><p class="sec small">Todo o histórico some deste aparelho. Faz um backup antes, vai por mim.</p>'
+    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+    +'<button class="btn perigo" data-action="zerar-confirma">apagar tudo</button></div>'),
+  'zerar-confirma':()=>{ S=defaultState(); saveState({skipSync:true}); fecharModal(); render(); toast('Recomeço. Bora 🌱'); }
+};
+
+function nomeHabito(id){ const h=S.habits.find(x=>x.id===id); return h?h.nome:id; }
+function val(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
+function linhas(id){ return val(id).split('\n').map(s=>s.trim()).filter(Boolean); }
+function campo(id,rotulo,tipo,valor){
+  /* 'number' vira texto com teclado decimal — aceita vírgula (72,4 · 1338,23) em qualquer aparelho */
+  const t=tipo==='number'?'text':tipo;
+  return '<div class="campo"><label>'+esc(rotulo)+'</label><input id="'+id+'" type="'+t+'" value="'+esc(valor)+'"'+(tipo==='number'?' inputmode="decimal"':'')+'></div>';
+}
+
+function abrirModalBloco(d,ix){
+  const b=ix!=null?blocosDoDia(d)[ix]:null;
+  const tipos=Object.keys(TIPO_LABEL).map(t=>'<option value="'+t+'" '+(b&&b.tipo===t?'selected':'')+'>'+TIPO_LABEL[t]+'</option>').join('');
+  abrirModal('<h3>'+(b?'Editar':'Novo')+' bloco — '+DIAS_NOME[d]+'</h3>'
+    +'<div class="grid-2">'+campo('bl-ini','Início','time',b?b.i:'')+campo('bl-fim','Fim (vazio = marco)','time',b&&b.f?b.f:'')+'</div>'
+    +campo('bl-titulo','Título','text',b?b.t:'')
+    +'<div class="campo"><label>Tipo</label><select id="bl-tipo">'+tipos+'</select></div>'
+    +'<div class="acoes">'
+    +(b?'<button class="btn perigo" data-action="bloco-remover" data-d="'+d+'" data-ix="'+ix+'">remover</button>':'')
+    +'<button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+    +'<button class="btn" data-action="bloco-salvar" data-d="'+d+'" data-ix="'+(ix!=null?ix:'')+'">salvar</button></div>');
+}
+function abrirModalDivida(id){
+  const dv=id?S.finance.dividas.find(x=>x.id===id):null;
+  abrirModal('<h3>'+(dv?'Editar':'Nova')+' dívida</h3>'
+    +campo('dv-nome','Pra quem','text',dv?dv.nome:'')
+    +campo('dv-total','Valor total (R$)','number',dv?dv.total:'')
+    +'<div class="acoes">'
+    +(dv?'<button class="btn perigo" data-action="divida-remover" data-id="'+esc(dv.id)+'">remover</button>':'')
+    +'<button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+    +'<button class="btn" data-action="divida-salvar" data-id="'+(dv?dv.id:'')+'">salvar</button></div>');
+}
+function abrirModalHabito(id){
+  const hb=id?S.habits.find(x=>x.id===id):null;
+  const dias=[1,2,3,4,5,6,0].map(i=>'<label class="chip" style="cursor:pointer"><input type="checkbox" id="hb-d'+i+'" style="width:auto" '+(!hb||hb.dias.includes(i)?'checked':'')+'> '+DIAS_ABREV[i]+'</label>').join(' ');
+  abrirModal('<h3>'+(hb?'Editar':'Novo')+' hábito</h3>'
+    +campo('hb-nome','Nome','text',hb?hb.nome:'')
+    +'<div class="grid-2">'+campo('hb-icone','Ícone (emoji)','text',hb?hb.icone:'⭐')+campo('hb-xp','XP','number',hb?hb.xp:10)+'</div>'
+    +'<div class="campo"><label>Tipo</label><select id="hb-tipo">'
+    +'<option value="fazer" '+(!hb||hb.tipo==='fazer'?'selected':'')+'>fazer (marco quando fizer)</option>'
+    +'<option value="evitar" '+(hb&&hb.tipo==='evitar'?'selected':'')+'>evitar (marco se vencer o dia)</option></select></div>'
+    +'<div class="campo"><label>Dias</label><div style="display:flex;flex-wrap:wrap;gap:0.3rem">'+dias+'</div></div>'
+    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+    +'<button class="btn" data-action="habito-salvar" data-id="'+(hb?hb.id:'')+'">salvar</button></div>');
+}
+function abrirModalRenda(ix){
+  const r=ix!=null?S.finance.rendas[ix]:null;
+  abrirModal('<h3>'+(r?'Editar':'Nova')+' renda</h3>'
+    +campo('rd-nome','Origem','text',r?r.nome:'')
+    +campo('rd-valor','Valor mensal (R$)','number',r?r.valor:'')
+    +'<div class="acoes">'
+    +(r?'<button class="btn perigo" data-action="renda-remover" data-ix="'+ix+'">remover</button>':'')
+    +'<button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+    +'<button class="btn" data-action="renda-salvar" data-ix="'+(ix!=null?ix:'')+'">salvar</button></div>');
+}
+
+/* ---------- listeners globais ---------- */
+function ligarEventos(){
+  document.body.addEventListener('click',ev=>{
+    const nav=ev.target.closest('[data-nav]');
+    if(nav){ UI.tab=nav.dataset.nav; render(); window.scrollTo({top:0}); return; }
+    const alvo=ev.target.closest('[data-action]');
+    if(!alvo) return;
+    const acao=alvo.dataset.action;
+    if(acao==='fechar-modal-fundo'){ if(ev.target===alvo){ fecharModal(); render(); } return; }
+    if(ACOES[acao]) ACOES[acao](alvo);
+  });
+
+  document.body.addEventListener('change',ev=>{
+    const t=ev.target;
+    if(t.dataset.sono!==undefined&&t.dataset.sono!==''){
+      const d=getDia();
+      d.sono[t.dataset.sono]=t.type==='number'?(t.value===''?null:Number(String(t.value).replace(',','.'))):t.value;
+      if(d.sono.deitou&&d.sono.acordou&&(d.sono.h==null||d.sono.h==='')){
+        d.sono.h=horasEntre(d.sono.deitou,d.sono.acordou);
+      }
+      recalcXP(hojeISO()); saveState(); renderTopbar();
+      return;
+    }
+    if(t.dataset.campo==='nota'){ getDia().nota=t.value; saveState(); return; }
+    if(t.dataset.cfg){ setPath(S,t.dataset.cfg,t.value); saveState(); renderTopbar(); return; }
+    if(t.dataset.cfgCheck){ setPath(S,t.dataset.cfgCheck,t.checked); saveState(); return; }
+    if(t.id==='importar-arquivo'&&t.files&&t.files[0]){
+      const fr=new FileReader();
+      fr.onload=()=>{
+        try{
+          const dados=JSON.parse(fr.result);
+          if(!dados||typeof dados!=='object'||Array.isArray(dados)) throw new Error('formato');
+          if(dados.days&&(typeof dados.days!=='object'||Array.isArray(dados.days))) throw new Error('formato');
+          S=deepFill(dados,defaultState());
+          sanearEstado();
+          Object.keys(S.days).forEach(recalcXPQuiet);
+          saveState(); render(); toast('✅ Backup importado');
+        }catch(e){ toast('❌ Arquivo de backup inválido — nada foi alterado'); loadState(); }
+      };
+      fr.readAsText(t.files[0]);
+      t.value='';
+    }
+  });
+}
+
+/* ---------- boot ---------- */
+function boot(){
+  loadState();
+  ligarEventos();
+  try{ render(); }
+  catch(e){
+    document.getElementById('view').innerHTML=
+      '<section class="card"><h2>Ops</h2><p class="sec">Deu erro ao carregar os dados ('+esc(e.message)+').</p>'
+      +'<button class="btn perigo mt" data-action="zerar">apagar dados e recomeçar</button></section>';
+  }
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+  if(S.settings.syncAuto&&syncConfigurado()){
+    syncPull().then(ok=>{ if(ok) render(); }).catch(()=>{});
+  }
+  /* atualiza “agora” a cada minuto sem atrapalhar digitação/modal */
+  setInterval(()=>{
+    const foco=document.activeElement&&['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName);
+    const modalAberto=document.getElementById('modal-root').innerHTML!=='';
+    if(!foco&&!modalAberto&&(UI.tab==='hoje'||UI.tab==='rotina')) render();
+  },60000);
+}
+document.addEventListener('DOMContentLoaded',boot);

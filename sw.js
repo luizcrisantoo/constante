@@ -3,7 +3,7 @@
    - estáticos: cache primeiro + revalidação em segundo plano (stale-while-revalidate)
    - Supabase: nunca intercepta (sync sempre online) */
 'use strict';
-const CACHE = 'constante-v4';
+const CACHE = 'constante-v5';
 const ARQUIVOS = [
   './', 'index.html', 'css/variables.css', 'css/styles.css',
   'js/data.js', 'js/core.js', 'js/ui.js', 'js/views.js', 'js/views2.js', 'js/script.js',

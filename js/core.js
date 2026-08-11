@@ -280,15 +280,17 @@ function _syncHeaders(){
   return { 'apikey':S.settings.syncKey, 'Authorization':'Bearer '+S.settings.syncKey,
            'Content-Type':'application/json' };
 }
-async function syncPush(){
+async function syncPush(opts){
   if(!syncConfigurado()) throw new Error('Sync não configurada');
   const url=S.settings.syncUrl.replace(/\/+$/,'')+'/rest/v1/constante_state';
   // privacidade: settings (chaves, código, config local) NUNCA sobem pra nuvem
   const payload={...S}; delete payload.settings;
-  const body=[{ sync_code:S.settings.syncCode, payload, updated_at:new Date().toISOString() }];
+  const body=JSON.stringify([{ sync_code:S.settings.syncCode, payload, updated_at:new Date().toISOString() }]);
+  // keepalive: tenta concluir o envio mesmo se a aba for fechada/minimizada (limite ~64KB)
+  const keepalive=!!(opts&&opts.flush)&&body.length<60000;
   const r=await fetch(url,{method:'POST',
     headers:{..._syncHeaders(),'Prefer':'resolution=merge-duplicates'},
-    body:JSON.stringify(body)});
+    body, keepalive});
   if(!r.ok) throw new Error('Falha ao enviar ('+r.status+')');
   S.settings.ultimaSync=new Date().toISOString();
   lsSet(JSON.stringify(S));

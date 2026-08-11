@@ -379,11 +379,34 @@ function boot(){
   if(S.settings.syncAuto&&syncConfigurado()){
     syncPull().then(ok=>{ if(ok) render(); }).catch(()=>{});
   }
-  /* atualiza “agora” a cada minuto sem atrapalhar digitação/modal */
-  setInterval(()=>{
+  /* sync ao vivo: puxa da nuvem ao voltar pro app/janela (com folga de 20s) */
+  let ultimoPullFoco=0;
+  const podeMexerNaTela=()=>{
     const foco=document.activeElement&&['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName);
     const modalAberto=document.getElementById('modal-root').innerHTML!=='';
-    if(!foco&&!modalAberto&&(UI.tab==='hoje'||UI.tab==='rotina')) render();
+    return !foco&&!modalAberto;
+  };
+  const pullAoVoltar=()=>{
+    if(document.visibilityState!=='visible') return;
+    if(!(S.settings.syncAuto&&syncConfigurado()&&S.settings.ultimaSync)) return;
+    const agora=Date.now();
+    if(agora-ultimoPullFoco<20000) return;
+    ultimoPullFoco=agora;
+    syncPull().then(ok=>{ if(ok&&podeMexerNaTela()) render(); }).catch(()=>{});
+  };
+  document.addEventListener('visibilitychange',pullAoVoltar);
+  window.addEventListener('focus',pullAoVoltar);
+  /* ao minimizar/trocar de app: manda já o que estiver pendente (não perde check no celular) */
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='hidden'&&S.settings.syncAuto&&syncConfigurado()&&S.settings.ultimaSync){
+      clearTimeout(_saveTimer);
+      syncPush({flush:true}).catch(()=>{});
+    }
+  });
+  /* atualiza “agora” a cada minuto (e aproveita pra puxar da nuvem) sem atrapalhar digitação/modal */
+  setInterval(()=>{
+    pullAoVoltar();
+    if(podeMexerNaTela()&&(UI.tab==='hoje'||UI.tab==='rotina')) render();
   },60000);
 }
 document.addEventListener('DOMContentLoaded',boot);

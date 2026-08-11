@@ -1,10 +1,5 @@
-/* ============================================================
-   CONSTANTE — núcleo: estado, storage, datas, XP, streak,
-   finanças, apostas e sincronização (Supabase REST)
-   ============================================================ */
 'use strict';
 
-/* ---------- datas ---------- */
 function pad2(n){ return String(n).padStart(2,'0'); }
 function dateToISO(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
 function hojeISO(){ return dateToISO(new Date()); }
@@ -19,7 +14,6 @@ function fmtBRL(v){ const n=Number(v); return (isFinite(n)?n:0).toLocaleString('
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function round2(v){ return Math.round(v*100)/100; }
 
-/* ---------- storage (protegido p/ ambientes sem localStorage) ---------- */
 const STORE_KEY='constante_v1';
 let _mem=null,_lsAvisou=false;
 function lsGet(){ try{ return localStorage.getItem(STORE_KEY); }catch(e){ return _mem; } }
@@ -33,9 +27,8 @@ function lsSet(v){
   }
 }
 
-let S=null; // estado global
+let S=null;
 
-/* dono do localStorage neste aparelho (id do usuário) — isolamento entre contas */
 const DONO_KEY='constante_dono';
 function lsDonoGet(){ try{ return localStorage.getItem(DONO_KEY); }catch(e){ return _donoMem; } }
 let _donoMem=null;
@@ -55,7 +48,7 @@ function sanearEstado(){
   if(!S||typeof S!=='object'||Array.isArray(S)) S=defaultState();
   if(!S.days||typeof S.days!=='object'||Array.isArray(S.days)) S.days={};
   ['habits','routine','pesos'].forEach(k=>{ if(!Array.isArray(S[k])) S[k]=defaultState()[k]; });
-  // pesos: só entradas válidas e numéricas (dados vindos de import/nuvem entram no gráfico SVG)
+
   S.pesos=S.pesos.filter(p=>p&&typeof p.data==='string'&&isFinite(Number(p.kg)))
                  .map(p=>({data:p.data,kg:Number(p.kg)}));
   if(!S.pesos.length) S.pesos=[{data:hojeISO(),kg:Number(S.profile&&S.profile.peso)||72}];
@@ -80,17 +73,15 @@ let _saveTimer=null;
 function saveState(opts){
   S._ts=new Date().toISOString();
   const dHoje=S.days[hojeISO()];
-  if(dHoje) dHoje._m=S._ts; // carimbo do dia p/ mesclagem entre aparelhos
+  if(dHoje) dHoje._m=S._ts;
   lsSet(JSON.stringify(S));
-  // auto-push só depois da PRIMEIRA sync bem-sucedida (evita segundo aparelho
-  // recém-configurado sobrescrever a nuvem com estado vazio)
+
   if(!(opts&&opts.skipSync) && S.settings.syncAuto && syncConfigurado() && S.settings.ultimaSync){
     clearTimeout(_saveTimer);
     _saveTimer=setTimeout(()=>syncPush().catch(()=>{}),1500);
   }
 }
 
-/* ---------- registro do dia ---------- */
 function diaVazio(){
   return { habitos:{}, refeicoes:{}, meds:{}, agua:0,
            sono:{h:null,score:null,deitou:'',acordou:''},
@@ -103,19 +94,17 @@ function getDia(iso){
   return deepFill(S.days[iso],diaVazio());
 }
 
-/* ---------- hábitos aplicáveis ---------- */
 function habitosDoDia(iso){
   const dow=isoToDate(iso||hojeISO()).getDay();
   return S.habits.filter(h=>h.dias.includes(dow));
 }
 
-/* ---------- XP ---------- */
 function xpPossivel(iso){
   let t=0;
   habitosDoDia(iso).forEach(h=>t+=h.xp||10);
-  t+=15;            // remédios (3 grupos × 5)
+  t+=15;
   t+=S.diet.refeicoes.length*5;
-  t+=10+10+5;       // água + sono + humor
+  t+=10+10+5;
   return t;
 }
 function recalcXP(iso){
@@ -145,7 +134,6 @@ function nivelAtual(){
   return { ...n, xp, prox, pct: prox? Math.min(100,Math.round(100*(xp-n.xp)/(prox.xp-n.xp))) : 100 };
 }
 
-/* ---------- streaks ---------- */
 function streakGeral(){
   let s=0; let d=hojeISO();
   if(diaConta(d)) s++;
@@ -159,7 +147,7 @@ function streakHabito(id){
   const aplicavel=iso=>h.dias.includes(isoToDate(iso).getDay());
   const feito=iso=>S.days[iso]&&S.days[iso].habitos[id];
   if(aplicavel(d)&&feito(d)) s++;
-  else if(aplicavel(d)&&!feito(d)){ /* hoje ainda em aberto — olha pra trás */ }
+  else if(aplicavel(d)&&!feito(d)){  }
   d=addDias(d,-1);
   let guard=0;
   while(guard++<3650){
@@ -181,7 +169,6 @@ function melhorStreak(){
   return Math.max(best,streakGeral());
 }
 
-/* ---------- conquistas ---------- */
 function checarConquistas(){
   const g=S.gamif; const novas=[];
   const tem=id=>g.conquistas.includes(id);
@@ -196,7 +183,7 @@ function checarConquistas(){
   if(dias.filter(d=>S.days[d].habitos.treino).length>=16) dar('treino16');
   if(dias.filter(d=>S.days[d].habitos.leitura).length>=20) dar('leitor');
   if(dias.filter(d=>S.days[d].habitos.duo_en&&S.days[d].habitos.duo_it&&S.days[d].habitos.duo_es).length>=14) dar('poliglota');
-  // semana sem apostas: 7 dias seguidos sem registro (e app em uso há pelo menos 7 dias)
+
   if(diffDias(S.criadoEm,hojeISO())>=6){
     let semAposta=0, dd=hojeISO();
     for(let i=0;i<7;i++){ const rec=S.days[dd]; if(rec&&rec.apostas&&rec.apostas.length){ semAposta=-1; break;} semAposta++; dd=addDias(dd,-1); }
@@ -209,7 +196,6 @@ function checarConquistas(){
   return novas;
 }
 
-/* ---------- finanças ---------- */
 function saldoDivida(dv){ return Math.max(0, dv.total - dv.pagos.reduce((a,p)=>a+p.valor,0)); }
 function resumoFinanceiro(){
   const dividas=S.finance.dividas;
@@ -242,7 +228,6 @@ function projecaoDividas(){
   return {meses,fim:(!incompleta&&meses.length)?meses[meses.length-1].label:null,incompleta};
 }
 
-/* ---------- apostas ---------- */
 function semanaDoPlano(iso){
   const inicio=S.bets.inicioPlano;
   return Math.max(0, Math.floor(diffDias(inicio, iso||hojeISO())/7));
@@ -269,7 +254,7 @@ function registrarAposta(valor){
   saveState();
 }
 function economiaDisponivel(){
-  // semanas já encerradas: limite - gasto (se positivo) e ainda não transferido
+
   const atual=semanaDoPlano();
   let econ=0;
   for(let w=0;w<atual;w++) econ+=Math.max(0, limiteSemana(w)-gastoNaSemana(w));
@@ -277,11 +262,6 @@ function economiaDisponivel(){
   return Math.max(0, econ-jaTransferido);
 }
 
-/* ---------- sincronização (Supabase REST) ----------
-   Modo produto (config.js preenchida): tabela constante_accounts,
-   identidade = sessão logada (Bearer do usuário), RLS no banco.
-   Modo local (config vazia): tabela constante_state por código —
-   comportamento antigo, intacto. */
 function produtoAtivo(){ return typeof modoProduto==='function' && modoProduto(); }
 function syncConfigurado(){
   if(produtoAtivo()) return !!(typeof tokenAcesso==='function' && tokenAcesso());
@@ -301,7 +281,7 @@ function _syncHeaders(){
 }
 async function syncPush(opts){
   if(!syncConfigurado()) throw new Error(produtoAtivo()?'Entra na tua conta primeiro':'Sync não configurada');
-  // privacidade: settings (chaves, código, config local) NUNCA sobem pra nuvem
+
   const payload={...S}; delete payload.settings;
   let url, linha;
   if(produtoAtivo()){
@@ -312,7 +292,7 @@ async function syncPush(opts){
     linha={ sync_code:S.settings.syncCode, payload, updated_at:new Date().toISOString() };
   }
   const body=JSON.stringify([linha]);
-  // keepalive: tenta concluir o envio mesmo se a aba for fechada/minimizada (limite ~64KB)
+
   const keepalive=!!(opts&&opts.flush)&&body.length<60000;
   const r=await fetch(url,{method:'POST',
     headers:{..._syncHeaders(),'Prefer':'resolution=merge-duplicates'},
@@ -333,8 +313,7 @@ async function syncPull(){
   if(!r.ok) throw new Error('Falha ao baixar ('+r.status+')');
   const rows=await r.json();
   if(!rows.length){
-    // nuvem vazia também conta como sync ok (primeiro upload liberado —
-    // é assim que os dados locais do Luiz migram pra conta dele)
+
     S.settings.ultimaSync=new Date().toISOString();
     lsSet(JSON.stringify(S));
     return false;
@@ -345,16 +324,16 @@ async function syncPull(){
   return true;
 }
 async function syncAgora(){
-  // pull PRECISA funcionar antes de qualquer push — nunca sobrescrever a nuvem às cegas
+
   await syncPull();
   await syncPush();
 }
-/* envia já qualquer mudança pendente (cancela o debounce) — usar ANTES de sair/apagar */
+
 async function flushSyncPendente(){
   clearTimeout(_saveTimer);
   if(syncConfigurado()){ try{ await syncPush(); }catch(e){} }
 }
-/* sessão caiu no meio do uso (401/403): sai limpo e volta pro login sem loop */
+
 let _tratandoSessao=false;
 function sessaoExpirou(){
   if(!produtoAtivo()||_tratandoSessao) return;
@@ -363,8 +342,7 @@ function sessaoExpirou(){
   if(typeof toast==='function') toast('Tua sessão expirou — entra de novo.');
   setTimeout(()=>{ _tratandoSessao=false; },3000);
 }
-/* mescla: dias = escrita mais recente vence (carimbo _m) com apostas unidas;
-   listas financeiras = união por id; settings = SEMPRE os locais (não trafegam) */
+
 function mesclarEstado(remoto){
   if(!remoto||typeof remoto!=='object'||Array.isArray(remoto)) return;
   const localMaisNovo = (S._ts||'') >= (remoto._ts||'');
@@ -376,12 +354,12 @@ function mesclarEstado(remoto){
   }
   const base = localMaisNovo ? S : remoto;
   const outro = localMaisNovo ? remoto : S;
-  const settingsLocais=JSON.parse(JSON.stringify(S.settings)); // nunca vêm da nuvem
+  const settingsLocais=JSON.parse(JSON.stringify(S.settings));
   const financeOutro=(outro.finance&&typeof outro.finance==='object')?outro.finance:{};
   S=deepFill(JSON.parse(JSON.stringify(base)),defaultState());
   sanearEstado();
   S.days=dias;
-  // dívidas: união por id (dívida criada só no outro aparelho não pode sumir)
+
   (Array.isArray(financeOutro.dividas)?financeOutro.dividas:[]).forEach(od=>{
     const jaTem=S.finance.dividas.find(x=>x.id===od.id);
     if(!jaTem) S.finance.dividas.push(JSON.parse(JSON.stringify(od)));
@@ -398,8 +376,7 @@ function mesclarEstado(remoto){
   Object.keys(S.days).forEach(recalcXPQuiet);
 }
 function recalcXPQuiet(iso){ try{ recalcXP(iso); }catch(e){} }
-/* união de lançamentos {id?,valor,data,...}: por id quando houver, senão por forma canônica
-   (chaves ordenadas — jsonb do Postgres reordena chaves e quebraria o stringify puro) */
+
 function canonico(x){
   if(Array.isArray(x)) return '['+x.map(canonico).join(',')+']';
   if(x&&typeof x==='object') return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonico(x[k])).join(',')+'}';
@@ -415,8 +392,7 @@ function uniaoLanc(a,b){
 }
 function mesclarDia(a,b){
   if(!a) return b; if(!b) return a;
-  // com carimbo _m nos dois: a escrita mais recente vence (permite DESMARCAR sem ressuscitar),
-  // apostas sempre unidas por id pra não perder lançamento de nenhum aparelho
+
   if(a._m&&b._m){
     const novo=a._m>=b._m?a:b, velho=a._m>=b._m?b:a;
     const out=JSON.parse(JSON.stringify(novo));
@@ -424,7 +400,7 @@ function mesclarDia(a,b){
     if(!out.burnout&&velho.burnout) out.burnout=velho.burnout;
     return out;
   }
-  // legado (sem carimbo): mescla otimista campo a campo
+
   const out=diaVazio();
   const ids=new Set([...Object.keys(a.habitos||{}),...Object.keys(b.habitos||{})]);
   ids.forEach(id=>{
@@ -446,7 +422,6 @@ function mesclarDia(a,b){
   return out;
 }
 
-/* ---------- rotina helpers ---------- */
 function blocosDoDia(dow){
   return S.routine.filter(b=>b.d===dow).slice().sort((x,y)=>hmParaMin(x.i)-hmParaMin(y.i));
 }

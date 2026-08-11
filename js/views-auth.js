@@ -1,8 +1,3 @@
-/* ============================================================
-   CONSTANTE — telas de conta (modo produto):
-   entrar · criar conta · esqueci a senha · confirme o e-mail ·
-   nova senha (link de recuperação)
-   ============================================================ */
 'use strict';
 
 function renderLogin(){

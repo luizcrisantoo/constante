@@ -1,12 +1,5 @@
-/* ============================================================
-   CONSTANTE — estilos (mobile-first, GSD PRO)
-   1. Reset/Base  2. Topbar  3. Navegação  4. Cartões/UI
-   5. Hoje  6. Rotina  7. Dieta  8. Grana  9. Mente
-   10. Config  11. Modais/SOS  12. Utilitários  13. Media queries
-   ============================================================ */
 @import url('variables.css');
 
-/* ---------- 1. Reset / Base ---------- */
 *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
 html{ -webkit-text-size-adjust:100%; }
 body{
@@ -27,7 +20,6 @@ input:focus,select:focus,textarea:focus,button:focus-visible{
 h1,h2,h3{ line-height:1.2; }
 a{ color:var(--brand-strong); }
 
-/* ---------- 2. Topbar ---------- */
 .topbar{
   position:sticky; top:0; z-index:40; height:var(--top-h);
   display:flex; align-items:center; gap:var(--sp-sm);
@@ -47,7 +39,6 @@ a{ color:var(--brand-strong); }
 .pill.warn{ background:var(--warning-soft); }
 .pill button{ padding:0; }
 
-/* ---------- 3. Navegação inferior ---------- */
 .bottom-nav{
   position:fixed; left:0; right:0; bottom:0; z-index:40;
   height:calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
@@ -63,7 +54,6 @@ a{ color:var(--brand-strong); }
 .bottom-nav button.ativo{ color:var(--brand-strong); }
 .bottom-nav button.ativo .ic{ transform:translateY(-1px); }
 
-/* ---------- 4. Cartões / UI ---------- */
 main{ max-width:640px; margin:0 auto; padding:var(--sp-md); display:grid; gap:var(--sp-md); }
 .card{
   background:var(--surface); border:1px solid var(--border);
@@ -101,7 +91,6 @@ main{ max-width:640px; margin:0 auto; padding:var(--sp-md); display:grid; gap:va
 .progress.verde > span{ background:var(--good); }
 .progress.fina{ height:6px; }
 
-/* ---------- 5. Hoje ---------- */
 .saudacao h1{ font-size:1.35rem; margin-bottom:2px; }
 .frase{ color:var(--ink-2); font-size:0.9rem; font-style:italic; }
 .agora{
@@ -143,7 +132,6 @@ main{ max-width:640px; margin:0 auto; padding:var(--sp-md); display:grid; gap:va
 }
 .escala button.sel{ background:var(--brand); border-color:var(--brand); }
 
-/* gráfico de barras 7 dias */
 .mini-chart{ display:flex; align-items:flex-end; gap:6px; height:88px; padding-top:14px; }
 .mini-chart .col{ flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end; }
 .mini-chart .bar{ width:100%; max-width:26px; background:var(--series-1); border-radius:4px 4px 0 0; min-height:2px; position:relative; }
@@ -151,7 +139,6 @@ main{ max-width:640px; margin:0 auto; padding:var(--sp-md); display:grid; gap:va
 .mini-chart .col .lbl{ font-size:0.66rem; color:var(--ink-mute); }
 .mini-chart .col .val{ font-size:0.66rem; color:var(--ink-2); font-variant-numeric:tabular-nums; height:0.9em; }
 
-/* ---------- 6. Rotina ---------- */
 .dias-nav{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; }
 .dias-nav button{
   flex:1; min-width:3.2rem; padding:0.45rem 0.2rem; border-radius:var(--radius-sm);
@@ -171,7 +158,6 @@ main{ max-width:640px; margin:0 auto; padding:var(--sp-md); display:grid; gap:va
 .bloco.agora-marca{ background:var(--surface-2); border-radius:var(--radius-sm); }
 .bloco .edit{ color:var(--ink-mute); font-size:0.85rem; padding:0 0.3rem; }
 
-/* ---------- 7. Dieta ---------- */
 .refeicao-card{ border-bottom:1px solid var(--grid); padding:0.7rem 0; }
 .refeicao-card:last-child{ border-bottom:none; }
 .refeicao-card ul{ margin:0.3rem 0 0 1.1rem; font-size:0.88rem; color:var(--ink-2); }
@@ -180,7 +166,6 @@ main{ max-width:640px; margin:0 auto; padding:var(--sp-md); display:grid; gap:va
 details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin-top:0.3rem; }
 .peso-chart{ width:100%; height:120px; }
 
-/* ---------- 8. Grana ---------- */
 .divida{ padding:0.6rem 0; border-bottom:1px solid var(--grid); }
 .divida:last-child{ border-bottom:none; }
 .divida .topo{ display:flex; align-items:baseline; gap:0.5rem; margin-bottom:0.35rem; }
@@ -195,7 +180,6 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
 .tabela td.num, .tabela th.num{ text-align:right; }
 .gauge-lbl{ display:flex; justify-content:space-between; font-size:0.8rem; color:var(--ink-2); margin-bottom:4px; }
 
-/* ---------- 9. Mente ---------- */
 .sono-form{ display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-sm); }
 .sono-form label{ font-size:0.75rem; color:var(--ink-mute); display:block; margin-bottom:2px; }
 .linha-chart{ display:flex; align-items:flex-end; gap:3px; height:64px; }
@@ -208,7 +192,6 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
 .conquista .nome{ font-weight:700; font-size:0.9rem; }
 .conquista .desc{ font-size:0.78rem; color:var(--ink-mute); }
 
-/* ---------- 10. Config ---------- */
 .cfg-grid{ display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-sm); }
 .cfg-grid label, .campo label{ font-size:0.75rem; color:var(--ink-mute); display:block; margin-bottom:2px; }
 .campo{ margin-bottom:var(--sp-sm); }
@@ -217,7 +200,6 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
 .lista-edit .item-edit:last-child{ border-bottom:none; }
 .lista-edit .item-edit .nome{ flex:1; }
 
-/* ---------- 11. Modais / SOS ---------- */
 .modal-fundo{
   position:fixed; inset:0; z-index:60; background:rgba(0,0,0,0.65);
   display:grid; place-items:end center; backdrop-filter:blur(3px);
@@ -252,7 +234,6 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
   box-shadow:var(--shadow); max-width:92vw; text-align:center;
 }
 
-/* ---------- 12. Utilitários ---------- */
 .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-sm); }
 .mt{ margin-top:var(--sp-sm); } .mt-lg{ margin-top:var(--sp-md); }
 .centro{ text-align:center; }
@@ -266,7 +247,6 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
 .hero-num{ font-size:2rem; font-weight:800; }
 .hero-sub{ font-size:0.8rem; color:var(--ink-mute); }
 
-/* ---------- 12b. Login (modo produto) ---------- */
 .modo-login .bottom-nav, .modo-login .sos-fab, .modo-login .topbar .stats,
 .modo-login .topbar [data-nav="config"]{ display:none; }
 .login-wrap{ max-width:400px; margin:7dvh auto 0; padding:var(--sp-md); display:grid; gap:var(--sp-md); }
@@ -279,7 +259,6 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
 .login-links{ display:flex; justify-content:space-between; font-size:0.85rem; }
 .login-links button{ color:var(--brand-strong); text-decoration:underline; padding:0.2rem; }
 
-/* ---------- 13. Media queries (mobile-first) ---------- */
 @media (min-width:768px){
   main{ max-width:720px; padding:var(--sp-lg); }
   .sono-form{ grid-template-columns:repeat(4,1fr); }

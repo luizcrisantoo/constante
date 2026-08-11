@@ -1,9 +1,5 @@
-/* ============================================================
-   CONSTANTE — script principal: eventos (delegação) e boot
-   ============================================================ */
 'use strict';
 
-/* ---------- util: set por caminho ('a.b.c') ---------- */
 function setPath(obj,caminho,valor){
   const partes=caminho.split('.');
   let o=obj;
@@ -13,7 +9,6 @@ function setPath(obj,caminho,valor){
   o[k]=(typeof antigo==='number')?(Number(String(valor).replace(',','.'))||0):valor;
 }
 
-/* ---------- ações de clique ---------- */
 const ACOES={
   'fechar-modal':()=>{ fecharModal(); render(); },
   'sos-abrir':()=>abrirSOS(),
@@ -147,7 +142,7 @@ const ACOES={
   'economia-transferir':()=>{
     const econ=economiaDisponivel();
     if(econ<=0){ toast('Nada pra transferir ainda'); return; }
-    // distribui em cascata (bola de neve); o que não couber continua disponível
+
     let restante=econ; const partes=[];
     for(const dv of S.finance.dividas){
       const s=saldoDivida(dv);
@@ -262,7 +257,6 @@ const ACOES={
     +'<button class="btn perigo" data-action="zerar-confirma">apagar tudo</button></div>'),
   'zerar-confirma':()=>{ S=defaultState(); saveState({skipSync:true}); fecharModal(); render(); toast('Recomeço. Bora 🌱'); },
 
-  /* ---------- conta (modo produto) ---------- */
   'auth-tela':el=>{
     UI.auth={tela:el.dataset.t,email:val('au-email')||(UI.auth&&UI.auth.email)||''};
     renderLogin();
@@ -272,7 +266,7 @@ const ACOES={
     const senha=(document.getElementById('au-senha')||{}).value||'';
     if(!email||!senha){ UI.auth.erro='Preenche e-mail e senha.'; UI.auth.msg=''; renderLogin(); return; }
     UI.auth.email=email; UI.auth.erro=''; UI.auth.msg='Entrando…'; renderLogin();
-    try{ await authEntrar(email,senha); /* o evento SIGNED_IN cuida do resto */ }
+    try{ await authEntrar(email,senha);  }
     catch(e){ UI.auth.msg=''; UI.auth.erro=e.message; renderLogin(); }
   },
   'auth-cadastrar':async()=>{
@@ -289,7 +283,7 @@ const ACOES={
     try{
       const data=await authCadastrar(email,s1);
       if(!data.session){ UI.auth={tela:'confirmar',email}; renderLogin(); }
-      /* com confirmação desligada, viria sessão e o SIGNED_IN assume */
+
     }catch(e){ UI.auth.msg=''; UI.auth.erro=e.message; renderLogin(); }
   },
   'auth-esqueci-enviar':async()=>{
@@ -323,7 +317,7 @@ const ACOES={
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">ficar</button>'
       +'<button class="btn" data-action="auth-sair-confirma">sair</button></div>');
   },
-  'auth-sair-confirma':async()=>{ fecharModal(); await flushSyncPendente(); await authSair(); /* SIGNED_OUT mostra o login */ },
+  'auth-sair-confirma':async()=>{ fecharModal(); await flushSyncPendente(); await authSair();  },
   'conta-trocar-senha':()=>{
     abrirModal('<h3>Trocar senha</h3>'
       +campo('cs-s1','Nova senha (mín. 6)','password','')
@@ -359,7 +353,7 @@ function nomeHabito(id){ const h=S.habits.find(x=>x.id===id); return h?h.nome:id
 function val(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
 function linhas(id){ return val(id).split('\n').map(s=>s.trim()).filter(Boolean); }
 function campo(id,rotulo,tipo,valor){
-  /* 'number' vira texto com teclado decimal — aceita vírgula (72,4 · 1338,23) em qualquer aparelho */
+
   const t=tipo==='number'?'text':tipo;
   return '<div class="campo"><label>'+esc(rotulo)+'</label><input id="'+id+'" type="'+t+'" value="'+esc(valor)+'"'+(tipo==='number'?' inputmode="decimal"':'')+'></div>';
 }
@@ -410,12 +404,11 @@ function abrirModalRenda(ix){
     +'<button class="btn" data-action="renda-salvar" data-ix="'+(ix!=null?ix:'')+'">salvar</button></div>');
 }
 
-/* ---------- listeners globais ---------- */
 function ligarEventos(){
   document.body.addEventListener('click',ev=>{
     const nav=ev.target.closest('[data-nav]');
     if(nav){
-      if(document.body.classList.contains('modo-login')) return; // sem navegação deslogado
+      if(document.body.classList.contains('modo-login')) return;
       UI.tab=nav.dataset.nav; render(); window.scrollTo({top:0}); return;
     }
     const alvo=ev.target.closest('[data-action]');
@@ -458,7 +451,6 @@ function ligarEventos(){
   });
 }
 
-/* ---------- boot ---------- */
 function renderSeguro(){
   try{ render(); }
   catch(e){
@@ -467,22 +459,19 @@ function renderSeguro(){
       +'<button class="btn perigo mt" data-action="zerar">apagar dados e recomeçar</button></section>';
   }
 }
-let _emRecuperacao=false;   // trava o boot enquanto o fluxo de nova-senha roda
-let _usuarioLogado=null;    // id do usuário atualmente carregado em S (isolamento por aparelho)
+let _emRecuperacao=false;
+let _usuarioLogado=null;
 
 function sincronizarPosLogin(){
   syncAgora()
     .then(()=>{ if(!document.body.classList.contains('modo-login')) render(); })
     .catch(e=>toast('⚠️ '+e.message));
 }
-/* Carrega o estado do usuário logado, isolando por aparelho:
-   - se o localStorage guarda dados de OUTRO usuário (ou do modo local), começa limpo
-     e deixa a nuvem preencher (evita vazamento entre contas no mesmo navegador)
-   - só migra os dados locais pré-existentes no PRIMEIRO login de uma conta neste aparelho */
+
 function carregarEstadoDaConta(u){
   const donoSalvo=lsDonoGet();
   if(donoSalvo && donoSalvo!==u.id){
-    // localStorage pertence a outra conta → não deixa vazar
+
     S=defaultState(); lsSet(JSON.stringify(S));
   }
   lsDonoSet(u.id);
@@ -491,7 +480,7 @@ function carregarEstadoDaConta(u){
 function aoMudarAuth(evento,sessao,antes){
   if(evento==='PASSWORD_RECOVERY'){ _emRecuperacao=true; UI.auth={tela:'nova-senha'}; renderLogin(); return; }
   if(evento==='SIGNED_IN'&&!antes){
-    if(_emRecuperacao) return; // no fluxo de recuperação, espera a nova senha ser salva
+    if(_emRecuperacao) return;
     carregarEstadoDaConta(sessao.user);
     sairModoLogin(); renderSeguro();
     toast('Bem-vindo 👋');
@@ -499,7 +488,7 @@ function aoMudarAuth(evento,sessao,antes){
     return;
   }
   if(evento==='SIGNED_OUT'){
-    // limpa TUDO deste aparelho — nada de dado sensível fica pro próximo que logar
+
     S=defaultState(); lsSet(JSON.stringify(S)); lsDonoSet(null);
     _usuarioLogado=null; _emRecuperacao=false;
     UI.auth={tela:'entrar'}; renderLogin();
@@ -509,7 +498,7 @@ function boot(){
   loadState();
   ligarEventos();
   if(typeof modoProduto==='function'&&modoProduto()){
-    // se a entrada é por link de recuperação, NÃO renderiza o app por cima da tela nova-senha
+
     if(/type=recovery/.test(location.hash)||/type=recovery/.test(location.search)) _emRecuperacao=true;
     initAuth(aoMudarAuth).then(sessao=>{
       if(_emRecuperacao){ if(!UI.auth) UI.auth={tela:'nova-senha'}; renderLogin(); return; }
@@ -525,7 +514,7 @@ function boot(){
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
-  /* sync ao vivo: puxa da nuvem ao voltar pro app/janela (com folga de 20s) */
+
   let ultimoPullFoco=0;
   const podeMexerNaTela=()=>{
     const foco=document.activeElement&&['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName);
@@ -542,14 +531,14 @@ function boot(){
   };
   document.addEventListener('visibilitychange',pullAoVoltar);
   window.addEventListener('focus',pullAoVoltar);
-  /* ao minimizar/trocar de app: manda já o que estiver pendente (não perde check no celular) */
+
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='hidden'&&S.settings.syncAuto&&syncConfigurado()&&S.settings.ultimaSync){
       clearTimeout(_saveTimer);
       syncPush({flush:true}).catch(()=>{});
     }
   });
-  /* atualiza “agora” a cada minuto (e aproveita pra puxar da nuvem) sem atrapalhar digitação/modal */
+
   setInterval(()=>{
     if(document.body.classList.contains('modo-login')) return;
     pullAoVoltar();

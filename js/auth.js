@@ -1,12 +1,7 @@
-/* ============================================================
-   CONSTANTE — autenticação (modo produto)
-   Wrapper fino sobre o supabase-js vendorizado (js/vendor-supabase.js).
-   Sessão persistida e renovada automaticamente pela lib.
-   ============================================================ */
 'use strict';
 
-let _sb=null;      // cliente supabase
-let _sessao=null;  // sessão atual (ou null)
+let _sb=null;
+let _sessao=null;
 
 function modoProduto(){
   return typeof CONSTANTE_CONFIG!=='undefined'
@@ -17,9 +12,6 @@ function sessaoAtual(){ return _sessao; }
 function tokenAcesso(){ return _sessao ? _sessao.access_token : null; }
 function usuarioAtual(){ return _sessao ? _sessao.user : null; }
 
-/* inicia o cliente e devolve a sessão persistida (se houver).
-   aoMudar(evento, sessao) é chamado em SIGNED_IN / SIGNED_OUT /
-   PASSWORD_RECOVERY / TOKEN_REFRESHED. */
 function initAuth(aoMudar){
   if(!modoProduto() || typeof supabase==='undefined') return Promise.resolve(null);
   try{
@@ -44,11 +36,11 @@ async function authCadastrar(email,senha){
     email, password:senha,
     options:{
       emailRedirectTo:urlDoApp(),
-      data:{ consent_lgpd_at:new Date().toISOString() } // consentimento registrado no cadastro
+      data:{ consent_lgpd_at:new Date().toISOString() }
     }
   });
   if(error) throw new Error(traduzErroAuth(error));
-  return data; // com confirmação ligada, data.session vem null até confirmar o e-mail
+  return data;
 }
 async function authReenviarConfirmacao(email){
   const {error}=await _sb.auth.resend({type:'signup',email,options:{emailRedirectTo:urlDoApp()}});
@@ -63,10 +55,10 @@ async function authTrocarSenha(nova){
   if(error) throw new Error(traduzErroAuth(error));
 }
 async function authSair(){
-  // scope:'local' — desloga SÓ este aparelho (não derruba o outro do Luiz)
+
   try{ await _sb.auth.signOut({scope:'local'}); }catch(e){}
 }
-/* LGPD: apaga o usuário no auth (cascade remove a linha de dados) e limpa o aparelho */
+
 async function authApagarConta(){
   const {error}=await _sb.rpc('delete_my_account');
   if(error) throw new Error('Não consegui apagar agora ('+(error.message||'erro')+'). Tenta de novo ou fala comigo pelo e-mail da política de privacidade.');

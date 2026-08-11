@@ -1,9 +1,5 @@
-/* ============================================================
-   CONSTANTE — views 2/2: Grana, Mente, Config
-   ============================================================ */
 'use strict';
 
-/* ============================ GRANA ============================ */
 function viewGrana(){
   const fin=resumoFinanceiro();
   const pct=fin.total?Math.round(100*fin.pago/fin.total):0;
@@ -15,7 +11,6 @@ function viewGrana(){
     +'<span class="muted small">Aporte: <b class="num">'+fmtBRL(S.finance.aporteMensal)+'</b>/mês <button class="btn mini sec-btn" data-action="aporte-edit">mudar</button></span></div>'
     +'</section>';
 
-  /* dívidas individuais (ordem snowball) */
   html+='<section class="card"><h2>Fila de pagamento (bola de neve) <button class="btn mini sec-btn dir" data-action="divida-add">+ dívida</button></h2>';
   S.finance.dividas.forEach((dv,ix)=>{
     const saldo=saldoDivida(dv);
@@ -36,7 +31,6 @@ function viewGrana(){
   });
   html+='</section>';
 
-  /* projeção */
   const proj=projecaoDividas();
   html+='<section class="card"><h2>Projeção de quitação</h2>';
   if(proj.incompleta){
@@ -53,7 +47,6 @@ function viewGrana(){
   }
   html+='</section>';
 
-  /* apostas */
   const wk=semanaDoPlano();
   const lim=limiteSemana(wk);
   const gasto=gastoNaSemana(wk);
@@ -85,10 +78,9 @@ function viewGrana(){
   return html;
 }
 
-/* ============================ MENTE ============================ */
 function viewMente(){
   let html='';
-  /* sono últimos 7 dias */
+
   const metaH=horasEntre(S.settings.sono.deitar,S.settings.sono.acordar);
   let barras='',soma=0,n=0;
   for(let i=6;i>=0;i--){
@@ -106,7 +98,6 @@ function viewMente(){
     +'<span class="chip">verde = na meta</span></div>'
     +'<p class="muted small mt">Sono é a fundação: protege o Reconter fazendo efeito, o treino rendendo e a cabeça no lugar. Registra pela manhã com o dado da Polar Loop.</p></section>';
 
-  /* humor / energia 14 dias */
   const EMO=['😞','😕','😐','🙂','😄'];
   let hb='',eb='';
   for(let i=13;i>=0;i--){
@@ -120,7 +111,6 @@ function viewMente(){
     +'<label class="muted small mt" style="display:block">Energia</label><div class="linha-chart" style="height:64px">'+eb+'</div>'
     +'<p class="muted small mt">Check-in fica na aba Hoje. Padrões (ex.: energia caindo toda quinta) aparecem aqui — usa isso na revisão de domingo.</p></section>';
 
-  /* burnout */
   const ultimo=ultimoBurnout();
   html+='<section class="card"><h2>Radar de burnout (semanal)</h2>';
   if(ultimo){
@@ -133,13 +123,11 @@ function viewMente(){
   }
   html+='<button class="btn sec-btn mt" data-action="burnout-abrir">fazer check-in de burnout</button></section>';
 
-  /* SOS */
   html+='<section class="card"><h2>Impulsos (apostas, jogos, 🔒)</h2>'
     +'<p class="sec small">Impulso é onda: cresce, faz pico e passa — surfar 10 minutos costuma bastar. O botão 🌊 te guia numa respiração 4-7-8 até a onda baixar.</p>'
     +'<button class="btn mt" data-action="sos-abrir">🌊 abrir o surf do impulso</button>'
     +'<p class="muted small mt">Dica: deslogar dos sites de aposta, tirar apps do celular e deixar o dinheiro “longe” (sem cartão salvo) reduz MUITO a força da onda.</p></section>';
 
-  /* conquistas */
   const ganhas=S.gamif.conquistas;
   html+='<section class="card"><h2>Conquistas ('+ganhas.length+'/'+CONQUISTAS.length+')</h2>';
   CONQUISTAS.forEach(c=>{
@@ -165,7 +153,6 @@ function ultimoBurnout(){
   return null;
 }
 
-/* ============================ CONFIG ============================ */
 function viewConfig(){
   const st=S.settings;
   let html='<section class="card"><h2>Perfil & metas</h2><div class="cfg-grid">'
@@ -184,7 +171,6 @@ function viewConfig(){
     +cfgCampo('Melatonina','settings.sono.melatonina','time',st.sono.melatonina)
     +'</div></section>';
 
-  /* hábitos */
   html+='<section class="card"><h2>Hábitos <button class="btn mini sec-btn dir" data-action="habito-add">+ novo</button></h2><div class="lista-edit">';
   S.habits.forEach(hb=>{
     html+='<div class="item-edit"><span>'+esc(hb.icone)+'</span><span class="nome">'+esc(hb.nome)
@@ -194,14 +180,12 @@ function viewConfig(){
   });
   html+='</div></section>';
 
-  /* apostas */
   html+='<section class="card"><h2>Plano de apostas</h2><div class="cfg-grid">'
     +cfgCampo('Limite inicial/semana (R$)','bets.limiteSemanaInicial','number',S.bets.limiteSemanaInicial)
     +cfgCampo('Semanas até zerar','bets.semanasParaZero','number',S.bets.semanasParaZero)
     +'</div><button class="btn sec-btn mt" data-action="apostas-reiniciar">reiniciar plano a partir de hoje</button>'
     +'<p class="muted small mt">Início do plano: '+fmtData(S.bets.inicioPlano)+'. Ajusta o limite inicial pra média real das suas últimas semanas — o plano desce a partir daí.</p></section>';
 
-  /* rendas */
   html+='<section class="card"><h2>Rendas mensais</h2><div class="lista-edit">';
   S.finance.rendas.forEach((r,ix)=>{
     html+='<div class="item-edit"><span class="nome">'+esc(r.nome)+'</span><span class="num">'+fmtBRL(r.valor)+'</span>'
@@ -209,7 +193,6 @@ function viewConfig(){
   });
   html+='</div><button class="btn mini sec-btn mt" data-action="renda-add">+ renda</button></section>';
 
-  /* conta (modo produto) ou sincronização por código (modo local) */
   if(produtoAtivo()){
     const u=usuarioAtual();
     html+='<section class="card"><h2>Conta</h2>'
@@ -236,7 +219,6 @@ function viewConfig(){
       +'<p class="muted small mt">'+(st.ultimaSync?'Última sync: '+new Date(st.ultimaSync).toLocaleString('pt-BR'):'Nunca sincronizado')+' · passo a passo no GUIA-PUBLICACAO.md</p></section>';
   }
 
-  /* backup */
   html+='<section class="card"><h2>Backup & dados</h2>'
     +'<div class="acoes" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
     +'<button class="btn sec-btn" data-action="exportar">⬇ exportar backup</button>'

@@ -1,6 +1,3 @@
-/* ============================================================
-   CONSTANTE — UI base: escape, modal, toast, SOS (respiração)
-   ============================================================ */
 'use strict';
 
 function esc(s){
@@ -30,7 +27,6 @@ function toast(msg){
   _toastTimer=setTimeout(()=>{ el.style.display='none'; },2600);
 }
 
-/* ---------- SOS: respiração 4-7-8 + surf do impulso ---------- */
 let _respTimer=null;
 function abrirSOS(){
   abrirModal(

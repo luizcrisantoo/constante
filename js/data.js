@@ -1,7 +1,3 @@
-/* ============================================================
-   CONSTANTE — dados padrão do Luiz (tudo editável em Config)
-   Dias: 0=Dom 1=Seg 2=Ter 3=Qua 4=Qui 5=Sex 6=Sáb
-   ============================================================ */
 const DIAS_NOME = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const DIAS_ABREV = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
@@ -19,7 +15,7 @@ function defaultState(){
       syncUrl:'', syncKey:'', syncCode:'', syncAuto:true, ultimaSync:null
     },
     pesos: [ { data: hojeISO(), kg: 72.0 } ],
-    // -------- HÁBITOS --------
+
     habits: [
       { id:'duo_en',  nome:'Duolingo Inglês',   icone:'🇬🇧', tipo:'fazer',  dias:[0,1,2,3,4,5,6], grupo:'Duolingo', xp:10 },
       { id:'duo_it',  nome:'Duolingo Italiano', icone:'🇮🇹', tipo:'fazer',  dias:[0,1,2,3,4,5,6], grupo:'Duolingo', xp:10 },
@@ -37,9 +33,9 @@ function defaultState(){
       { id:'foco',    nome:'Modo Foco 🔒', icone:'🔒', tipo:'evitar', dias:[0,1,2,3,4,5,6], xp:20, discreto:true,
         desc:'Hábito pessoal — só você sabe o que significa. Conta pra streak como os outros.' }
     ],
-    // -------- ROTINA SEMANAL --------
+
     routine: [
-      // SEGUNDA
+
       {d:1,i:'05:30',f:'05:40',t:'Acordar + copo d’água',tipo:'sono'},
       {d:1,i:'05:40',f:'06:10',t:'Café da manhã + remédios da manhã',tipo:'refeicao',ref:'cafe'},
       {d:1,i:'06:45',f:'07:30',t:'Deslocamento → faculdade',tipo:'desloc'},
@@ -58,7 +54,7 @@ function defaultState(){
       {d:1,i:'21:00',f:'21:30',t:'Livre — sem telas',tipo:'livre'},
       {d:1,i:'21:30',f:'21:45',t:'Remédios da noite + melatonina 21:40',tipo:'remedios'},
       {d:1,i:'22:00',t:'💤 Dormir',tipo:'sono'},
-      // TERÇA
+
       {d:2,i:'05:30',f:'05:40',t:'Acordar + copo d’água',tipo:'sono'},
       {d:2,i:'05:40',f:'06:10',t:'Café da manhã + remédios da manhã',tipo:'refeicao',ref:'cafe'},
       {d:2,i:'06:45',f:'07:30',t:'Deslocamento → faculdade',tipo:'desloc'},
@@ -80,7 +76,7 @@ function defaultState(){
       {d:2,i:'21:10',f:'21:30',t:'Leitura',tipo:'leitura'},
       {d:2,i:'21:30',f:'21:45',t:'Remédios da noite + melatonina 21:40',tipo:'remedios'},
       {d:2,i:'22:00',t:'💤 Dormir',tipo:'sono'},
-      // QUARTA
+
       {d:3,i:'05:30',f:'05:40',t:'Acordar + copo d’água',tipo:'sono'},
       {d:3,i:'05:40',f:'06:05',t:'Café da manhã + remédios da manhã',tipo:'refeicao',ref:'cafe'},
       {d:3,i:'06:50',f:'07:50',t:'Academia — Treino B (costas/bíceps + core)',tipo:'treino'},
@@ -99,7 +95,7 @@ function defaultState(){
       {d:3,i:'20:30',f:'21:00',t:'Leitura',tipo:'leitura'},
       {d:3,i:'21:30',f:'21:45',t:'Remédios da noite + melatonina 21:40',tipo:'remedios'},
       {d:3,i:'22:00',t:'💤 Dormir',tipo:'sono'},
-      // QUINTA
+
       {d:4,i:'05:30',f:'05:40',t:'Acordar + copo d’água',tipo:'sono'},
       {d:4,i:'05:40',f:'06:10',t:'Café da manhã + remédios da manhã',tipo:'refeicao',ref:'cafe'},
       {d:4,i:'06:45',f:'07:30',t:'Deslocamento → faculdade',tipo:'desloc'},
@@ -119,7 +115,7 @@ function defaultState(){
       {d:4,i:'21:10',f:'21:30',t:'Leitura',tipo:'leitura'},
       {d:4,i:'21:30',f:'21:45',t:'Remédios da noite + melatonina 21:40',tipo:'remedios'},
       {d:4,i:'22:00',t:'💤 Dormir',tipo:'sono'},
-      // SEXTA
+
       {d:5,i:'05:30',f:'05:40',t:'Acordar + copo d’água',tipo:'sono'},
       {d:5,i:'05:40',f:'06:10',t:'Café da manhã + remédios da manhã',tipo:'refeicao',ref:'cafe'},
       {d:5,i:'06:45',f:'07:30',t:'Deslocamento → faculdade',tipo:'desloc'},
@@ -138,7 +134,7 @@ function defaultState(){
       {d:5,i:'20:00',f:'22:00',t:'Noite livre 🎉 (social / lazer offline)',tipo:'livre'},
       {d:5,i:'22:15',f:'22:30',t:'Remédios da noite + melatonina',tipo:'remedios'},
       {d:5,i:'22:30',t:'💤 Dormir (flex)',tipo:'sono'},
-      // SÁBADO
+
       {d:6,i:'06:30',f:'06:45',t:'Acordar (flex) + copo d’água',tipo:'sono'},
       {d:6,i:'06:45',f:'07:00',t:'⚖️ Pesagem semanal (em jejum)',tipo:'revisao'},
       {d:6,i:'07:00',f:'07:30',t:'Café da manhã + remédios da manhã',tipo:'refeicao',ref:'cafe'},
@@ -153,7 +149,7 @@ function defaultState(){
       {d:6,i:'17:00',f:'22:00',t:'Livre 🎉',tipo:'livre'},
       {d:6,i:'19:30',f:'20:00',t:'Jantar',tipo:'refeicao',ref:'jantar'},
       {d:6,i:'22:30',t:'💤 Dormir (flex)',tipo:'sono'},
-      // DOMINGO
+
       {d:0,i:'06:30',f:'07:00',t:'Acordar (flex) + copo d’água',tipo:'sono'},
       {d:0,i:'07:00',f:'07:30',t:'Café da manhã + remédios da manhã',tipo:'refeicao',ref:'cafe'},
       {d:0,i:'08:00',f:'08:30',t:'Duolingo (EN·IT·ES)',tipo:'idioma'},
@@ -168,7 +164,7 @@ function defaultState(){
       {d:0,i:'21:30',f:'21:45',t:'Remédios da noite + melatonina 21:40',tipo:'remedios'},
       {d:0,i:'22:00',t:'💤 Dormir',tipo:'sono'}
     ],
-    // -------- DIETA --------
+
     diet: {
       alvo:'≈2.700 kcal/dia · proteína ≥145g (alvo real ~180g) · carbo de baixo/médio IG distribuído — energia constante, sem picos.',
       aviso:'Plano orientativo montado a partir da sua calorimetria e do plano do nutricionista Gabriel Januzzi (ago/2024), ajustado para a fase SEM corrida/futevôlei. Valide com ele, principalmente antes da cirurgia. Sem maltodextrina e sem leite condensado nesta fase (eram combustível de treino de corrida).',
@@ -192,7 +188,7 @@ function defaultState(){
       hidratacao:'Meta 2,5L de água/dia (35ml/kg). Garrafa cheia no início de cada bloco da rotina.',
       constante:['Sem picos: nada de doce/refri isolado no meio do dia — sobremesa pequena junto de refeição completa, se quiser.','Café: ok até 14:00 no máximo (protege o sono das 22:00).','Proteína em TODAS as refeições = saciedade e glicemia estável.']
     },
-    // -------- REMÉDIOS / SUPLEMENTOS --------
+
     meds: {
       aviso:'Horários sugeridos por praxe comum — confirme dose e frequência com seu médico (principalmente Reconter e Dymista, que são de prescrição).',
       grupos: [
@@ -201,7 +197,7 @@ function defaultState(){
         { id:'med_noite', nome:'Noite (21:30)', itens:['Mag-3 Complex (magnésio)','Dymista — 2ª dose (se prescrito 2x/dia)','Melatonina às 21:40 (~20 min antes de deitar)'] }
       ]
     },
-    // -------- FINANÇAS --------
+
     finance: {
       rendas:[ {nome:'Estágio', valor:1400}, {nome:'Site Clínica Ortopédica do Recife', valor:200} ],
       aporteMensal:700,
@@ -215,14 +211,14 @@ function defaultState(){
       ],
       extras:[]
     },
-    // -------- APOSTAS (redução gradual) --------
+
     bets: {
       inicioPlano: hojeISO(),
       limiteSemanaInicial: 50,
       semanasParaZero: 8,
       nota:'Redução gradual, sem corte seco: o limite semanal cai a cada semana até zerar. Tudo que você NÃO apostar pode virar pagamento de dívida com 1 toque.'
     },
-    // -------- TREINOS --------
+
     treinos: {
       aviso:'Pré-cirurgia do quadril: regra nº1 é ZERO dor no quadril. Combine as adaptações com o professor da academia (e fisio, se tiver). Registre treino e sono pela pulseira Polar Loop e lance aqui o resumo.',
       split:[
@@ -232,13 +228,12 @@ function defaultState(){
         {dia:'Sáb 08:00', nome:'Treino D', foco:'Upper leve + mobilidade e alongamento'}
       ]
     },
-    // -------- DIÁRIO --------
+
     days: {},
     gamif: { xpTotal:0, conquistas:[] }
   };
 }
 
-/* Conquistas disponíveis */
 const CONQUISTAS = [
   { id:'primeiro_dia',  nome:'Primeiro passo',      icone:'👣', desc:'Complete seu primeiro dia com 80+ XP' },
   { id:'streak7',       nome:'Uma semana constante', icone:'🔥', desc:'7 dias seguidos de ofensiva' },
@@ -254,7 +249,6 @@ const CONQUISTAS = [
   { id:'poliglota',     nome:'Poliglota',            icone:'🌍', desc:'Duolingo completo (3 línguas) por 14 dias' }
 ];
 
-/* Níveis */
 const NIVEIS = [
   { xp:0,    nome:'Começo',   icone:'🌱' },
   { xp:300,  nome:'Bronze',   icone:'🥉' },

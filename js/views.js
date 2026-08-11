@@ -1,6 +1,3 @@
-/* ============================================================
-   CONSTANTE — views 1/2: dispatcher, Hoje, Rotina, Dieta
-   ============================================================ */
 'use strict';
 
 const UI={ tab:'hoje', rotinaDia:new Date().getDay() };
@@ -32,7 +29,6 @@ function renderTopbar(){
     +'<span class="pill" title="'+esc(nv.nome)+' — '+nv.xp+' XP">'+nv.icone+' <span class="num">'+nv.xp+'</span> XP</span>';
 }
 
-/* ============================ HOJE ============================ */
 function viewHoje(){
   const iso=hojeISO();
   const d=getDia(iso);
@@ -51,7 +47,6 @@ function viewHoje(){
   if(prox) html+='<div class="agora" style="border-color:var(--baseline)"><b>Depois:</b> '+esc(prox.t)+' <span class="muted num">('+esc(prox.i)+')</span></div>';
   html+='</section>';
 
-  /* progresso do dia + nível */
   html+='<section class="card"><h2>Seu dia</h2>'
     +'<div class="linha"><div class="esq"><span class="hero-num num">'+xpHoje+'</span> <span class="muted">/ '+xpPoss+' XP</span></div>'
     +'<div>'+nv.icone+' <b>'+esc(nv.nome)+'</b>'+(nv.prox?' <span class="muted small">→ '+nv.prox.icone+' aos '+nv.prox.xp+'</span>':'')+'</div></div>'
@@ -60,7 +55,6 @@ function viewHoje(){
     +barraSemana()
     +'</section>';
 
-  /* hábitos de fazer */
   const habs=habitosDoDia(iso);
   const fazer=habs.filter(x=>x.tipo==='fazer');
   const evitar=habs.filter(x=>x.tipo==='evitar');
@@ -72,7 +66,6 @@ function viewHoje(){
   }
   html+='</section>';
 
-  /* refeições */
   html+='<section class="card"><h2>Refeições <button class="btn mini sec-btn dir" data-nav="dieta">ver plano</button></h2>';
   S.diet.refeicoes.forEach(r=>{
     const ok=!!d.refeicoes[r.id];
@@ -83,7 +76,6 @@ function viewHoje(){
   });
   html+='</section>';
 
-  /* remédios */
   html+='<section class="card"><h2>Remédios & suplementos</h2><div class="check-lista">';
   S.meds.grupos.forEach(g=>{
     const ok=!!d.meds[g.id];
@@ -92,7 +84,6 @@ function viewHoje(){
   });
   html+='</div><p class="muted small mt">'+esc(S.meds.aviso)+'</p></section>';
 
-  /* água */
   const pctAgua=Math.min(100,Math.round(100*(d.agua||0)/S.profile.aguaAlvoMl));
   html+='<section class="card"><h2>Água</h2>'
     +'<div class="linha"><div class="esq"><span class="hero-num num">'+((d.agua||0)/1000).toFixed(2).replace('.',',')+'</span> <span class="muted">/ '+(S.profile.aguaAlvoMl/1000).toFixed(1).replace('.',',')+' L</span></div>'
@@ -102,7 +93,6 @@ function viewHoje(){
     +'<button class="btn mini sec-btn" data-action="agua" data-ml="500">+500ml</button>'
     +'<button class="btn mini sec-btn" data-action="agua" data-ml="-250">−250ml</button></div></section>';
 
-  /* sono */
   const so=d.sono||{};
   html+='<section class="card"><h2>Sono (noite passada — Polar Loop)</h2>'
     +'<div class="sono-form">'
@@ -114,7 +104,6 @@ function viewHoje(){
     +'<div class="muted small mt">Meta: deitar '+esc(S.settings.sono.deitar)+' · acordar '+esc(S.settings.sono.acordar)+' · melatonina '+esc(S.settings.sono.melatonina)+'.</div>'
     +'</section>';
 
-  /* check-in humor/energia */
   const EMO=['😞','😕','😐','🙂','😄'];
   html+='<section class="card"><h2>Check-in mental</h2>'
     +'<label class="muted small">Humor</label><div class="escala">'
@@ -147,7 +136,7 @@ function habRow(hb,d){
 }
 
 function barraSemana(){
-  /* últimos 7 dias, hoje à direita — série única (azul), rótulos seletivos */
+
   let html='<div class="mini-chart" role="img" aria-label="XP dos últimos 7 dias">';
   const hoje=hojeISO();
   let max=1;
@@ -170,7 +159,6 @@ function barraSemana(){
   return html+'</div>';
 }
 
-/* ============================ ROTINA ============================ */
 function viewRotina(){
   const dow=UI.rotinaDia;
   const hojeDow=new Date().getDay();
@@ -183,7 +171,7 @@ function viewRotina(){
   const agoraMin=hmParaMin(agoraHM());
   if(!blocos.length) html+='<p class="muted mt">Dia sem blocos — toca em “editar” pra montar.</p>';
   blocos.forEach((b,ix)=>{
-    const tipoSeguro=TIPO_LABEL[b.tipo]?b.tipo:'livre'; // whitelist (tipo entra em style)
+    const tipoSeguro=TIPO_LABEL[b.tipo]?b.tipo:'livre';
     const cor='var(--c-'+tipoSeguro+')';
     const ehAgora=dow===hojeDow&&b.f&&agoraMin>=hmParaMin(b.i)&&agoraMin<hmParaMin(b.f);
     html+='<div class="bloco '+(ehAgora?'agora-marca':'')+'">'
@@ -197,14 +185,12 @@ function viewRotina(){
     +'<button class="btn sec-btn" data-action="bloco-add" data-d="'+dow+'">+ bloco</button>'
     +'</div></section>';
 
-  /* treinos */
   html+='<section class="card"><h2>Treinos da semana (até a cirurgia)</h2>';
   S.treinos.split.forEach(t=>{
     html+='<div class="linha" style="padding:0.35rem 0"><span class="esq"><b>'+esc(t.nome)+'</b> <span class="muted small">'+esc(t.dia)+'</span><br><span class="sec small">'+esc(t.foco)+'</span></span></div>';
   });
   html+='<div class="aviso mt">⚠️ '+esc(S.treinos.aviso)+'</div></section>';
 
-  /* legenda */
   html+='<section class="card"><h2>Legenda</h2><div style="display:flex;flex-wrap:wrap;gap:0.4rem">';
   Object.keys(TIPO_LABEL).forEach(t=>{
     html+='<span class="chip"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--c-'+t+');margin-right:4px"></span>'+TIPO_LABEL[t]+'</span>';
@@ -213,7 +199,6 @@ function viewRotina(){
   return html;
 }
 
-/* ============================ DIETA ============================ */
 function viewDieta(){
   let html='<section class="card"><h2>Plano alimentar — fase atual</h2>'
     +'<p class="sec small">'+esc(S.diet.alvo)+'</p>'
@@ -238,7 +223,6 @@ function viewDieta(){
     +S.diet.constante.map(c=>'<li style="margin:0.25rem 0">'+esc(c)+'</li>').join('')
     +'</ul><p class="muted small mt">💧 '+esc(S.diet.hidratacao)+'</p></section>';
 
-  /* peso */
   const ult=S.pesos[S.pesos.length-1]||{kg:S.profile.peso||72,data:hojeISO()};
   html+='<section class="card"><h2>Peso (sábado, em jejum)</h2>'
     +'<div class="linha"><div class="esq"><span class="hero-num num">'+esc(String(ult.kg).replace('.',','))+'</span> <span class="muted">kg em '+fmtData(ult.data)+'</span></div>'

@@ -1,7 +1,3 @@
-/* Constante — service worker
-   - navegação: rede primeiro (atualização chega sempre), cache como fallback offline
-   - estáticos: cache primeiro + revalidação em segundo plano (stale-while-revalidate)
-   - Supabase: nunca intercepta (sync sempre online) */
 'use strict';
 const CACHE = 'constante-v6';
 const ARQUIVOS = [
@@ -14,7 +10,7 @@ const ARQUIVOS = [
 self.addEventListener('install', ev => {
   ev.waitUntil(
     caches.open(CACHE)
-      // cache:'reload' força buscar da rede, nunca do HTTP-cache velho do navegador
+
       .then(c => Promise.all(ARQUIVOS.map(u => c.add(new Request(u, { cache: 'reload' })).catch(() => {}))))
       .then(() => self.skipWaiting())
   );
@@ -29,7 +25,6 @@ self.addEventListener('fetch', ev => {
   const url = new URL(ev.request.url);
   if (ev.request.method !== 'GET' || url.hostname.endsWith('.supabase.co')) return;
 
-  // páginas: rede primeiro (pega versão nova), cache se offline
   if (ev.request.mode === 'navigate') {
     ev.respondWith(
       fetch(ev.request).then(resp => {
@@ -41,7 +36,6 @@ self.addEventListener('fetch', ev => {
     return;
   }
 
-  // estáticos do próprio site: responde do cache e revalida por trás
   if (url.origin === location.origin) {
     ev.respondWith(
       caches.match(ev.request, { ignoreSearch: true }).then(hit => {

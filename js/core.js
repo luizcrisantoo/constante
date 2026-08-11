@@ -35,6 +35,12 @@ function lsSet(v){
 
 let S=null; // estado global
 
+/* dono do localStorage neste aparelho (id do usuário) — isolamento entre contas */
+const DONO_KEY='constante_dono';
+function lsDonoGet(){ try{ return localStorage.getItem(DONO_KEY); }catch(e){ return _donoMem; } }
+let _donoMem=null;
+function lsDonoSet(id){ _donoMem=id; try{ if(id) localStorage.setItem(DONO_KEY,id); else localStorage.removeItem(DONO_KEY); }catch(e){} }
+
 function deepFill(alvo,base){
   if(Array.isArray(base)) return (alvo===undefined)?JSON.parse(JSON.stringify(base)):alvo;
   if(base && typeof base==='object'){
@@ -271,40 +277,64 @@ function economiaDisponivel(){
   return Math.max(0, econ-jaTransferido);
 }
 
-/* ---------- sincronização (Supabase REST, sem SDK) ---------- */
+/* ---------- sincronização (Supabase REST) ----------
+   Modo produto (config.js preenchida): tabela constante_accounts,
+   identidade = sessão logada (Bearer do usuário), RLS no banco.
+   Modo local (config vazia): tabela constante_state por código —
+   comportamento antigo, intacto. */
+function produtoAtivo(){ return typeof modoProduto==='function' && modoProduto(); }
 function syncConfigurado(){
+  if(produtoAtivo()) return !!(typeof tokenAcesso==='function' && tokenAcesso());
   const s=S.settings;
   return !!(s.syncUrl && s.syncKey && s.syncCode);
 }
+function _syncBase(){
+  return (produtoAtivo()?CONSTANTE_CONFIG.supabaseUrl:S.settings.syncUrl).replace(/\/+$/,'');
+}
 function _syncHeaders(){
+  if(produtoAtivo()){
+    return { 'apikey':CONSTANTE_CONFIG.supabaseKey, 'Authorization':'Bearer '+tokenAcesso(),
+             'Content-Type':'application/json' };
+  }
   return { 'apikey':S.settings.syncKey, 'Authorization':'Bearer '+S.settings.syncKey,
            'Content-Type':'application/json' };
 }
 async function syncPush(opts){
-  if(!syncConfigurado()) throw new Error('Sync não configurada');
-  const url=S.settings.syncUrl.replace(/\/+$/,'')+'/rest/v1/constante_state';
+  if(!syncConfigurado()) throw new Error(produtoAtivo()?'Entra na tua conta primeiro':'Sync não configurada');
   // privacidade: settings (chaves, código, config local) NUNCA sobem pra nuvem
   const payload={...S}; delete payload.settings;
-  const body=JSON.stringify([{ sync_code:S.settings.syncCode, payload, updated_at:new Date().toISOString() }]);
+  let url, linha;
+  if(produtoAtivo()){
+    url=_syncBase()+'/rest/v1/constante_accounts';
+    linha={ user_id:usuarioAtual().id, payload, updated_at:new Date().toISOString() };
+  } else {
+    url=_syncBase()+'/rest/v1/constante_state';
+    linha={ sync_code:S.settings.syncCode, payload, updated_at:new Date().toISOString() };
+  }
+  const body=JSON.stringify([linha]);
   // keepalive: tenta concluir o envio mesmo se a aba for fechada/minimizada (limite ~64KB)
   const keepalive=!!(opts&&opts.flush)&&body.length<60000;
   const r=await fetch(url,{method:'POST',
     headers:{..._syncHeaders(),'Prefer':'resolution=merge-duplicates'},
     body, keepalive});
+  if(r.status===401||r.status===403){ sessaoExpirou(); throw new Error('Sessão expirada'); }
   if(!r.ok) throw new Error('Falha ao enviar ('+r.status+')');
   S.settings.ultimaSync=new Date().toISOString();
   lsSet(JSON.stringify(S));
   return true;
 }
 async function syncPull(){
-  if(!syncConfigurado()) throw new Error('Sync não configurada');
-  const url=S.settings.syncUrl.replace(/\/+$/,'')+'/rest/v1/constante_state'
-    +'?sync_code=eq.'+encodeURIComponent(S.settings.syncCode)+'&select=payload,updated_at';
+  if(!syncConfigurado()) throw new Error(produtoAtivo()?'Entra na tua conta primeiro':'Sync não configurada');
+  const url=produtoAtivo()
+    ? _syncBase()+'/rest/v1/constante_accounts?user_id=eq.'+encodeURIComponent(usuarioAtual().id)+'&select=payload,updated_at'
+    : _syncBase()+'/rest/v1/constante_state?sync_code=eq.'+encodeURIComponent(S.settings.syncCode)+'&select=payload,updated_at';
   const r=await fetch(url,{headers:_syncHeaders()});
+  if(r.status===401||r.status===403){ sessaoExpirou(); throw new Error('Sessão expirada'); }
   if(!r.ok) throw new Error('Falha ao baixar ('+r.status+')');
   const rows=await r.json();
   if(!rows.length){
-    // nuvem vazia também conta como sync ok (primeiro upload liberado)
+    // nuvem vazia também conta como sync ok (primeiro upload liberado —
+    // é assim que os dados locais do Luiz migram pra conta dele)
     S.settings.ultimaSync=new Date().toISOString();
     lsSet(JSON.stringify(S));
     return false;
@@ -318,6 +348,20 @@ async function syncAgora(){
   // pull PRECISA funcionar antes de qualquer push — nunca sobrescrever a nuvem às cegas
   await syncPull();
   await syncPush();
+}
+/* envia já qualquer mudança pendente (cancela o debounce) — usar ANTES de sair/apagar */
+async function flushSyncPendente(){
+  clearTimeout(_saveTimer);
+  if(syncConfigurado()){ try{ await syncPush(); }catch(e){} }
+}
+/* sessão caiu no meio do uso (401/403): sai limpo e volta pro login sem loop */
+let _tratandoSessao=false;
+function sessaoExpirou(){
+  if(!produtoAtivo()||_tratandoSessao) return;
+  _tratandoSessao=true;
+  if(typeof authSair==='function') Promise.resolve(authSair()).catch(()=>{});
+  if(typeof toast==='function') toast('Tua sessão expirou — entra de novo.');
+  setTimeout(()=>{ _tratandoSessao=false; },3000);
 }
 /* mescla: dias = escrita mais recente vence (carimbo _m) com apostas unidas;
    listas financeiras = união por id; settings = SEMPRE os locais (não trafegam) */

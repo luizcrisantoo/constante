@@ -266,6 +266,19 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
 .hero-num{ font-size:2rem; font-weight:800; }
 .hero-sub{ font-size:0.8rem; color:var(--ink-mute); }
 
+/* ---------- 12b. Login (modo produto) ---------- */
+.modo-login .bottom-nav, .modo-login .sos-fab, .modo-login .topbar .stats,
+.modo-login .topbar [data-nav="config"]{ display:none; }
+.login-wrap{ max-width:400px; margin:7dvh auto 0; padding:var(--sp-md); display:grid; gap:var(--sp-md); }
+.login-logo{ text-align:center; font-size:1.9rem; font-weight:800; letter-spacing:0.4px; }
+.login-logo em{ font-style:normal; color:var(--brand-strong); }
+.login-tag{ text-align:center; color:var(--ink-mute); font-size:0.88rem; margin-top:-0.8rem; }
+.login-consent{ display:flex; gap:0.5rem; align-items:flex-start; font-size:0.8rem;
+  color:var(--ink-2); margin-top:var(--sp-sm); }
+.login-consent input{ width:auto; margin-top:2px; flex:none; }
+.login-links{ display:flex; justify-content:space-between; font-size:0.85rem; }
+.login-links button{ color:var(--brand-strong); text-decoration:underline; padding:0.2rem; }
+
 /* ---------- 13. Media queries (mobile-first) ---------- */
 @media (min-width:768px){
   main{ max-width:720px; padding:var(--sp-lg); }

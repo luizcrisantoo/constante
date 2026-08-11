@@ -260,7 +260,99 @@ const ACOES={
   'zerar':()=>abrirModal('<h3>Apagar tudo?</h3><p class="sec small">Todo o histórico some deste aparelho. Faz um backup antes, vai por mim.</p>'
     +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
     +'<button class="btn perigo" data-action="zerar-confirma">apagar tudo</button></div>'),
-  'zerar-confirma':()=>{ S=defaultState(); saveState({skipSync:true}); fecharModal(); render(); toast('Recomeço. Bora 🌱'); }
+  'zerar-confirma':()=>{ S=defaultState(); saveState({skipSync:true}); fecharModal(); render(); toast('Recomeço. Bora 🌱'); },
+
+  /* ---------- conta (modo produto) ---------- */
+  'auth-tela':el=>{
+    UI.auth={tela:el.dataset.t,email:val('au-email')||(UI.auth&&UI.auth.email)||''};
+    renderLogin();
+  },
+  'auth-entrar':async()=>{
+    const email=val('au-email');
+    const senha=(document.getElementById('au-senha')||{}).value||'';
+    if(!email||!senha){ UI.auth.erro='Preenche e-mail e senha.'; UI.auth.msg=''; renderLogin(); return; }
+    UI.auth.email=email; UI.auth.erro=''; UI.auth.msg='Entrando…'; renderLogin();
+    try{ await authEntrar(email,senha); /* o evento SIGNED_IN cuida do resto */ }
+    catch(e){ UI.auth.msg=''; UI.auth.erro=e.message; renderLogin(); }
+  },
+  'auth-cadastrar':async()=>{
+    const email=val('au-email');
+    const s1=(document.getElementById('au-senha')||{}).value||'';
+    const s2=(document.getElementById('au-senha2')||{}).value||'';
+    const consent=(document.getElementById('au-consent')||{}).checked;
+    UI.auth.email=email; UI.auth.msg='';
+    if(!email){ UI.auth.erro='Preenche teu e-mail.'; renderLogin(); return; }
+    if(s1.length<6){ UI.auth.erro='A senha precisa ter pelo menos 6 caracteres.'; renderLogin(); return; }
+    if(s1!==s2){ UI.auth.erro='As senhas não batem.'; renderLogin(); return; }
+    if(!consent){ UI.auth.erro='Pra criar a conta, precisa aceitar a Política de Privacidade (LGPD).'; renderLogin(); return; }
+    UI.auth.erro=''; UI.auth.msg='Criando conta…'; renderLogin();
+    try{
+      const data=await authCadastrar(email,s1);
+      if(!data.session){ UI.auth={tela:'confirmar',email}; renderLogin(); }
+      /* com confirmação desligada, viria sessão e o SIGNED_IN assume */
+    }catch(e){ UI.auth.msg=''; UI.auth.erro=e.message; renderLogin(); }
+  },
+  'auth-esqueci-enviar':async()=>{
+    const email=val('au-email');
+    if(!email){ UI.auth.erro='Digita teu e-mail.'; UI.auth.msg=''; renderLogin(); return; }
+    UI.auth.email=email; UI.auth.erro=''; UI.auth.msg='Enviando…'; renderLogin();
+    try{ await authRecuperarSenha(email); UI.auth={tela:'entrar',email,msg:'Link enviado! Abre teu e-mail (e o spam) e clica nele.'}; }
+    catch(e){ UI.auth.msg=''; UI.auth.erro=e.message; }
+    renderLogin();
+  },
+  'auth-reenviar':async()=>{
+    try{ await authReenviarConfirmacao(UI.auth.email); UI.auth.msg='Reenviado! Confere o spam também.'; UI.auth.erro=''; }
+    catch(e){ UI.auth.erro=e.message; UI.auth.msg=''; }
+    renderLogin();
+  },
+  'auth-nova-senha-salvar':async()=>{
+    const s1=(document.getElementById('au-senha')||{}).value||'';
+    const s2=(document.getElementById('au-senha2')||{}).value||'';
+    if(s1.length<6){ UI.auth.erro='Mínimo 6 caracteres.'; renderLogin(); return; }
+    if(s1!==s2){ UI.auth.erro='As senhas não batem.'; renderLogin(); return; }
+    try{
+      await authTrocarSenha(s1);
+      _emRecuperacao=false;
+      const u=usuarioAtual(); if(u) carregarEstadoDaConta(u);
+      toast('🔒 Senha nova salva'); sairModoLogin(); renderSeguro(); sincronizarPosLogin();
+    }
+    catch(e){ UI.auth.erro=e.message; renderLogin(); }
+  },
+  'auth-sair':()=>{
+    abrirModal('<h3>Sair da conta?</h3><p class="sec small">Teus dados continuam na nuvem e também neste aparelho.</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">ficar</button>'
+      +'<button class="btn" data-action="auth-sair-confirma">sair</button></div>');
+  },
+  'auth-sair-confirma':async()=>{ fecharModal(); await flushSyncPendente(); await authSair(); /* SIGNED_OUT mostra o login */ },
+  'conta-trocar-senha':()=>{
+    abrirModal('<h3>Trocar senha</h3>'
+      +campo('cs-s1','Nova senha (mín. 6)','password','')
+      +campo('cs-s2','Repete a nova senha','password','')
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+      +'<button class="btn" data-action="conta-trocar-senha-salvar">salvar</button></div>');
+  },
+  'conta-trocar-senha-salvar':async()=>{
+    const s1=(document.getElementById('cs-s1')||{}).value||'';
+    const s2=(document.getElementById('cs-s2')||{}).value||'';
+    if(s1.length<6){ toast('Mínimo 6 caracteres'); return; }
+    if(s1!==s2){ toast('As senhas não batem'); return; }
+    try{ await authTrocarSenha(s1); fecharModal(); render(); toast('🔒 Senha trocada'); }
+    catch(e){ toast('❌ '+e.message); }
+  },
+  'conta-apagar':()=>{
+    abrirModal('<h3>Apagar sua conta?</h3>'
+      +'<p class="sec small">Remove <b>pra sempre</b> sua conta e todos os seus dados do servidor (LGPD). Não tem volta. Se quiser guardar algo, usa "exportar backup" antes.</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+      +'<button class="btn perigo" data-action="conta-apagar-confirma">apagar minha conta</button></div>');
+  },
+  'conta-apagar-confirma':async()=>{
+    fecharModal(); toast('Apagando…');
+    try{
+      await authApagarConta();
+      S=defaultState(); saveState({skipSync:true});
+      toast('Conta apagada. Cuida de ti 💜');
+    }catch(e){ toast('❌ '+e.message); }
+  }
 };
 
 function nomeHabito(id){ const h=S.habits.find(x=>x.id===id); return h?h.nome:id; }
@@ -322,7 +414,10 @@ function abrirModalRenda(ix){
 function ligarEventos(){
   document.body.addEventListener('click',ev=>{
     const nav=ev.target.closest('[data-nav]');
-    if(nav){ UI.tab=nav.dataset.nav; render(); window.scrollTo({top:0}); return; }
+    if(nav){
+      if(document.body.classList.contains('modo-login')) return; // sem navegação deslogado
+      UI.tab=nav.dataset.nav; render(); window.scrollTo({top:0}); return;
+    }
     const alvo=ev.target.closest('[data-action]');
     if(!alvo) return;
     const acao=alvo.dataset.action;
@@ -364,20 +459,71 @@ function ligarEventos(){
 }
 
 /* ---------- boot ---------- */
-function boot(){
-  loadState();
-  ligarEventos();
+function renderSeguro(){
   try{ render(); }
   catch(e){
     document.getElementById('view').innerHTML=
       '<section class="card"><h2>Ops</h2><p class="sec">Deu erro ao carregar os dados ('+esc(e.message)+').</p>'
       +'<button class="btn perigo mt" data-action="zerar">apagar dados e recomeçar</button></section>';
   }
+}
+let _emRecuperacao=false;   // trava o boot enquanto o fluxo de nova-senha roda
+let _usuarioLogado=null;    // id do usuário atualmente carregado em S (isolamento por aparelho)
+
+function sincronizarPosLogin(){
+  syncAgora()
+    .then(()=>{ if(!document.body.classList.contains('modo-login')) render(); })
+    .catch(e=>toast('⚠️ '+e.message));
+}
+/* Carrega o estado do usuário logado, isolando por aparelho:
+   - se o localStorage guarda dados de OUTRO usuário (ou do modo local), começa limpo
+     e deixa a nuvem preencher (evita vazamento entre contas no mesmo navegador)
+   - só migra os dados locais pré-existentes no PRIMEIRO login de uma conta neste aparelho */
+function carregarEstadoDaConta(u){
+  const donoSalvo=lsDonoGet();
+  if(donoSalvo && donoSalvo!==u.id){
+    // localStorage pertence a outra conta → não deixa vazar
+    S=defaultState(); lsSet(JSON.stringify(S));
+  }
+  lsDonoSet(u.id);
+  _usuarioLogado=u.id;
+}
+function aoMudarAuth(evento,sessao,antes){
+  if(evento==='PASSWORD_RECOVERY'){ _emRecuperacao=true; UI.auth={tela:'nova-senha'}; renderLogin(); return; }
+  if(evento==='SIGNED_IN'&&!antes){
+    if(_emRecuperacao) return; // no fluxo de recuperação, espera a nova senha ser salva
+    carregarEstadoDaConta(sessao.user);
+    sairModoLogin(); renderSeguro();
+    toast('Bem-vindo 👋');
+    sincronizarPosLogin();
+    return;
+  }
+  if(evento==='SIGNED_OUT'){
+    // limpa TUDO deste aparelho — nada de dado sensível fica pro próximo que logar
+    S=defaultState(); lsSet(JSON.stringify(S)); lsDonoSet(null);
+    _usuarioLogado=null; _emRecuperacao=false;
+    UI.auth={tela:'entrar'}; renderLogin();
+  }
+}
+function boot(){
+  loadState();
+  ligarEventos();
+  if(typeof modoProduto==='function'&&modoProduto()){
+    // se a entrada é por link de recuperação, NÃO renderiza o app por cima da tela nova-senha
+    if(/type=recovery/.test(location.hash)||/type=recovery/.test(location.search)) _emRecuperacao=true;
+    initAuth(aoMudarAuth).then(sessao=>{
+      if(_emRecuperacao){ if(!UI.auth) UI.auth={tela:'nova-senha'}; renderLogin(); return; }
+      if(sessao){ carregarEstadoDaConta(sessao.user); renderSeguro(); sincronizarPosLogin(); }
+      else renderLogin();
+    });
+  } else {
+    renderSeguro();
+    if(S.settings.syncAuto&&syncConfigurado()){
+      syncPull().then(ok=>{ if(ok) render(); }).catch(()=>{});
+    }
+  }
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
-  }
-  if(S.settings.syncAuto&&syncConfigurado()){
-    syncPull().then(ok=>{ if(ok) render(); }).catch(()=>{});
   }
   /* sync ao vivo: puxa da nuvem ao voltar pro app/janela (com folga de 20s) */
   let ultimoPullFoco=0;
@@ -405,6 +551,7 @@ function boot(){
   });
   /* atualiza “agora” a cada minuto (e aproveita pra puxar da nuvem) sem atrapalhar digitação/modal */
   setInterval(()=>{
+    if(document.body.classList.contains('modo-login')) return;
     pullAoVoltar();
     if(podeMexerNaTela()&&(UI.tab==='hoje'||UI.tab==='rotina')) render();
   },60000);

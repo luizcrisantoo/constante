@@ -209,17 +209,32 @@ function viewConfig(){
   });
   html+='</div><button class="btn mini sec-btn mt" data-action="renda-add">+ renda</button></section>';
 
-  /* sincronização */
-  html+='<section class="card"><h2>Sincronização (celular ↔ notebook)</h2>'
-    +'<div class="campo"><label>URL do projeto Supabase</label><input type="url" data-cfg="settings.syncUrl" value="'+esc(st.syncUrl)+'" placeholder="https://xxxx.supabase.co"></div>'
-    +'<div class="campo"><label>Chave anon (public)</label><input type="text" data-cfg="settings.syncKey" value="'+esc(st.syncKey)+'" placeholder="eyJhbGciOi..."></div>'
-    +'<div class="campo"><label>Código de sincronização (igual nos 2 aparelhos — trata como senha)</label><input type="text" data-cfg="settings.syncCode" value="'+esc(st.syncCode)+'" placeholder="ex.: luiz-quadril-2026-x7k9"></div>'
-    +'<div class="linha"><label class="esq small sec"><input type="checkbox" style="width:auto" data-cfg-check="settings.syncAuto" '+(st.syncAuto?'checked':'')+'> sincronizar automático ao salvar</label></div>'
-    +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-    +'<button class="btn" data-action="sync-agora">🔄 sincronizar agora</button>'
-    +'<button class="btn sec-btn" data-action="sync-baixar">⬇ baixar da nuvem</button>'
-    +'</div>'
-    +'<p class="muted small mt">'+(st.ultimaSync?'Última sync: '+new Date(st.ultimaSync).toLocaleString('pt-BR'):'Nunca sincronizado')+' · passo a passo no GUIA-PUBLICACAO.md</p></section>';
+  /* conta (modo produto) ou sincronização por código (modo local) */
+  if(produtoAtivo()){
+    const u=usuarioAtual();
+    html+='<section class="card"><h2>Conta</h2>'
+      +'<p class="sec">Logado como <b>'+esc(u?u.email:'—')+'</b></p>'
+      +'<div class="linha mt"><label class="esq small sec"><input type="checkbox" style="width:auto" data-cfg-check="settings.syncAuto" '+(st.syncAuto?'checked':'')+'> sincronizar automático ao salvar</label></div>'
+      +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+      +'<button class="btn" data-action="sync-agora">🔄 sincronizar agora</button>'
+      +'<button class="btn sec-btn" data-action="conta-trocar-senha">trocar senha</button>'
+      +'<button class="btn sec-btn" data-action="auth-sair">sair</button>'
+      +'</div>'
+      +'<p class="muted small mt">'+(st.ultimaSync?'Última sync: '+new Date(st.ultimaSync).toLocaleString('pt-BR'):'Ainda não sincronizado')+' · <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a></p>'
+      +'<button class="btn perigo bloco mt-lg" data-action="conta-apagar">apagar minha conta e todos os dados (LGPD)</button>'
+      +'</section>';
+  } else {
+    html+='<section class="card"><h2>Sincronização (celular ↔ notebook)</h2>'
+      +'<div class="campo"><label>URL do projeto Supabase</label><input type="url" data-cfg="settings.syncUrl" value="'+esc(st.syncUrl)+'" placeholder="https://xxxx.supabase.co"></div>'
+      +'<div class="campo"><label>Chave anon (public)</label><input type="text" data-cfg="settings.syncKey" value="'+esc(st.syncKey)+'" placeholder="eyJhbGciOi..."></div>'
+      +'<div class="campo"><label>Código de sincronização (igual nos 2 aparelhos — trata como senha)</label><input type="text" data-cfg="settings.syncCode" value="'+esc(st.syncCode)+'" placeholder="ex.: luiz-quadril-2026-x7k9"></div>'
+      +'<div class="linha"><label class="esq small sec"><input type="checkbox" style="width:auto" data-cfg-check="settings.syncAuto" '+(st.syncAuto?'checked':'')+'> sincronizar automático ao salvar</label></div>'
+      +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+      +'<button class="btn" data-action="sync-agora">🔄 sincronizar agora</button>'
+      +'<button class="btn sec-btn" data-action="sync-baixar">⬇ baixar da nuvem</button>'
+      +'</div>'
+      +'<p class="muted small mt">'+(st.ultimaSync?'Última sync: '+new Date(st.ultimaSync).toLocaleString('pt-BR'):'Nunca sincronizado')+' · passo a passo no GUIA-PUBLICACAO.md</p></section>';
+  }
 
   /* backup */
   html+='<section class="card"><h2>Backup & dados</h2>'

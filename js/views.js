@@ -24,8 +24,10 @@ function render(){
   document.querySelectorAll('.bottom-nav button').forEach(b=>{
     b.classList.toggle('ativo',b.dataset.nav===UI.tab);
   });
-  if(novas.length){
-    toast('🏆 Conquista: '+novas.map(c=>c.icone+' '+c.nome).join(' · '));
+  if(novas.length===1){
+    toast('🏆 '+novas[0].icone+' '+esc(novas[0].nome));
+  } else if(novas.length>1){
+    toast('🏆 '+novas.length+' novas conquistas! Confira na aba Mente.');
   }
 }
 
@@ -40,15 +42,15 @@ function renderTopbar(){
 function viewHoje(){
   const iso=hojeISO();
   const d=getDia(iso);
-  const h=new Date().getHours();
-  const sauda=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+  const sauda=saudacaoHora();
   const frase=FRASES[diffDias('2026-01-01',iso)%FRASES.length];
   const {atual,prox}=blocoAtual();
   const xpHoje=recalcXP(iso), xpPoss=xpPossivel(iso);
   const nv=nivelAtual();
 
+  const nome=(S.profile.nome||'').trim();
   let html='<section class="card saudacao">'
-    +'<h1>'+sauda+', '+esc(S.profile.nome)+' 👋</h1>'
+    +'<h1>'+sauda+(nome?', '+esc(nome):'')+' 👋</h1>'
     +'<div class="muted">'+fmtDataLonga(iso)+'</div>'
     +'<div class="frase">“'+esc(frase)+'”</div>';
   if(atual) html+='<div class="agora"><b>Agora:</b> '+esc(atual.t)+' <span class="muted num">('+esc(atual.i)+(atual.f?'–'+esc(atual.f):'')+')</span></div>';
@@ -56,10 +58,10 @@ function viewHoje(){
   html+='</section>';
 
   const tHoje=treinoDeHoje();
-  if(tHoje){
+  if(tHoje&&tHoje.exercicios.length){
     html+='<button class="card esq" data-action="abrir-treino" data-id="'+esc(tHoje.id)+'" style="width:100%;display:flex;align-items:center;gap:0.7rem;border-left:3px solid var(--c-treino)">'
       +'<span style="font-size:1.5rem">🏋️</span>'
-      +'<span class="esq" style="text-align:left"><b>Treino de hoje: '+esc(tHoje.nome)+'</b><br><span class="muted small">'+esc(tHoje.foco)+' — toque pra registrar as cargas</span></span>'
+      +'<span class="esq" style="text-align:left"><b>Treino de hoje: '+esc(tHoje.nome)+'</b><br><span class="muted small">'+(tHoje.foco?esc(tHoje.foco)+' — ':'')+'toque pra registrar as cargas</span></span>'
       +'<span class="muted">›</span></button>';
   }
 
@@ -71,34 +73,59 @@ function viewHoje(){
     +barraSemana()
     +'</section>';
 
+  if(!S.habits.length && !S.routine.length){
+    html+='<section class="card" style="border-left:3px solid var(--brand)">'
+      +'<h2>👋 Bem-vindo ao Constante</h2>'
+      +'<p class="sec">Esse é seu espaço pra construir constância — hábitos, rotina, dieta, treino, finanças e cabeça, tudo num lugar só.</p>'
+      +'<p class="sec small mt">Comece adicionando o que fizer sentido pra você:</p>'
+      +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+      +'<button class="btn" data-action="habito-add">+ hábito</button>'
+      +'<button class="btn sec-btn" data-nav="rotina">montar rotina</button>'
+      +'</div>'
+      +'<p class="muted small mt">🤖 Em breve: um assistente que monta tudo pra você a partir de uma foto do seu horário, do PDF da sua dieta e do que você contar.</p>'
+      +'</section>';
+  }
+
   const habs=habitosDoDia(iso);
   const fazer=habs.filter(x=>x.tipo==='fazer');
   const evitar=habs.filter(x=>x.tipo==='evitar');
-  html+='<section class="card"><h2>Hábitos de hoje</h2>';
-  fazer.forEach(hb=>{ html+=habRow(hb,d); });
-  if(evitar.length){
-    html+='<div class="grupo-titulo">Evitar hoje (marca no fim do dia se venceu)</div>';
-    evitar.forEach(hb=>{ html+=habRow(hb,d); });
+  html+='<section class="card"><h2>Hábitos de hoje <button class="btn mini sec-btn dir" data-action="habito-add">+ hábito</button></h2>';
+  if(!habs.length){
+    html+='<p class="muted small">Nenhum hábito pra hoje. Toque em “+ hábito” pra criar o primeiro.</p>';
+  } else {
+    fazer.forEach(hb=>{ html+=habRow(hb,d); });
+    if(evitar.length){
+      html+='<div class="grupo-titulo">Evitar hoje (marca no fim do dia se venceu)</div>';
+      evitar.forEach(hb=>{ html+=habRow(hb,d); });
+    }
   }
   html+='</section>';
 
-  html+='<section class="card"><h2>Refeições <button class="btn mini sec-btn dir" data-nav="dieta">ver plano</button></h2>';
-  S.diet.refeicoes.forEach(r=>{
-    const ok=!!d.refeicoes[r.id];
-    html+='<button class="item check-lista-item hab '+(ok?'feito':'')+'" data-action="ref" data-id="'+esc(r.id)+'">'
-      +'<span class="ic">🍽️</span>'
-      +'<span class="nome">'+esc(r.nome)+'<span class="sub num">'+esc(r.hora)+' · ~'+r.kcal+' kcal</span></span>'
-      +'<span class="check">✓</span></button>';
-  });
+  html+='<section class="card"><h2>Refeições <button class="btn mini sec-btn dir" data-action="ref-add">+ refeição</button></h2>';
+  if(!S.diet.refeicoes.length){
+    html+='<p class="muted small">Sem refeições no plano ainda. Adicione uma ou monte tudo na aba Dieta.</p>';
+  } else {
+    S.diet.refeicoes.forEach(r=>{
+      const ok=!!d.refeicoes[r.id];
+      html+='<button class="item check-lista-item hab '+(ok?'feito':'')+'" data-action="ref" data-id="'+esc(r.id)+'">'
+        +'<span class="ic">🍽️</span>'
+        +'<span class="nome">'+esc(r.nome)+'<span class="sub num">'+esc(r.hora)+' · ~'+r.kcal+' kcal</span></span>'
+        +'<span class="check">✓</span></button>';
+    });
+  }
   html+='</section>';
 
-  html+='<section class="card"><h2>Remédios & suplementos</h2><div class="check-lista">';
-  S.meds.grupos.forEach(g=>{
-    const ok=!!d.meds[g.id];
-    html+='<button class="item '+(ok?'ok':'')+'" data-action="med" data-id="'+esc(g.id)+'">'
-      +'<span class="box">✓</span><span><b>'+esc(g.nome)+'</b><br><span class="muted small">'+esc(g.itens.join(' · '))+'</span></span></button>';
-  });
-  html+='</div><p class="muted small mt">'+esc(S.meds.aviso)+'</p></section>';
+  html+='<section class="card"><h2>Remédios & suplementos <button class="btn mini sec-btn dir" data-action="med-add">+ grupo</button></h2><div class="check-lista">';
+  if(!S.meds.grupos.length){
+    html+='<p class="muted small">Nenhum remédio/suplemento cadastrado. Toque em “+ grupo” pra adicionar.</p>';
+  } else {
+    S.meds.grupos.forEach(g=>{
+      const ok=!!d.meds[g.id];
+      html+='<button class="item '+(ok?'ok':'')+'" data-action="med" data-id="'+esc(g.id)+'">'
+        +'<span class="box">✓</span><span><b>'+esc(g.nome)+'</b><br><span class="muted small">'+esc((g.itens||[]).join(' · '))+'</span></span></button>';
+    });
+  }
+  html+='</div>'+(S.meds.aviso?'<p class="muted small mt">'+esc(S.meds.aviso)+'</p>':'')+'</section>';
 
   const pctAgua=Math.min(100,Math.round(100*(d.agua||0)/S.profile.aguaAlvoMl));
   html+='<section class="card"><h2>Água</h2>'
@@ -232,23 +259,30 @@ function viewRotina(){
 }
 
 function viewDieta(){
-  let html='<section class="card"><h2>Plano alimentar — fase atual</h2>'
-    +'<p class="sec small">'+esc(S.diet.alvo)+'</p>'
-    +'<div class="aviso mt">📋 '+esc(S.diet.aviso)+'</div></section>';
+  let html='';
+  if(S.diet.alvo||S.diet.aviso){
+    html+='<section class="card"><h2>Plano alimentar</h2>'
+      +(S.diet.alvo?'<p class="sec small">'+esc(S.diet.alvo)+'</p>':'')
+      +(S.diet.aviso?'<div class="aviso mt">📋 '+esc(S.diet.aviso)+'</div>':'')+'</section>';
+  }
 
-  html+='<section class="card"><h2>Refeições</h2>';
-  S.diet.refeicoes.forEach(r=>{
-    html+='<div class="refeicao-card">'
-      +'<div class="linha"><b class="esq">'+esc(r.nome)+' <span class="muted num small">'+esc(r.hora)+'</span></b>'
-      +'<span class="chip num">~'+r.kcal+' kcal · '+r.prot+'g prot</span>'
-      +'<button class="edit" data-action="ref-edit" data-id="'+esc(r.id)+'" aria-label="Editar">✎</button></div>'
-      +'<ul>'+r.itens.map(i=>'<li>'+esc(i)+'</li>').join('')+'</ul>'
-      +(r.subs&&r.subs.length?'<details class="subs"><summary>substituições</summary><ul>'+r.subs.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ul></details>':'')
-      +'</div>';
-  });
-  const somaK=S.diet.refeicoes.reduce((a,r)=>a+r.kcal,0);
-  const somaP=S.diet.refeicoes.reduce((a,r)=>a+r.prot,0);
-  html+='<div class="linha mt"><span class="esq muted small">Total do plano</span><span class="chip num">~'+somaK+' kcal · '+somaP+'g prot</span></div>';
+  html+='<section class="card"><h2>Refeições <button class="btn mini sec-btn dir" data-action="ref-add">+ refeição</button></h2>';
+  if(!S.diet.refeicoes.length){
+    html+='<p class="muted small">Monte seu plano: adicione suas refeições com os itens de cada uma. (Em breve dá pra enviar o PDF do seu nutricionista e o assistente monta pra você.)</p>';
+  } else {
+    S.diet.refeicoes.forEach(r=>{
+      html+='<div class="refeicao-card">'
+        +'<div class="linha"><b class="esq">'+esc(r.nome)+' <span class="muted num small">'+esc(r.hora)+'</span></b>'
+        +((r.kcal||r.prot)?'<span class="chip num">~'+r.kcal+' kcal · '+r.prot+'g prot</span>':'')
+        +'<button class="edit" data-action="ref-edit" data-id="'+esc(r.id)+'" aria-label="Editar">✎</button></div>'
+        +'<ul>'+r.itens.map(i=>'<li>'+esc(i)+'</li>').join('')+'</ul>'
+        +(r.subs&&r.subs.length?'<details class="subs"><summary>substituições</summary><ul>'+r.subs.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ul></details>':'')
+        +'</div>';
+    });
+    const somaK=S.diet.refeicoes.reduce((a,r)=>a+r.kcal,0);
+    const somaP=S.diet.refeicoes.reduce((a,r)=>a+r.prot,0);
+    if(somaK||somaP) html+='<div class="linha mt"><span class="esq muted small">Total do plano</span><span class="chip num">~'+somaK+' kcal · '+somaP+'g prot</span></div>';
+  }
   html+='</section>';
 
   html+='<section class="card"><h2>Regras de energia constante</h2><ul style="margin-left:1.1rem" class="sec small">'

@@ -1,0 +1,14 @@
+# Dados pessoais e backups — NUNCA vão pro repositório público
+backup-perfil-luiz.json
+*-backup.json
+constante-backup-*.json
+
+# Segredos (caso um dia use) — chave da Anthropic e afins ficam FORA do git
+.env
+.env.*
+*.secret
+secrets.*
+
+# Lixo de sistema
+.DS_Store
+Thumbs.db

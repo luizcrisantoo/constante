@@ -87,6 +87,29 @@ const ACOES={
     r.itens=linhas('re-itens'); r.subs=linhas('re-subs');
     saveState(); fecharModal(); render();
   },
+  'ref-add':()=>abrirModal('<h3>Nova refeição</h3>'
+    +campo('ra-nome','Nome (ex.: Café da manhã)','text','')+campo('ra-hora','Horário (ex.: 07:00)','text','')
+    +'<div class="grid-2">'+campo('ra-kcal','kcal (opcional)','number','')+campo('ra-prot','Proteína g (opcional)','number','')+'</div>'
+    +'<div class="campo"><label>Itens (um por linha)</label><textarea id="ra-itens" rows="4" placeholder="ex.: 2 ovos&#10;1 fruta"></textarea></div>'
+    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+    +'<button class="btn" data-action="ref-add-salvar">criar</button></div>'),
+  'ref-add-salvar':()=>{
+    const nome=val('ra-nome'); if(!nome){ toast('Dá um nome à refeição'); return; }
+    S.diet.refeicoes.push({id:'ref'+uid(),nome,hora:val('ra-hora'),kcal:Number(val('ra-kcal'))||0,prot:Number(val('ra-prot'))||0,itens:linhas('ra-itens'),subs:[]});
+    saveState(); fecharModal(); render();
+  },
+  'ref-remover':el=>{ S.diet.refeicoes=S.diet.refeicoes.filter(r=>r.id!==el.dataset.id); saveState(); fecharModal(); render(); },
+  'med-add':()=>abrirModal('<h3>Novo grupo de remédios/suplementos</h3>'
+    +'<p class="sec small">Agrupe por horário (ex.: “Manhã”, “Antes de dormir”).</p>'
+    +campo('ma-nome','Nome do grupo (ex.: Manhã)','text','')
+    +'<div class="campo"><label>Itens (um por linha)</label><textarea id="ma-itens" rows="4" placeholder="ex.: Vitamina D&#10;Creatina 3g"></textarea></div>'
+    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+    +'<button class="btn" data-action="med-add-salvar">criar</button></div>'),
+  'med-add-salvar':()=>{
+    const nome=val('ma-nome'); if(!nome){ toast('Dá um nome ao grupo'); return; }
+    S.meds.grupos.push({id:'med'+uid(),nome,itens:linhas('ma-itens')});
+    saveState(); fecharModal(); render();
+  },
 
   'peso-add':()=>abrirModal('<h3>Registrar peso</h3>'
     +campo('pe-kg','Peso (kg)','number','')
@@ -174,6 +197,18 @@ const ACOES={
   'apostas-reiniciar':()=>{
     S.bets.inicioPlano=hojeISO();
     saveState(); render(); toast('Plano de redução reiniciado a partir de hoje');
+  },
+  'apostas-ativar':()=>abrirModal('<h3>Ativar plano de redução de apostas</h3>'
+    +'<p class="sec small">Quanto você costuma apostar por semana hoje? O limite começa aí e cai até zerar.</p>'
+    +campo('at-limite','Limite inicial por semana (R$)','number','')
+    +campo('at-semanas','Semanas até zerar','number','8')
+    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+    +'<button class="btn" data-action="apostas-ativar-ok">ativar</button></div>'),
+  'apostas-ativar-ok':()=>{
+    const lim=Number(String(val('at-limite')).replace(',','.'))||0;
+    const sem=Number(val('at-semanas'))||8;
+    S.bets.ativo=true; S.bets.limiteSemanaInicial=Math.max(0,lim); S.bets.semanasParaZero=Math.max(1,sem); S.bets.inicioPlano=hojeISO();
+    saveState(); fecharModal(); render(); toast('Plano ativado — um passo de cada vez 💪');
   },
 
   'burnout-abrir':()=>{
@@ -433,8 +468,40 @@ const ACOES={
     if(!texto.trim()){ toast('Escreve algo primeiro'); return; }
     addNota(el.dataset.id,texto); render(); toast('📝 anotado');
   },
-  'nota-remover':el=>{ removerNota(el.dataset.c,el.dataset.n); render(); }
+  'nota-remover':el=>{ removerNota(el.dataset.c,el.dataset.n); render(); },
+
+  'nome-salvar':()=>{
+    const n=val('nome-novo'); if(!n){ toast('Escreve um nome ou apelido'); return; }
+    S.profile.nome=n; saveState(); fecharModal(); render();
+    setTimeout(()=>toast(saudacaoHora()+', '+n+'! Bem-vindo ao Constante 👋'),300);
+  },
+  'nome-pular':()=>{ fecharModal(); }
 };
+
+function pedirNome(){
+  abrirModal('<h3>👋 Como você quer ser chamado(a)?</h3>'
+    +'<p class="sec small">É assim que o Constante vai te cumprimentar todo dia.</p>'
+    +campo('nome-novo','Seu nome ou apelido','text','')
+    +'<div class="acoes"><button class="btn sec-btn" data-action="nome-pular">agora não</button>'
+    +'<button class="btn" data-action="nome-salvar">pronto</button></div>');
+}
+function boasVindas(){
+  const nome=(S.profile.nome||'').trim();
+  if(!nome){ setTimeout(pedirNome,500); return; }
+  const ult=S.settings.ultimaVisita;
+  S.settings.ultimaVisita=hojeISO();
+  saveState({skipSync:true});
+  if(ult && diffDias(ult,hojeISO())<=0) return;
+  let msg;
+  if(!ult) msg=saudacaoHora()+', '+nome+'! 👋';
+  else{
+    const dd=diffDias(ult,hojeISO());
+    if(dd===1) msg='Bom te ver de novo, '+nome+'! 👋';
+    else if(dd<7) msg='Que bom que você voltou, '+nome+'! 💜';
+    else msg='Senti sua falta, '+nome+'! Bora retomar 🚀';
+  }
+  setTimeout(()=>toast(msg),600);
+}
 
 function nomeHabito(id){ const h=S.habits.find(x=>x.id===id); return h?h.nome:id; }
 function val(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
@@ -577,8 +644,8 @@ function aoMudarAuth(evento,sessao,antes){
     if(_emRecuperacao) return;
     carregarEstadoDaConta(sessao.user);
     sairModoLogin(); renderSeguro();
-    toast('Bem-vindo 👋');
     sincronizarPosLogin();
+    boasVindas();
     return;
   }
   if(evento==='SIGNED_OUT'){
@@ -596,11 +663,12 @@ function boot(){
     if(/type=recovery/.test(location.hash)||/type=recovery/.test(location.search)) _emRecuperacao=true;
     initAuth(aoMudarAuth).then(sessao=>{
       if(_emRecuperacao){ if(!UI.auth) UI.auth={tela:'nova-senha'}; renderLogin(); return; }
-      if(sessao){ carregarEstadoDaConta(sessao.user); renderSeguro(); sincronizarPosLogin(); }
+      if(sessao){ carregarEstadoDaConta(sessao.user); renderSeguro(); sincronizarPosLogin(); boasVindas(); }
       else renderLogin();
     });
   } else {
     renderSeguro();
+    boasVindas();
     if(S.settings.syncAuto&&syncConfigurado()){
       syncPull().then(ok=>{ if(ok) render(); }).catch(()=>{});
     }

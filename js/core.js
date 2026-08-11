@@ -175,30 +175,67 @@ function melhorStreak(){
   return Math.max(best,streakGeral());
 }
 
-function checarConquistas(){
-  const g=S.gamif; const novas=[];
-  const tem=id=>g.conquistas.includes(id);
-  const dar=id=>{ if(!tem(id)){ g.conquistas.push(id); novas.push(CONQUISTAS.find(c=>c.id===id)); } };
-  const dias=Object.keys(S.days);
-  if(dias.some(d=>diaConta(d))) dar('primeiro_dia');
-  const st=streakGeral();
-  if(st>=7||melhorStreak()>=7) dar('streak7');
-  if(st>=30||melhorStreak()>=30) dar('streak30');
-  if(dias.filter(d=>S.days[d].sono&&(S.days[d].sono.h||S.days[d].sono.deitou)).length>=7) dar('sono7');
-  if(dias.filter(d=>(S.days[d].agua||0)>=S.profile.aguaAlvoMl).length>=7) dar('agua7');
-  if(dias.filter(d=>S.days[d].habitos.treino).length>=16) dar('treino16');
-  if(dias.filter(d=>S.days[d].habitos.leitura).length>=20) dar('leitor');
-  if(dias.filter(d=>S.days[d].habitos.duo_en&&S.days[d].habitos.duo_it&&S.days[d].habitos.duo_es).length>=14) dar('poliglota');
+function saudacaoHora(){
+  const h=new Date().getHours();
+  return h<5?'Boa madrugada':h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+}
 
-  if(diffDias(S.criadoEm,hojeISO())>=6){
-    let semAposta=0, dd=hojeISO();
-    for(let i=0;i<7;i++){ const rec=S.days[dd]; if(rec&&rec.apostas&&rec.apostas.length){ semAposta=-1; break;} semAposta++; dd=addDias(dd,-1); }
-    if(semAposta>=7) dar('semana_zero');
+function marcosAte(valor, fixos, incr){
+  const atingidos=fixos.filter(m=>m<=valor);
+  let proximo=fixos.find(m=>m>valor);
+  if(proximo===undefined){
+    const base=fixos[fixos.length-1];
+    let m=base+incr;
+    while(m<=valor){ atingidos.push(m); m+=incr; }
+    proximo=m;
   }
-  const fin=resumoFinanceiro();
-  if(fin.quitadas>=1) dar('divida1');
-  if(fin.pago>=fin.total/2 && fin.total>0) dar('metade_divida');
-  if(fin.saldo<=0 && fin.total>0) dar('livre');
+  return {atingidos, proximo};
+}
+const MARCOS_DIAS=[3,7,14,30,60,100,150,200,300,365,500,750,1000];
+const MARCOS_XP=[100,500,1000,2500,5000,10000,25000,50000,100000];
+
+function metricasConquista(){
+  const dias=Object.keys(S.days);
+  const contaDias=fn=>dias.filter(fn).length;
+  const cats=[
+    {chave:'ofensiva', titulo:'Dias de ofensiva', icone:'🔥', unidade:'dias seguidos', valor:melhorStreak(), fixos:MARCOS_DIAS, incr:500},
+    {chave:'xp', titulo:'XP acumulado', icone:'🌟', unidade:'XP', valor:xpTotal(), fixos:MARCOS_XP, incr:50000},
+    {chave:'dias', titulo:'Dias completos', icone:'✅', unidade:'dias batidos', valor:contaDias(d=>diaConta(d)), fixos:MARCOS_DIAS, incr:500},
+    {chave:'agua', titulo:'Hidratação', icone:'💧', unidade:'dias na meta de água', valor:contaDias(d=>(S.days[d].agua||0)>=S.profile.aguaAlvoMl), fixos:MARCOS_DIAS, incr:500},
+    {chave:'sono', titulo:'Sono registrado', icone:'😴', unidade:'noites', valor:contaDias(d=>S.days[d].sono&&(S.days[d].sono.h||S.days[d].sono.deitou)), fixos:MARCOS_DIAS, incr:500}
+  ];
+
+  S.habits.filter(h=>h.tipo==='fazer').forEach(h=>{
+    const feito=contaDias(d=>S.days[d].habitos&&S.days[d].habitos[h.id]===true);
+    cats.push({chave:'hab_'+h.id, titulo:h.nome, icone:h.icone||'⭐', unidade:'vezes', valor:feito, fixos:MARCOS_DIAS, incr:500});
+  });
+  return cats;
+}
+
+function gerarConquistas(){
+  const out=[];
+  metricasConquista().forEach(c=>{
+    const {atingidos,proximo}=marcosAte(c.valor,c.fixos,c.incr);
+    atingidos.forEach(m=>out.push({
+      id:c.chave+'_'+m, icone:c.icone, nome:c.titulo+' — '+m,
+      desc:m+' '+c.unidade, ganha:true, cat:c.chave, meta:m
+    }));
+    out.push({
+      id:c.chave+'_'+proximo, icone:c.icone, nome:c.titulo+' — '+proximo,
+      desc:'Faltam '+(proximo-c.valor)+' pra '+proximo+' '+c.unidade, ganha:false, cat:c.chave,
+      meta:proximo, valor:c.valor, proxima:true
+    });
+  });
+  return out;
+}
+
+function checarConquistas(){
+  const g=S.gamif; if(!Array.isArray(g.conquistas)) g.conquistas=[];
+  const jaTem=new Set(g.conquistas);
+  const novas=[];
+  gerarConquistas().filter(c=>c.ganha).forEach(c=>{
+    if(!jaTem.has(c.id)){ g.conquistas.push(c.id); jaTem.add(c.id); novas.push(c); }
+  });
   return novas;
 }
 

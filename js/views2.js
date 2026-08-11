@@ -3,13 +3,21 @@
 function viewGrana(){
   let html=secaoGastos();
 
+  const temDividas=S.finance.dividas.length>0;
+  if(!temDividas){
+    html+='<section class="card"><h2>Dívidas <span class="chip">opcional</span></h2>'
+      +'<p class="muted small">Tem dívidas pra organizar? O Constante monta uma fila (bola de neve) e te mostra quando você fica livre delas.</p>'
+      +'<button class="btn sec-btn mt" data-action="divida-add">+ adicionar dívida</button></section>';
+    return html+secaoApostas();
+  }
+
   const fin=resumoFinanceiro();
   const pct=fin.total?Math.round(100*fin.pago/fin.total):0;
   html+='<section class="card"><h2>Dívidas — visão geral</h2>'
     +'<div class="linha"><div class="esq"><span class="hero-num num">'+fmtBRL(fin.saldo)+'</span><div class="hero-sub">faltam · já pagou '+fmtBRL(fin.pago)+' de '+fmtBRL(fin.total)+'</div></div>'
     +'<span class="chip num">'+pct+'%</span></div>'
     +'<div class="progress verde mt"><span style="width:'+pct+'%"></span></div>'
-    +'<div class="linha mt"><span class="esq muted small">Renda garantida: <b class="num">'+fmtBRL(fin.renda)+'</b>/mês</span>'
+    +'<div class="linha mt"><span class="esq muted small">Renda: <b class="num">'+fmtBRL(fin.renda)+'</b>/mês</span>'
     +'<span class="muted small">Aporte: <b class="num">'+fmtBRL(S.finance.aporteMensal)+'</b>/mês <button class="btn mini sec-btn" data-action="aporte-edit">mudar</button></span></div>'
     +'</section>';
 
@@ -49,22 +57,32 @@ function viewGrana(){
   }
   html+='</section>';
 
+  return html+secaoApostas();
+}
+
+function secaoApostas(){
+  const jaApostou=Object.keys(S.days).some(k=>S.days[k].apostas&&S.days[k].apostas.length);
+  if(!S.bets.ativo && !jaApostou){
+    return '<section class="card"><h2>Reduzir apostas <span class="chip">opcional</span></h2>'
+      +'<p class="muted small">Quer diminuir apostas aos poucos, sem corte seco? O Constante define um limite semanal que cai sozinho até zerar, com um botão de apoio pra quando bater a vontade.</p>'
+      +'<button class="btn sec-btn mt" data-action="apostas-ativar">ativar plano de redução</button></section>';
+  }
   const wk=semanaDoPlano();
   const lim=limiteSemana(wk);
   const gasto=gastoNaSemana(wk);
   const resto=Math.max(0,lim-gasto);
   const estourou=gasto>lim;
   const econ=economiaDisponivel();
-  html+='<section class="card"><h2>Apostas — redução gradual</h2>'
+  let html='<section class="card"><h2>Apostas — redução gradual</h2>'
     +'<div class="gauge-lbl"><span>Semana '+(wk+1)+' de '+S.bets.semanasParaZero+(lim===0?' — 🎯 fase zero':'')+'</span><span class="num">'+fmtBRL(gasto)+' / '+fmtBRL(lim)+'</span></div>'
     +'<div class="progress '+(estourou?'':'azul')+'"><span style="width:'+Math.min(100,lim?Math.round(100*gasto/lim):(gasto>0?100:0))+'%'+(estourou?';background:var(--critical)':'')+'"></span></div>'
     +(estourou?'<div class="aviso mt">⚠️ Passou do limite desta semana. Sem culpa — registra, respira (🌊) e volta pro plano. O que importa é a tendência.</div>'
-             :'<div class="muted small mt">Ainda “disponível” nesta semana: <b class="num">'+fmtBRL(resto)+'</b> — não usar vale mais: vira dívida paga.</div>')
+             :'<div class="muted small mt">Ainda “disponível” nesta semana: <b class="num">'+fmtBRL(resto)+'</b>.</div>')
     +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
     +'<button class="btn sec-btn" data-action="apostar">registrar aposta</button>'
     +'<button class="btn" data-action="sos-abrir">🌊 tô com vontade</button>'
     +'</div>';
-  if(econ>0){
+  if(econ>0 && S.finance.dividas.length){
     html+='<div class="ok-box mt">💰 Você deixou de apostar <b class="num">'+fmtBRL(econ)+'</b> nas semanas fechadas. '
       +'<button class="btn mini mt" data-action="economia-transferir">transformar em pagamento de dívida</button></div>';
   }
@@ -76,8 +94,7 @@ function viewGrana(){
     }
     html+='</tbody></table></details>';
   }
-  html+='<p class="muted small mt">'+esc(S.bets.nota)+'</p></section>';
-  return html;
+  return html+'<p class="muted small mt">'+esc(S.bets.nota)+'</p></section>';
 }
 
 function viewMente(){
@@ -130,13 +147,31 @@ function viewMente(){
     +'<button class="btn mt" data-action="sos-abrir">🌊 abrir o surf do impulso</button>'
     +'<p class="muted small mt">Dica: deslogar dos sites de aposta, tirar apps do celular e deixar o dinheiro “longe” (sem cartão salvo) reduz MUITO a força da onda.</p></section>';
 
-  const ganhas=S.gamif.conquistas;
-  html+='<section class="card"><h2>Conquistas ('+ganhas.length+'/'+CONQUISTAS.length+')</h2>';
-  CONQUISTAS.forEach(c=>{
-    const tem=ganhas.includes(c.id);
-    html+='<div class="conquista '+(tem?'ganha':'')+'"><span class="ic">'+c.icone+'</span>'
-      +'<span><span class="nome">'+esc(c.nome)+'</span><br><span class="desc">'+esc(c.desc)+'</span></span></div>';
+  const todas=gerarConquistas();
+  const ganhas=todas.filter(c=>c.ganha);
+  const proximas=todas.filter(c=>c.proxima);
+  html+='<section class="card"><h2>Conquistas — '+ganhas.length+' desbloqueada'+(ganhas.length===1?'':'s')+'</h2>';
+
+  html+='<div class="grupo-titulo">Próximas metas</div>';
+  proximas.forEach(c=>{
+    const pct=c.meta>0?Math.min(100,Math.round(100*(c.valor||0)/c.meta)):0;
+    html+='<div class="conquista"><span class="ic" style="filter:none;opacity:0.85">'+esc(c.icone)+'</span>'
+      +'<span style="flex:1"><span class="nome">'+esc(c.nome)+'</span>'
+      +'<div class="progress fina" style="margin:4px 0"><span style="width:'+pct+'%"></span></div>'
+      +'<span class="desc">'+esc(c.desc)+'</span></span></div>';
   });
+
+  if(ganhas.length){
+    const recentes=ganhas.slice().sort((a,b)=>b.meta-a.meta).slice(0,8);
+    html+='<div class="grupo-titulo">Desbloqueadas</div>';
+    recentes.forEach(c=>{
+      html+='<div class="conquista ganha"><span class="ic">'+esc(c.icone)+'</span>'
+        +'<span><span class="nome">'+esc(c.nome)+'</span><br><span class="desc">'+esc(c.desc)+'</span></span></div>';
+    });
+    if(ganhas.length>8) html+='<p class="muted small mt centro">+ '+(ganhas.length-8)+' outras conquistas</p>';
+  } else {
+    html+='<p class="muted small mt">Suas conquistas aparecem aqui conforme você mantém a constância. Elas nunca param de crescer 🚀</p>';
+  }
   html+='</section>';
   return html;
 }

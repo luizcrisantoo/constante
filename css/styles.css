@@ -5,7 +5,7 @@ html{ -webkit-text-size-adjust:100%; }
 body{
   font-family:var(--font); background:var(--bg); color:var(--ink);
   line-height:1.45; min-height:100dvh;
-  padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 12px);
+  padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 20px);
 }
 img{ max-width:100%; height:auto; }
 button{ font:inherit; color:inherit; background:none; border:none; cursor:pointer; }
@@ -24,7 +24,7 @@ a{ color:var(--brand-strong); }
   position:sticky; top:0; z-index:40; height:var(--top-h);
   display:flex; align-items:center; gap:var(--sp-sm);
   padding:0 var(--sp-md);
-  background:rgba(13,13,13,0.92); backdrop-filter:blur(10px);
+  background:var(--bg);
   border-bottom:1px solid var(--border);
 }
 .topbar .logo{ font-weight:800; letter-spacing:0.4px; font-size:1.05rem; }
@@ -43,9 +43,13 @@ a{ color:var(--brand-strong); }
   position:fixed; left:0; right:0; bottom:0; z-index:40;
   height:calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
   padding-bottom:env(safe-area-inset-bottom, 0px);
-  display:flex; background:rgba(20,20,19,0.97);
-  border-top:1px solid var(--border); backdrop-filter:blur(10px);
+  display:flex; background:var(--surface);
+  border-top:1px solid var(--border);
+  transition:transform 0.2s ease;
 }
+/* teclado do celular aberto → esconde a barra pra não cobrir o campo */
+body.teclado-aberto .bottom-nav{ transform:translateY(110%); }
+body.teclado-aberto .sos-fab{ display:none; }
 .bottom-nav button{
   flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:2px; font-size:0.66rem; color:var(--ink-mute); font-weight:600;

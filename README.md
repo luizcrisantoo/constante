@@ -1,56 +1,47 @@
 # 🟣 Constante
 
-**Sua vida no ritmo certo.** App pessoal de rotina, hábitos, dieta, finanças e foco — feito sob medida pro Luiz, com arquitetura pronta pra evoluir pra produto.
+**Sua vida no ritmo certo — sem picos, sempre constante.**
 
-## O que tem dentro
+O Constante é um app pessoal que junta num lugar só as coisas que costumam viver espalhadas: sua rotina, seus hábitos, sua dieta, suas finanças e sua cabeça. A ideia é simples — em vez de picos de motivação que somem em três dias, construir constância de verdade, um dia de cada vez.
 
-| Aba | Função |
-|---|---|
-| ☀️ **Hoje** | Bloco atual da rotina, hábitos com streak/XP (estilo Duolingo), refeições, remédios, água, sono (Polar Loop), check-in de humor/energia |
-| 📅 **Rotina** | Grade semanal completa (aulas, estágio, treinos, estudo, sites, idiomas, sono) — 100% editável |
-| 🍽️ **Dieta** | Plano de ~2.700 kcal (fase sem corrida), substituições do nutricionista, regras de energia constante, evolução do peso |
-| 💰 **Grana** | Dívidas com método bola de neve, projeção de quitação, plano de **redução gradual de apostas** com limite semanal decrescente e conversão de economia em pagamento |
-| 🧠 **Mente** | Sono da semana, humor/energia 14 dias, radar de burnout, surf do impulso (respiração 4-7-8), conquistas |
-| ⚙️ **Config** | Tudo editável + sincronização Supabase + backup |
+Funciona no celular e no computador (é um app web instalável — PWA), com os seus dados sincronizados entre eles pela sua conta. Sem anúncio, sem venda de dados.
 
-## Stack (padrão GSD PRO)
+---
 
-- HTML/CSS/JS **puro**, zero dependências, zero build.
-- PWA: instala no celular e no notebook, funciona offline (service worker).
-- Sync opcional via **Supabase REST** (sem SDK) — offline-first com mesclagem inteligente (nunca perde um check feito no outro aparelho).
-- Segurança: sem `innerHTML` com dado externo sem escape, sem `eval`, RLS no banco.
+## O que já dá pra fazer hoje
 
-```
-/app
-├── index.html
-├── favicon.ico
-├── manifest.webmanifest        # PWA
-├── sw.js                       # service worker (offline)
-├── supabase-setup.sql          # cria a tabela de sync
-├── GUIA-PUBLICACAO.md          # como publicar em ~10 min
-├── /assets/icons               # ícones do app
-├── /css
-│   ├── variables.css           # design tokens (tema)
-│   └── styles.css
-└── /js
-    ├── data.js                 # SEUS dados padrão (rotina, dieta, dívidas…)
-    ├── core.js                 # estado, XP, streaks, finanças, sync
-    ├── ui.js                   # modal, toast, respiração SOS
-    ├── views.js                # telas: Hoje, Rotina, Dieta
-    ├── views2.js               # telas: Grana, Mente, Config
-    └── script.js               # eventos e boot
-```
+**☀️ Hoje** — seu dia num relance: o que está acontecendo agora na rotina, seus hábitos com sequência (streak) e XP no estilo Duolingo, refeições, remédios/suplementos, água, sono e um check-in rápido de humor e energia.
 
-## Rodar local
+**📅 Rotina** — sua grade da semana inteira (aulas, trabalho, treinos, estudo, idiomas, sono), totalmente editável.
 
-```bash
-cd app && python3 -m http.server 8080
-# abre http://localhost:8080
-```
+**🍽️ Dieta** — seu plano alimentar com opções de substituição, regras pra manter energia constante ao longo do dia, e acompanhamento de peso.
 
-## Roadmap v2 (se virar produto)
+**💰 Grana** — suas dívidas organizadas pelo método bola de neve, com projeção de quando você fica livre delas, e um plano de redução gradual de apostas (com um botão de apoio pra quando bater a vontade).
 
-- Login multiusuário (Supabase Auth) — policies já esboçadas no SQL.
-- Notificações push (lembrete de remédio/melatonina).
-- Integração Polar AccessLink (sono/treino automáticos).
-- Onboarding genérico (hoje o `data.js` é o "perfil do Luiz" — vira wizard de primeiro uso).
+**🧠 Mente** — seu sono da semana, humor e energia ao longo do tempo, um radar de burnout e conquistas pra celebrar a constância.
+
+**🔒 Conta** — login por e-mail e senha, dados protegidos e privados por conta, e controle total: exportar tudo ou apagar sua conta quando quiser.
+
+---
+
+## Pra onde o Constante está indo
+
+Um passo de cada vez — cada etapa já entrega algo útil sozinha:
+
+- **Treino que lembra de você.** Registrar as cargas de cada exercício e ver sua evolução treino a treino — na próxima vez, o app já te mostra quanto você fez da última vez.
+- **Cada real anotado.** Uma aba pra registrar os gastos do dia (aquele Uber, a cantina) e enxergar pra onde o dinheiro está indo.
+- **Estudo que rende.** Anotar o que você estudou e, quando pedir, receber um resumo ou um mapa mental do assunto.
+- **Lembretes na hora certa.** Notificações pra remédio, hora de dormir, compromissos — sem depender de você lembrar.
+- **Um assistente que te entende.** Conversar com o app em linguagem natural pra adicionar um compromisso, pedir um resumo, ver sua evolução — as coisas do dia a dia, sem menu.
+- **Onboarding que monta sua rotina.** Você conta o seu objetivo e o que quer mudar, e o app monta um plano sob medida — inclusive um desmame gradual pra um hábito que você queira largar.
+- **Sua dieta, do seu jeito.** Enviar o PDF ou a foto do plano do seu nutricionista e ver ele virar a sua aba de dieta.
+
+---
+
+## Como é feito
+
+App web puro (HTML, CSS e JavaScript), sem frameworks pesados — leve, rápido e instalável como aplicativo no celular e no computador. Funciona offline e sincroniza quando a conexão volta. Contas e sincronização usam Supabase, com segurança por usuário no banco de dados.
+
+---
+
+*Feito com cuidado, começando por uma pessoa real e uma rotina real. 🟣*

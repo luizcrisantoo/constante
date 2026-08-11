@@ -405,6 +405,13 @@ function abrirModalRenda(ix){
 }
 
 function ligarEventos(){
+  const ehCampo=el=>el&&/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)&&el.type!=='checkbox'&&el.type!=='radio';
+  const noCelular=()=>matchMedia('(max-width:767px), (pointer:coarse)').matches;
+  document.addEventListener('focusin',ev=>{ if(noCelular()&&ehCampo(ev.target)) document.body.classList.add('teclado-aberto'); });
+  document.addEventListener('focusout',ev=>{ if(ehCampo(ev.target)) setTimeout(()=>{
+    if(!ehCampo(document.activeElement)) document.body.classList.remove('teclado-aberto');
+  },100); });
+
   document.body.addEventListener('click',ev=>{
     const nav=ev.target.closest('[data-nav]');
     if(nav){

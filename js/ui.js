@@ -31,7 +31,7 @@ let _respTimer=null;
 function abrirSOS(){
   abrirModal(
     '<h3>🌊 Surfa o impulso</h3>'
-    +'<p class="sec small">Vontade de apostar, jogar ou quebrar um combinado? Ela é uma onda: sobe, faz pico e <b>sempre desce</b> — em geral em menos de 10 minutos. Respira comigo até ela passar.</p>'
+    +'<p class="sec small">Bateu uma vontade forte de fazer aquilo que você quer evitar? Ela é uma onda: sobe, faz pico e <b>sempre desce</b> — em geral em menos de 10 minutos. Respira comigo até ela passar.</p>'
     +'<div class="respira" id="respira-circulo">…</div>'
     +'<p class="centro sec" id="respira-texto">Preparando…</p>'
     +'<div class="acoes">'

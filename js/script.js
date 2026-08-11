@@ -179,18 +179,21 @@ const ACOES={
     if(usado<=0){ toast('Sem dívidas em aberto 🎉'); return; }
     S.finance.extras.push({id:uid(),valor:usado,data:hojeISO(),origem:'apostas'});
     saveState(); render();
-    toast('💰 '+fmtBRL(usado)+' de apostas não feitas → '+partes.join(' · '));
+    toast('💰 '+fmtBRL(usado)+' economizados → '+partes.join(' · '));
   },
 
-  'apostar':()=>abrirModal('<h3>Registrar aposta</h3>'
-    +'<p class="sec small">Registrar é coragem, não fracasso. O número entra na semana e a vida segue.</p>'
-    +campo('bt-valor','Valor (R$)','number','')
-    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
-    +'<button class="btn perigo" data-action="apostar-salvar">registrar</button></div>'
-    +'<p class="muted small mt">Se ainda der tempo de não apostar: fecha isso e aperta 🌊.</p>'),
+  'apostar':()=>{
+    const un=(UNIDADES[unidadeBets()]||UNIDADES.min);
+    abrirModal('<h3>Registrar uso</h3>'
+      +'<p class="sec small">Registrar é coragem, não fracasso. O número entra na semana e a vida segue.</p>'
+      +campo('bt-valor','Quanto ('+un.abrev+')','text','')
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+      +'<button class="btn perigo" data-action="apostar-salvar">registrar</button></div>'
+      +'<p class="muted small mt">Se ainda der tempo de evitar: fecha isso e aperta 🌊.</p>');
+  },
   'apostar-salvar':()=>{
     const v=Number(String(val('bt-valor')).replace(',','.'));
-    if(!v||v<=0){ toast('Valor inválido'); return; }
+    if(!(v>0)){ toast('Valor inválido'); return; }
     registrarAposta(Math.round(v*100)/100);
     fecharModal(); render();
   },
@@ -198,16 +201,25 @@ const ACOES={
     S.bets.inicioPlano=hojeISO();
     saveState(); render(); toast('Plano de redução reiniciado a partir de hoje');
   },
-  'apostas-ativar':()=>abrirModal('<h3>Ativar plano de redução de apostas</h3>'
-    +'<p class="sec small">Quanto você costuma apostar por semana hoje? O limite começa aí e cai até zerar.</p>'
-    +campo('at-limite','Limite inicial por semana (R$)','number','')
-    +campo('at-semanas','Semanas até zerar','number','8')
+  'apostas-ativar':()=>abrirModal('<h3>Ativar plano de redução</h3>'
+    +'<p class="sec small">O que você quer reduzir aos poucos? O limite começa no seu uso de hoje e cai até a meta.</p>'
+    +campo('at-alvo','O que reduzir (ex.: redes sociais, jogos, doces)','text','')
+    +'<div class="campo"><label>Como medir</label><select id="at-unidade">'
+      +'<option value="min">minutos por dia</option>'
+      +'<option value="vez">vezes por dia</option>'
+      +'<option value="brl">R$ por dia</option>'
+    +'</select></div>'
+    +campo('at-limite','Quanto você faz hoje, por semana','text','')
+    +campo('at-semanas','Semanas até a meta','text','8')
     +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
     +'<button class="btn" data-action="apostas-ativar-ok">ativar</button></div>'),
   'apostas-ativar-ok':()=>{
+    const alvo=String(val('at-alvo')||'').trim().slice(0,60);
+    const uni=val('at-unidade'); const unidade=(uni==='vez'||uni==='brl')?uni:'min';
     const lim=Number(String(val('at-limite')).replace(',','.'))||0;
-    const sem=Number(val('at-semanas'))||8;
-    S.bets.ativo=true; S.bets.limiteSemanaInicial=Math.max(0,lim); S.bets.semanasParaZero=Math.max(1,sem); S.bets.inicioPlano=hojeISO();
+    const sem=Number(String(val('at-semanas')).replace(',','.'))||8;
+    S.bets.ativo=true; S.bets.alvo=alvo; S.bets.unidade=unidade;
+    S.bets.limiteSemanaInicial=Math.max(0,lim); S.bets.semanasParaZero=Math.max(1,Math.round(sem)); S.bets.inicioPlano=hojeISO();
     saveState(); fecharModal(); render(); toast('Plano ativado — um passo de cada vez 💪');
   },
 
@@ -240,7 +252,7 @@ const ACOES={
     saveState(); fecharModal(); render();
   },
   'habito-del':el=>{
-    if(el.dataset.id==='apostas'){ toast('Esse hábito é ligado ao plano de apostas da aba Grana — edita em vez de excluir 😉'); return; }
+    if(el.dataset.id==='apostas'){ toast('Esse hábito é ligado ao seu plano de redução (aba Grana) — edita em vez de excluir 😉'); return; }
     const hb=S.habits.find(x=>x.id===el.dataset.id);
     abrirModal('<h3>Excluir “'+esc(hb?hb.nome:'')+'”?</h3><p class="sec small">O histórico dos dias fica guardado, mas o hábito some da lista. (Obs.: conquistas ligadas a hábitos padrão param de progredir se eles forem excluídos.)</p>'
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
@@ -650,13 +662,15 @@ function sincronizarPosLogin(){
 }
 
 function carregarEstadoDaConta(u){
-  const donoSalvo=lsDonoGet();
-  if(donoSalvo && donoSalvo!==u.id){
-
-    S=defaultState(); lsSet(JSON.stringify(S));
-  }
-  lsDonoSet(u.id);
   _usuarioLogado=u.id;
+  setUserKey(u.id);
+  let raw=lsGet();
+  if(!raw) raw=migrarLocalUmaVez();
+  if(raw){ try{ S=deepFill(JSON.parse(raw),defaultState()); }catch(e){ S=defaultState(); } }
+  else S=defaultState();
+  sanearEstado();
+  if(!S._ts) S._ts=new Date().toISOString();
+  lsSet(JSON.stringify(S));
 }
 function aoMudarAuth(evento,sessao,antes){
   if(evento==='PASSWORD_RECOVERY'){ _emRecuperacao=true; UI.auth={tela:'nova-senha'}; renderLogin(); return; }
@@ -669,9 +683,9 @@ function aoMudarAuth(evento,sessao,antes){
     return;
   }
   if(evento==='SIGNED_OUT'){
-
-    S=defaultState(); lsSet(JSON.stringify(S)); lsDonoSet(null);
-    _usuarioLogado=null; _emRecuperacao=false;
+    lsLimparConta();
+    setUserKey(null);
+    S=defaultState(); _usuarioLogado=null; _emRecuperacao=false;
     UI.auth={tela:'entrar'}; renderLogin();
   }
 }

@@ -16,7 +16,7 @@ Funciona no celular e no computador (é um app web instalável — PWA), com os 
 
 **🍽️ Dieta** — seu plano alimentar com opções de substituição, regras pra manter energia constante ao longo do dia, e acompanhamento de peso.
 
-**💰 Grana** — suas dívidas organizadas pelo método bola de neve, com projeção de quando você fica livre delas, e um plano de redução gradual de apostas (com um botão de apoio pra quando bater a vontade).
+**💰 Grana** — suas dívidas organizadas pelo método bola de neve, com projeção de quando você fica livre delas, e um plano opcional pra reduzir um hábito aos poucos (redes sociais, jogos, doces… você escolhe), com um botão de apoio pra quando bater a vontade.
 
 **🧠 Mente** — seu sono da semana, humor e energia ao longo do tempo, um radar de burnout e conquistas pra celebrar a constância.
 

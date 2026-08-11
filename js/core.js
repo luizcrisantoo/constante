@@ -11,28 +11,40 @@ function fmtDataLonga(iso){ const d=isoToDate(iso); return DIAS_NOME[d.getDay()]
 function agoraHM(){ const d=new Date(); return pad2(d.getHours())+':'+pad2(d.getMinutes()); }
 function hmParaMin(hm){ if(!hm) return null; const [h,m]=hm.split(':').map(Number); return h*60+(m||0); }
 function fmtBRL(v){ const n=Number(v); return (isFinite(n)?n:0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function unidadeBets(){ const b=S.bets||{}; if(b.unidade&&UNIDADES[b.unidade]) return b.unidade; return b.ativo?'brl':'min'; }
+function fmtQtd(v){ const n=Number(v); const x=isFinite(n)?n:0; return (Math.round(x*100)/100).toString().replace('.',','); }
+function fmtUnidade(v,u){ u=u||unidadeBets(); if(u==='brl') return fmtBRL(v); if(u==='vez') return fmtQtd(v)+'x'; return fmtQtd(v)+' min'; }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function round2(v){ return Math.round(v*100)/100; }
 
 const STORE_KEY='constante_v1';
-let _mem=null,_lsAvisou=false;
-function lsGet(){ try{ return localStorage.getItem(STORE_KEY); }catch(e){ return _mem; } }
+const MIGRADO_FLAG='constante_migrado_local';
+let _mem={}, _lsAvisou=false, _userKey=null;
+
+function storeKey(){ return STORE_KEY + (_userKey ? ('_u_'+_userKey) : ''); }
+function setUserKey(id){ _userKey=id||null; }
+function lsGet(){ const k=storeKey(); try{ return localStorage.getItem(k); }catch(e){ return _mem[k]; } }
 function lsSet(v){
-  _mem=v;
-  try{ localStorage.setItem(STORE_KEY,v); }
+  const k=storeKey(); _mem[k]=v;
+  try{ localStorage.setItem(k,v); }
   catch(e){
     if(!_lsAvisou){ _lsAvisou=true;
       if(typeof toast==='function') toast('⚠️ Este navegador não está salvando os dados (aba privada?). Exporta um backup!');
     }
   }
 }
+function lsLimparConta(){ const k=storeKey(); delete _mem[k]; try{ localStorage.removeItem(k); }catch(e){} }
+
+function migrarLocalUmaVez(){
+  try{
+    if(localStorage.getItem(MIGRADO_FLAG)) return null;
+    const base=localStorage.getItem(STORE_KEY);
+    localStorage.setItem(MIGRADO_FLAG,'1');
+    return base||null;
+  }catch(e){ return null; }
+}
 
 let S=null;
-
-const DONO_KEY='constante_dono';
-function lsDonoGet(){ try{ return localStorage.getItem(DONO_KEY); }catch(e){ return _donoMem; } }
-let _donoMem=null;
-function lsDonoSet(id){ _donoMem=id; try{ if(id) localStorage.setItem(DONO_KEY,id); else localStorage.removeItem(DONO_KEY); }catch(e){} }
 
 function deepFill(alvo,base){
   if(Array.isArray(base)) return (alvo===undefined)?JSON.parse(JSON.stringify(base)):alvo;

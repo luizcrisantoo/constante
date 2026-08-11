@@ -8,7 +8,7 @@ function viewGrana(){
     html+='<section class="card"><h2>Dívidas <span class="chip">opcional</span></h2>'
       +'<p class="muted small">Tem dívidas pra organizar? O Constante monta uma fila (bola de neve) e te mostra quando você fica livre delas.</p>'
       +'<button class="btn sec-btn mt" data-action="divida-add">+ adicionar dívida</button></section>';
-    return html+secaoApostas();
+    return html+secaoReducao();
   }
 
   const fin=resumoFinanceiro();
@@ -44,9 +44,9 @@ function viewGrana(){
   const proj=projecaoDividas();
   html+='<section class="card"><h2>Projeção de quitação</h2>';
   if(proj.incompleta){
-    html+='<div class="aviso">Com o aporte atual, a quitação passa de 10 anos — aumenta o aporte mensal (ou registra as economias de aposta) pra encurtar isso.</div>';
+    html+='<div class="aviso">Com o aporte atual, a quitação passa de 10 anos — aumenta o aporte mensal pra encurtar isso.</div>';
   } else if(proj.fim){
-    html+='<div class="ok-box">Mantendo '+fmtBRL(S.finance.aporteMensal)+'/mês, você fica <b>livre de dívidas em '+esc(proj.fim)+'</b> 🕊️ — e todo deslize de aposta que virar pagamento antecipa isso.</div>';
+    html+='<div class="ok-box">Mantendo '+fmtBRL(S.finance.aporteMensal)+'/mês, você fica <b>livre de dívidas em '+esc(proj.fim)+'</b> 🕊️ — e cada economia que virar pagamento antecipa isso.</div>';
     html+='<details class="mt"><summary class="muted small">ver mês a mês</summary><table class="tabela mt"><thead><tr><th>Mês</th><th>Pagamentos</th><th class="num">Resta</th></tr></thead><tbody>';
     proj.meses.forEach(mm=>{
       html+='<tr><td class="num">'+esc(mm.label)+'</td><td>'+mm.pagamentos.map(p=>esc(p.nome)+' '+fmtBRL(p.valor)+(p.quitou?' ✅':'')).join('<br>')+'</td><td class="num">'+fmtBRL(mm.resta)+'</td></tr>';
@@ -57,40 +57,45 @@ function viewGrana(){
   }
   html+='</section>';
 
-  return html+secaoApostas();
+  return html+secaoReducao();
 }
 
-function secaoApostas(){
-  const jaApostou=Object.keys(S.days).some(k=>S.days[k].apostas&&S.days[k].apostas.length);
-  if(!S.bets.ativo && !jaApostou){
-    return '<section class="card"><h2>Reduzir apostas <span class="chip">opcional</span></h2>'
-      +'<p class="muted small">Quer diminuir apostas aos poucos, sem corte seco? O Constante define um limite semanal que cai sozinho até zerar, com um botão de apoio pra quando bater a vontade.</p>'
+function secaoReducao(){
+  const jaUsou=Object.keys(S.days).some(k=>S.days[k].apostas&&S.days[k].apostas.length);
+  if(!S.bets.ativo && !jaUsou){
+    return '<section class="card"><h2>Reduzir um hábito <span class="chip">opcional</span></h2>'
+      +'<p class="muted small">Tem algum hábito que você quer diminuir aos poucos — redes sociais, jogos, telas de madrugada, doces, cigarro? Sem corte seco: o Constante define um limite semanal que cai sozinho até a meta, com um apoio pra quando bater a vontade.</p>'
       +'<button class="btn sec-btn mt" data-action="apostas-ativar">ativar plano de redução</button></section>';
   }
+  const u=unidadeBets();
+  const nomeAlvo=(S.bets.alvo||'').trim()||'seu hábito';
+  const titulo=nomeAlvo.charAt(0).toUpperCase()+nomeAlvo.slice(1);
   const wk=semanaDoPlano();
   const lim=limiteSemana(wk);
   const gasto=gastoNaSemana(wk);
   const resto=Math.max(0,lim-gasto);
   const estourou=gasto>lim;
   const econ=economiaDisponivel();
-  let html='<section class="card"><h2>Apostas — redução gradual</h2>'
-    +'<div class="gauge-lbl"><span>Semana '+(wk+1)+' de '+S.bets.semanasParaZero+(lim===0?' — 🎯 fase zero':'')+'</span><span class="num">'+fmtBRL(gasto)+' / '+fmtBRL(lim)+'</span></div>'
+  let html='<section class="card"><h2>'+esc(titulo)+' — redução gradual</h2>'
+    +'<div class="gauge-lbl"><span>Semana '+(wk+1)+' de '+S.bets.semanasParaZero+(lim===0?' — 🎯 fase meta':'')+'</span><span class="num">'+fmtUnidade(gasto,u)+' / '+fmtUnidade(lim,u)+'</span></div>'
     +'<div class="progress '+(estourou?'':'azul')+'"><span style="width:'+Math.min(100,lim?Math.round(100*gasto/lim):(gasto>0?100:0))+'%'+(estourou?';background:var(--critical)':'')+'"></span></div>'
     +(estourou?'<div class="aviso mt">⚠️ Passou do limite desta semana. Sem culpa — registra, respira (🌊) e volta pro plano. O que importa é a tendência.</div>'
-             :'<div class="muted small mt">Ainda “disponível” nesta semana: <b class="num">'+fmtBRL(resto)+'</b>.</div>')
+             :'<div class="muted small mt">Ainda dentro do limite nesta semana: <b class="num">'+fmtUnidade(resto,u)+'</b>.</div>')
     +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-    +'<button class="btn sec-btn" data-action="apostar">registrar aposta</button>'
+    +'<button class="btn sec-btn" data-action="apostar">registrar uso</button>'
     +'<button class="btn" data-action="sos-abrir">🌊 tô com vontade</button>'
     +'</div>';
-  if(econ>0 && S.finance.dividas.length){
-    html+='<div class="ok-box mt">💰 Você deixou de apostar <b class="num">'+fmtBRL(econ)+'</b> nas semanas fechadas. '
+  if(u==='brl' && econ>0 && S.finance.dividas.length){
+    html+='<div class="ok-box mt">💰 Você deixou de gastar <b class="num">'+fmtBRL(econ)+'</b> nas semanas fechadas. '
       +'<button class="btn mini mt" data-action="economia-transferir">transformar em pagamento de dívida</button></div>';
+  } else if(u!=='brl' && econ>0){
+    html+='<div class="ok-box mt">🎉 Você ficou <b class="num">'+fmtUnidade(econ,u)+'</b> abaixo do limite nas semanas fechadas. Cada semana dentro da meta é um degrau.</div>';
   }
   if(wk>0){
-    html+='<details class="mt"><summary class="muted small">semanas anteriores</summary><table class="tabela mt"><thead><tr><th>Semana</th><th class="num">Limite</th><th class="num">Apostado</th><th>Status</th></tr></thead><tbody>';
+    html+='<details class="mt"><summary class="muted small">semanas anteriores</summary><table class="tabela mt"><thead><tr><th>Semana</th><th class="num">Limite</th><th class="num">Registrado</th><th>Status</th></tr></thead><tbody>';
     for(let w=Math.max(0,wk-8);w<wk;w++){
       const g=gastoNaSemana(w), l=limiteSemana(w);
-      html+='<tr><td class="num">'+(w+1)+'</td><td class="num">'+fmtBRL(l)+'</td><td class="num">'+fmtBRL(g)+'</td><td>'+(g<=l?'✅ dentro':'❌ passou')+'</td></tr>';
+      html+='<tr><td class="num">'+(w+1)+'</td><td class="num">'+fmtUnidade(l,u)+'</td><td class="num">'+fmtUnidade(g,u)+'</td><td>'+(g<=l?'✅ dentro':'❌ passou')+'</td></tr>';
     }
     html+='</tbody></table></details>';
   }
@@ -142,10 +147,10 @@ function viewMente(){
   }
   html+='<button class="btn sec-btn mt" data-action="burnout-abrir">fazer check-in de burnout</button></section>';
 
-  html+='<section class="card"><h2>Impulsos (apostas, jogos, 🔒)</h2>'
+  html+='<section class="card"><h2>Quando bate a vontade</h2>'
     +'<p class="sec small">Impulso é onda: cresce, faz pico e passa — surfar 10 minutos costuma bastar. O botão 🌊 te guia numa respiração 4-7-8 até a onda baixar.</p>'
     +'<button class="btn mt" data-action="sos-abrir">🌊 abrir o surf do impulso</button>'
-    +'<p class="muted small mt">Dica: deslogar dos sites de aposta, tirar apps do celular e deixar o dinheiro “longe” (sem cartão salvo) reduz MUITO a força da onda.</p></section>';
+    +'<p class="muted small mt">Dica: tirar o gatilho do alcance — app fora do celular, sem atalho, sem login salvo — reduz MUITO a força da onda.</p></section>';
 
   const todas=gerarConquistas();
   const ganhas=todas.filter(c=>c.ganha);
@@ -217,11 +222,15 @@ function viewConfig(){
   });
   html+='</div></section>';
 
-  html+='<section class="card"><h2>Plano de apostas</h2><div class="cfg-grid">'
-    +cfgCampo('Limite inicial/semana (R$)','bets.limiteSemanaInicial','number',S.bets.limiteSemanaInicial)
-    +cfgCampo('Semanas até zerar','bets.semanasParaZero','number',S.bets.semanasParaZero)
-    +'</div><button class="btn sec-btn mt" data-action="apostas-reiniciar">reiniciar plano a partir de hoje</button>'
-    +'<p class="muted small mt">Início do plano: '+fmtData(S.bets.inicioPlano)+'. Ajusta o limite inicial pra média real das suas últimas semanas — o plano desce a partir daí.</p></section>';
+  if(S.bets.ativo){
+    const uInfo=(UNIDADES[unidadeBets()]||UNIDADES.min);
+    html+='<section class="card"><h2>Plano de redução</h2><div class="cfg-grid">'
+      +cfgCampo('O que reduzir','bets.alvo','text',S.bets.alvo)
+      +cfgCampo('Limite inicial/semana ('+uInfo.abrev+')','bets.limiteSemanaInicial','number',S.bets.limiteSemanaInicial)
+      +cfgCampo('Semanas até a meta','bets.semanasParaZero','number',S.bets.semanasParaZero)
+      +'</div><button class="btn sec-btn mt" data-action="apostas-reiniciar">reiniciar plano a partir de hoje</button>'
+      +'<p class="muted small mt">Medindo em <b>'+esc(uInfo.nome)+'</b>. Início: '+fmtData(S.bets.inicioPlano)+'. Pra trocar a unidade, reative o plano na aba Grana.</p></section>';
+  }
 
   html+='<section class="card"><h2>Rendas mensais</h2><div class="lista-edit">';
   S.finance.rendas.forEach((r,ix)=>{

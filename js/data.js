@@ -1,6 +1,11 @@
 'use strict';
 const DIAS_NOME = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const DIAS_ABREV = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const UNIDADES = {
+  min: { nome:'minutos', abrev:'min' },
+  vez: { nome:'vezes',   abrev:'x'   },
+  brl: { nome:'reais',   abrev:'R$'  }
+};
 
 function defaultState(){
   return {
@@ -38,10 +43,12 @@ function defaultState(){
     },
     bets: {
       inicioPlano: hojeISO(),
+      alvo: '',
+      unidade: 'min',
       limiteSemanaInicial: 0,
       semanasParaZero: 8,
       ativo: false,
-      nota:'Redução gradual, sem corte seco: o limite semanal cai a cada semana até zerar.'
+      nota:'Redução gradual, sem corte seco: o limite semanal cai a cada semana até a meta.'
     },
     treinos: {
       aviso:'Monte seus treinos e registre as cargas de cada exercício — na próxima vez o app te lembra da última.',

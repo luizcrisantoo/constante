@@ -73,6 +73,7 @@ function defaultState(){
     estudo: {
       cadernos:[]
     },
+    progresso: [],
     days: {},
     gamif: { xpTotal:0, conquistas:[] }
   };

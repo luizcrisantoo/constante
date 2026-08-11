@@ -14,6 +14,7 @@ function render(){
   let html;
   if(UI.sub&&UI.sub.tipo==='treino') html=viewTreinoDetalhe(UI.sub.id);
   else if(UI.sub&&UI.sub.tipo==='caderno') html=viewCadernoDetalhe(UI.sub.id);
+  else if(UI.sub&&UI.sub.tipo==='progresso') html=viewProgresso();
   else {
     UI.sub=null;
     const fn={hoje:viewHoje,rotina:viewRotina,dieta:viewDieta,grana:viewGrana,mente:viewMente,config:viewConfig}[UI.tab]||viewHoje;
@@ -21,6 +22,7 @@ function render(){
   }
   view.innerHTML=html;
   renderTopbar();
+  if(UI.sub&&UI.sub.tipo==='progresso') hidratarFotos();
   document.querySelectorAll('.bottom-nav button').forEach(b=>{
     b.classList.toggle('ativo',b.dataset.nav===UI.tab);
   });
@@ -37,6 +39,8 @@ function renderTopbar(){
   document.getElementById('top-stats').innerHTML=
     '<span class="pill" title="Ofensiva: dias seguidos com o dia batido">🔥 <span class="num">'+st+'</span></span>'
     +'<span class="pill" title="'+esc(nv.nome)+' — '+nv.xp+' XP">'+nv.icone+' <span class="num">'+nv.xp+'</span> XP</span>';
+  const ba=document.getElementById('btn-assist');
+  if(ba) ba.style.display=assistenteDisponivel()?'':'none';
 }
 
 function viewHoje(){

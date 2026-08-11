@@ -152,6 +152,12 @@ function viewMente(){
     +'<button class="btn mt" data-action="sos-abrir">🌊 abrir o surf do impulso</button>'
     +'<p class="muted small mt">Dica: tirar o gatilho do alcance — app fora do celular, sem atalho, sem login salvo — reduz MUITO a força da onda.</p></section>';
 
+  if(produtoAtivo()){
+    html+='<section class="card"><h2>Progresso em fotos</h2>'
+      +'<p class="muted small">Registre fotos ao longo do tempo e compare sua evolução. Privadas, só você vê.</p>'
+      +'<button class="btn sec-btn mt" data-action="progresso-abrir">📷 abrir progresso</button></section>';
+  }
+
   const todas=gerarConquistas();
   const ganhas=todas.filter(c=>c.ganha);
   const proximas=todas.filter(c=>c.proxima);

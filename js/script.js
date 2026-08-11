@@ -396,6 +396,27 @@ const ACOES={
   },
 
   'voltar-sub':()=>{ UI.sub=null; render(); window.scrollTo({top:0}); },
+  'progresso-abrir':()=>{ _fotoCompareModo=false; _fotoCompare=[]; UI.sub={tipo:'progresso'}; render(); window.scrollTo({top:0}); },
+  'foto-add':()=>{ const f=document.getElementById('foto-file'); if(f) f.click(); },
+  'foto-toque':el=>{
+    const id=el.dataset.id;
+    if(_fotoCompareModo){
+      const i=_fotoCompare.indexOf(id);
+      if(i>=0) _fotoCompare.splice(i,1); else if(_fotoCompare.length<2) _fotoCompare.push(id);
+      render(); return;
+    }
+    abrirFoto(id);
+  },
+  'foto-comparar-modo':()=>{ _fotoCompareModo=!_fotoCompareModo; _fotoCompare=[]; render(); },
+  'foto-comparar-limpar':()=>{ _fotoCompare=[]; _fotoCompareModo=false; render(); },
+  'foto-del':async el=>{
+    const id=el.dataset.id; const f=(S.progresso||[]).find(x=>x.id===id); if(!f) return;
+    try{ if(progressoDisponivel()) await clienteSB().storage.from('progresso').remove([f.path]); }catch(e){}
+    S.progresso=(S.progresso||[]).filter(x=>x.id!==id);
+    _fotoCompare=_fotoCompare.filter(x=>x!==id);
+    delete _fotoUrls[f.path];
+    saveState(); fecharModal(); render(); toast('Foto removida');
+  },
   'abrir-treino':el=>{ UI.tab='rotina'; UI.sub={tipo:'treino',id:el.dataset.id}; render(); window.scrollTo({top:0}); },
   'abrir-caderno':el=>{ UI.tab='rotina'; UI.sub={tipo:'caderno',id:el.dataset.id}; render(); window.scrollTo({top:0}); },
 
@@ -491,12 +512,14 @@ const ACOES={
 
   'assist-abrir':()=>abrirAssistente(),
   'assist-foto':()=>{ const f=document.getElementById('assist-file'); if(f) f.click(); },
-  'assist-remimg':el=>{ _assistImgs.splice(Number(el.dataset.ix),1); const r=document.querySelector('.modal'); if(r) r.innerHTML=assistenteHTML(); },
-  'assist-enviar':()=>enviarAssistente(),
-  'assist-aplicar':()=>{
-    aplicarPlano(_planoPendente); _planoPendente=null;
-    fecharModal(); UI.tab='rotina'; render();
-    toast('✨ Rotina montada! Dá uma olhada e ajusta o que quiser.');
+  'assist-remimg':el=>{ _assistImgs.splice(Number(el.dataset.ix),1); renderAssist(); },
+  'assist-enviar':()=>enviarMensagem(),
+  'assist-aplicar':el=>{
+    const ix=Number(el.dataset.ix); const m=_assistMsgs[ix];
+    if(!m||!m.plano||m.aplicado) return;
+    aplicarPlano(m.plano); m.aplicado=true;
+    render(); renderAssist();
+    toast('✨ Aplicado! Dá uma olhada.');
   }
 };
 
@@ -617,14 +640,11 @@ function ligarEventos(){
     if(t.dataset.cfgCheck){ setPath(S,t.dataset.cfgCheck,t.checked); saveState(); return; }
     if(t.id==='assist-file'&&t.files&&t.files[0]){
       const arq=t.files[0]; t.value='';
-      if(_assistImgs.length>=3){ assistStatus('Máximo de 3 fotos.',true); return; }
-      assistStatus('Carregando foto…');
-      lerImagemReduzida(arq).then(im=>{
-        _assistImgs.push(im);
-        const r=document.querySelector('.modal'); if(r) r.innerHTML=assistenteHTML();
-      }).catch(e=>assistStatus('❌ '+e.message,true));
+      if(_assistImgs.length>=3){ toast('Máximo de 3 fotos.'); return; }
+      lerImagemReduzida(arq).then(im=>{ _assistImgs.push(im); renderAssist(); }).catch(e=>toast('❌ '+e.message));
       return;
     }
+    if(t.id==='foto-file'&&t.files&&t.files[0]){ const arq=t.files[0]; t.value=''; subirFoto(arq); return; }
     if(t.id==='importar-arquivo'&&t.files&&t.files[0]){
       const fr=new FileReader();
       fr.onload=()=>{

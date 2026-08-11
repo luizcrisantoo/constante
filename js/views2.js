@@ -271,6 +271,8 @@ function viewConfig(){
       +'<p class="muted small mt">'+(st.ultimaSync?'Última sync: '+new Date(st.ultimaSync).toLocaleString('pt-BR'):'Nunca sincronizado')+' · passo a passo no GUIA-PUBLICACAO.md</p></section>';
   }
 
+  html+=secaoNotificacoes();
+
   html+='<section class="card"><h2>Backup & dados</h2>'
     +'<div class="acoes" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
     +'<button class="btn sec-btn" data-action="exportar">⬇ exportar backup</button>'

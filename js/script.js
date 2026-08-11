@@ -397,6 +397,9 @@ const ACOES={
 
   'voltar-sub':()=>{ UI.sub=null; render(); window.scrollTo({top:0}); },
   'progresso-abrir':()=>{ _fotoCompareModo=false; _fotoCompare=[]; UI.sub={tipo:'progresso'}; render(); window.scrollTo({top:0}); },
+  'notif-ativar':()=>ativarLembretes(),
+  'notif-exemplo':()=>exemploNotificacao(),
+  'notif-desativar':()=>desativarLembretes(),
   'foto-add':()=>{ const f=document.getElementById('foto-file'); if(f) f.click(); },
   'foto-toque':el=>{
     const id=el.dataset.id;

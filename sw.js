@@ -1,10 +1,10 @@
 'use strict';
-const CACHE = 'constante-v12';
+const CACHE = 'constante-v13';
 const ARQUIVOS = [
   './', 'index.html', 'privacidade.html', 'css/variables.css', 'css/styles.css',
   'js/config.js', 'js/vendor-supabase.js', 'js/data.js', 'js/core.js', 'js/ui.js',
   'js/auth.js', 'js/views.js', 'js/views2.js', 'js/views-f2.js', 'js/views-auth.js',
-  'js/assistente.js', 'js/progresso.js', 'js/script.js',
+  'js/assistente.js', 'js/progresso.js', 'js/notificacoes.js', 'js/script.js',
   'manifest.webmanifest', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png'
 ];
 
@@ -51,4 +51,29 @@ self.addEventListener('fetch', ev => {
       })
     );
   }
+});
+
+self.addEventListener('push', ev => {
+  let d = {};
+  try { d = ev.data ? ev.data.json() : {}; }
+  catch (e) { d = { body: ev.data ? ev.data.text() : '' }; }
+  const titulo = d.titulo || 'Constante';
+  ev.waitUntil(self.registration.showNotification(titulo, {
+    body: d.body || '',
+    icon: 'assets/icons/icon-192.png',
+    badge: 'assets/icons/icon-192.png',
+    tag: d.tag || 'constante',
+    data: { url: d.url || './' }
+  }));
+});
+
+self.addEventListener('notificationclick', ev => {
+  ev.notification.close();
+  const alvo = (ev.notification.data && ev.notification.data.url) || './';
+  ev.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
+      for (const c of cs) { if ('focus' in c) return c.focus(); }
+      if (self.clients.openWindow) return self.clients.openWindow(alvo);
+    })
+  );
 });

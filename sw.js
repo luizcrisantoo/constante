@@ -1,9 +1,9 @@
 'use strict';
-const CACHE = 'constante-v6';
+const CACHE = 'constante-v7';
 const ARQUIVOS = [
   './', 'index.html', 'privacidade.html', 'css/variables.css', 'css/styles.css',
   'js/config.js', 'js/vendor-supabase.js', 'js/data.js', 'js/core.js', 'js/ui.js',
-  'js/auth.js', 'js/views.js', 'js/views2.js', 'js/views-auth.js', 'js/script.js',
+  'js/auth.js', 'js/views.js', 'js/views2.js', 'js/views-f2.js', 'js/views-auth.js', 'js/script.js',
   'manifest.webmanifest', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png'
 ];
 

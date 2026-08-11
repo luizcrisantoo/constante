@@ -1,6 +1,6 @@
 'use strict';
 
-const UI={ tab:'hoje', rotinaDia:new Date().getDay() };
+const UI={ tab:'hoje', rotinaDia:new Date().getDay(), sub:null };
 
 const TIPO_LABEL={aula:'Aula',estagio:'Estágio',treino:'Treino',refeicao:'Refeição',estudo:'Estudo',
   sites:'Sites',idioma:'Idiomas',leitura:'Leitura',sono:'Sono',livre:'Livre',pausa:'Pausa',
@@ -10,8 +10,16 @@ function render(){
   recalcXP(hojeISO());
   const novas=checarConquistas();
   const view=document.getElementById('view');
-  const fn={hoje:viewHoje,rotina:viewRotina,dieta:viewDieta,grana:viewGrana,mente:viewMente,config:viewConfig}[UI.tab]||viewHoje;
-  view.innerHTML=fn();
+
+  let html;
+  if(UI.sub&&UI.sub.tipo==='treino') html=viewTreinoDetalhe(UI.sub.id);
+  else if(UI.sub&&UI.sub.tipo==='caderno') html=viewCadernoDetalhe(UI.sub.id);
+  else {
+    UI.sub=null;
+    const fn={hoje:viewHoje,rotina:viewRotina,dieta:viewDieta,grana:viewGrana,mente:viewMente,config:viewConfig}[UI.tab]||viewHoje;
+    html=fn();
+  }
+  view.innerHTML=html;
   renderTopbar();
   document.querySelectorAll('.bottom-nav button').forEach(b=>{
     b.classList.toggle('ativo',b.dataset.nav===UI.tab);
@@ -46,6 +54,14 @@ function viewHoje(){
   if(atual) html+='<div class="agora"><b>Agora:</b> '+esc(atual.t)+' <span class="muted num">('+esc(atual.i)+(atual.f?'–'+esc(atual.f):'')+')</span></div>';
   if(prox) html+='<div class="agora" style="border-color:var(--baseline)"><b>Depois:</b> '+esc(prox.t)+' <span class="muted num">('+esc(prox.i)+')</span></div>';
   html+='</section>';
+
+  const tHoje=treinoDeHoje();
+  if(tHoje){
+    html+='<button class="card esq" data-action="abrir-treino" data-id="'+esc(tHoje.id)+'" style="width:100%;display:flex;align-items:center;gap:0.7rem;border-left:3px solid var(--c-treino)">'
+      +'<span style="font-size:1.5rem">🏋️</span>'
+      +'<span class="esq" style="text-align:left"><b>Treino de hoje: '+esc(tHoje.nome)+'</b><br><span class="muted small">'+esc(tHoje.foco)+' — toque pra registrar as cargas</span></span>'
+      +'<span class="muted">›</span></button>';
+  }
 
   html+='<section class="card"><h2>Seu dia</h2>'
     +'<div class="linha"><div class="esq"><span class="hero-num num">'+xpHoje+'</span> <span class="muted">/ '+xpPoss+' XP</span></div>'
@@ -185,11 +201,27 @@ function viewRotina(){
     +'<button class="btn sec-btn" data-action="bloco-add" data-d="'+dow+'">+ bloco</button>'
     +'</div></section>';
 
-  html+='<section class="card"><h2>Treinos da semana (até a cirurgia)</h2>';
+  html+='<section class="card"><h2>Treinos — toca pra registrar cargas 🏋️</h2>';
   S.treinos.split.forEach(t=>{
-    html+='<div class="linha" style="padding:0.35rem 0"><span class="esq"><b>'+esc(t.nome)+'</b> <span class="muted small">'+esc(t.dia)+'</span><br><span class="sec small">'+esc(t.foco)+'</span></span></div>';
+    const nEx=t.exercicios.length;
+    html+='<button class="hab esq" data-action="abrir-treino" data-id="'+esc(t.id)+'" style="width:100%">'
+      +'<span class="ic">🏋️</span>'
+      +'<span class="nome">'+esc(t.nome)+' <span class="muted small">'+esc(t.dia)+'</span>'
+      +'<span class="sub">'+esc(t.foco)+(nEx?' · '+nEx+' exercício'+(nEx>1?'s':''):' · toque pra adicionar exercícios')+'</span></span>'
+      +'<span class="streak">›</span></button>';
   });
   html+='<div class="aviso mt">⚠️ '+esc(S.treinos.aviso)+'</div></section>';
+
+  html+='<section class="card"><h2>Cadernos de estudo 📓 <button class="btn mini sec-btn dir" data-action="caderno-add">+ tema</button></h2>';
+  if(!S.estudo.cadernos.length) html+='<p class="muted small">Cria um tema pra guardar suas anotações.</p>';
+  S.estudo.cadernos.forEach(c=>{
+    const n=c.notas.length;
+    html+='<button class="hab esq" data-action="abrir-caderno" data-id="'+esc(c.id)+'" style="width:100%">'
+      +'<span class="ic">📓</span>'
+      +'<span class="nome">'+esc(c.nome)+'<span class="sub">'+(n?n+' anotação'+(n>1?'ões':''):'sem anotações ainda')+'</span></span>'
+      +'<span class="streak">›</span></button>';
+  });
+  html+='</section>';
 
   html+='<section class="card"><h2>Legenda</h2><div style="display:flex;flex-wrap:wrap;gap:0.4rem">';
   Object.keys(TIPO_LABEL).forEach(t=>{

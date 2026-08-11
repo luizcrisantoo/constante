@@ -346,7 +346,94 @@ const ACOES={
       S=defaultState(); saveState({skipSync:true});
       toast('Conta apagada. Cuida de ti 💜');
     }catch(e){ toast('❌ '+e.message); }
-  }
+  },
+
+  'voltar-sub':()=>{ UI.sub=null; render(); window.scrollTo({top:0}); },
+  'abrir-treino':el=>{ UI.tab='rotina'; UI.sub={tipo:'treino',id:el.dataset.id}; render(); window.scrollTo({top:0}); },
+  'abrir-caderno':el=>{ UI.tab='rotina'; UI.sub={tipo:'caderno',id:el.dataset.id}; render(); window.scrollTo({top:0}); },
+
+  'ex-add':el=>{
+    const idT=el.dataset.t;
+    abrirModal('<h3>Novo exercício</h3>'
+      +campo('ex-nome','Nome do exercício (ex.: Supino reto)','text','')
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+      +'<button class="btn" data-action="ex-salvar" data-t="'+esc(idT)+'">adicionar</button></div>');
+  },
+  'ex-salvar':el=>{
+    const nome=val('ex-nome'); if(!nome){ toast('Dá um nome ao exercício'); return; }
+    addExercicio(el.dataset.t,nome); fecharModal(); render();
+  },
+  'ex-remover':el=>{
+    abrirModal('<h3>Remover exercício?</h3><p class="sec small">O histórico de cargas dele some junto.</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+      +'<button class="btn perigo" data-action="ex-remover-ok" data-t="'+esc(el.dataset.t)+'" data-e="'+esc(el.dataset.e)+'">remover</button></div>');
+  },
+  'ex-remover-ok':el=>{ removerExercicio(el.dataset.t,el.dataset.e); fecharModal(); render(); },
+  'carga-add':el=>{
+    const t=treinoPorId(el.dataset.t); const ex=t&&t.exercicios.find(x=>x.id===el.dataset.e);
+    const ult=ex&&ultimoRegistro(ex);
+    abrirModal('<h3>Registrar série — '+esc(ex?ex.nome:'')+'</h3>'
+      +(ult?'<p class="sec small">Última vez: '+ult.series+'×'+ult.reps+' · '+String(ult.carga).replace('.',',')+' kg</p>':'')
+      +'<div class="grid-2">'+campo('cg-series','Séries','number',ult?ult.series:3)+campo('cg-reps','Repetições','number',ult?ult.reps:10)+'</div>'
+      +campo('cg-carga','Carga (kg)','number',ult?ult.carga:'')
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+      +'<button class="btn" data-action="carga-salvar" data-t="'+esc(el.dataset.t)+'" data-e="'+esc(el.dataset.e)+'">salvar</button></div>');
+  },
+  'carga-salvar':el=>{
+    registrarCarga(el.dataset.t,el.dataset.e,val('cg-series'),val('cg-reps'),val('cg-carga'));
+    fecharModal(); render(); toast('💪 registrado');
+  },
+
+  'gasto-add':()=>{
+    const cats=S.gastos.categorias.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.icone+' '+c.nome)+'</option>').join('');
+    abrirModal('<h3>Registrar gasto</h3>'
+      +campo('ga-valor','Valor (R$)','number','')
+      +'<div class="campo"><label>Categoria</label><select id="ga-cat">'+cats+'</select></div>'
+      +campo('ga-desc','Descrição (ex.: uber, cantina)','text','')
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+      +'<button class="btn" data-action="gasto-salvar">registrar</button></div>'
+      +'<p class="muted small mt"><button class="deslize-btn" data-action="gasto-nova-cat">+ criar categoria</button></p>');
+  },
+  'gasto-salvar':()=>{
+    const v=Number(String(val('ga-valor')).replace(',','.'));
+    if(!v||v<=0){ toast('Valor inválido'); return; }
+    addGasto(v,val('ga-cat'),val('ga-desc'),hojeISO());
+    fecharModal(); render(); toast('Gasto registrado');
+  },
+  'gasto-nova-cat':()=>{
+    abrirModal('<h3>Nova categoria</h3>'
+      +'<div class="grid-2">'+campo('nc-icone','Ícone (emoji)','text','📦')+campo('nc-nome','Nome','text','')+'</div>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="gasto-add">← voltar</button>'
+      +'<button class="btn" data-action="gasto-nova-cat-ok">criar</button></div>');
+  },
+  'gasto-nova-cat-ok':()=>{
+    const nome=val('nc-nome'); if(!nome){ toast('Dá um nome'); return; }
+    addCategoriaGasto(nome,val('nc-icone')); ACOES['gasto-add']();
+  },
+  'gasto-remover':el=>{ removerGasto(el.dataset.id); render(); },
+
+  'caderno-add':()=>abrirModal('<h3>Novo caderno de estudo</h3>'
+    +campo('cad-nome','Tema (ex.: Cálculo, Violão, Inglês…)','text','')
+    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+    +'<button class="btn" data-action="caderno-salvar">criar</button></div>'),
+  'caderno-salvar':()=>{
+    const nome=val('cad-nome'); if(!nome){ toast('Dá um nome ao tema'); return; }
+    const c=addCaderno(nome); fecharModal();
+    if(c){ UI.tab='rotina'; UI.sub={tipo:'caderno',id:c.id}; }
+    render();
+  },
+  'caderno-remover':el=>{
+    abrirModal('<h3>Excluir caderno?</h3><p class="sec small">Todas as anotações dele somem.</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
+      +'<button class="btn perigo" data-action="caderno-remover-ok" data-id="'+esc(el.dataset.id)+'">excluir</button></div>');
+  },
+  'caderno-remover-ok':el=>{ removerCaderno(el.dataset.id); fecharModal(); UI.sub=null; render(); },
+  'nota-salvar':el=>{
+    const texto=(document.getElementById('nota-nova')||{}).value||'';
+    if(!texto.trim()){ toast('Escreve algo primeiro'); return; }
+    addNota(el.dataset.id,texto); render(); toast('📝 anotado');
+  },
+  'nota-remover':el=>{ removerNota(el.dataset.c,el.dataset.n); render(); }
 };
 
 function nomeHabito(id){ const h=S.habits.find(x=>x.id===id); return h?h.nome:id; }

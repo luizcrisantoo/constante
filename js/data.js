@@ -222,10 +222,33 @@ function defaultState(){
     treinos: {
       aviso:'Pré-cirurgia do quadril: regra nº1 é ZERO dor no quadril. Combine as adaptações com o professor da academia (e fisio, se tiver). Registre treino e sono pela pulseira Polar Loop e lance aqui o resumo.',
       split:[
-        {dia:'Seg 18:35', nome:'Treino A', foco:'Peito, ombro e tríceps + core'},
-        {dia:'Qua 06:50', nome:'Treino B', foco:'Costas e bíceps + core'},
-        {dia:'Qui 14:50', nome:'Treino C', foco:'Pernas ADAPTADO (máquinas, amplitude sem dor, sem impacto)'},
-        {dia:'Sáb 08:00', nome:'Treino D', foco:'Upper leve + mobilidade e alongamento'}
+        {id:'a', dia:'Seg 18:35', nome:'Treino A', foco:'Peito, ombro e tríceps + core', exercicios:[]},
+        {id:'b', dia:'Qua 06:50', nome:'Treino B', foco:'Costas e bíceps + core', exercicios:[]},
+        {id:'c', dia:'Qui 14:50', nome:'Treino C', foco:'Pernas ADAPTADO (máquinas, amplitude sem dor, sem impacto)', exercicios:[]},
+        {id:'d', dia:'Sáb 08:00', nome:'Treino D', foco:'Upper leve + mobilidade e alongamento', exercicios:[]}
+      ]
+    },
+
+    gastos: {
+      categorias:[
+        {id:'g_alim', nome:'Alimentação', icone:'🍔', cor:'var(--c-refeicao)'},
+        {id:'g_transp', nome:'Transporte', icone:'🚗', cor:'var(--c-aula)'},
+        {id:'g_lazer', nome:'Lazer', icone:'🎮', cor:'var(--c-sites)'},
+        {id:'g_saude', nome:'Saúde', icone:'💊', cor:'var(--c-estagio)'},
+        {id:'g_casa', nome:'Casa/contas', icone:'🏠', cor:'var(--c-estudo)'},
+        {id:'g_outros', nome:'Outros', icone:'📦', cor:'var(--c-livre)'}
+      ],
+      lancamentos:[]
+    },
+
+    estudo: {
+      cadernos:[
+        {id:'e_ia', nome:'Inteligência Artificial', notas:[]},
+        {id:'e_algo', nome:'Análise de Algoritmos', notas:[]},
+        {id:'e_web', nome:'Programação Web e Mobile', notas:[]},
+        {id:'e_pdi', nome:'Processamento Digital de Imagem', notas:[]},
+        {id:'e_ing', nome:'Língua Inglesa Instrumental', notas:[]},
+        {id:'e_claude', nome:'Cursos de IA / Claude', notas:[]}
       ]
     },
 

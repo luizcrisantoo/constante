@@ -1,9 +1,11 @@
 'use strict';
 
 function viewGrana(){
+  let html=secaoGastos();
+
   const fin=resumoFinanceiro();
   const pct=fin.total?Math.round(100*fin.pago/fin.total):0;
-  let html='<section class="card"><h2>Dívidas — visão geral</h2>'
+  html+='<section class="card"><h2>Dívidas — visão geral</h2>'
     +'<div class="linha"><div class="esq"><span class="hero-num num">'+fmtBRL(fin.saldo)+'</span><div class="hero-sub">faltam · já pagou '+fmtBRL(fin.pago)+' de '+fmtBRL(fin.total)+'</div></div>'
     +'<span class="chip num">'+pct+'%</span></div>'
     +'<div class="progress verde mt"><span style="width:'+pct+'%"></span></div>'

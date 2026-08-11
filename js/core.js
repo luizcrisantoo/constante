@@ -57,6 +57,12 @@ function sanearEstado(){
   if(!Array.isArray(S.finance.extras)) S.finance.extras=[];
   if(!Array.isArray(S.diet.refeicoes)) S.diet.refeicoes=defaultState().diet.refeicoes;
   if(!Array.isArray(S.meds.grupos)) S.meds.grupos=defaultState().meds.grupos;
+  if(!S.treinos||!Array.isArray(S.treinos.split)) S.treinos=defaultState().treinos;
+  S.treinos.split.forEach(t=>{ if(!Array.isArray(t.exercicios)) t.exercicios=[]; });
+  if(!S.gastos||typeof S.gastos!=='object') S.gastos=defaultState().gastos;
+  if(!Array.isArray(S.gastos.categorias)) S.gastos.categorias=defaultState().gastos.categorias;
+  if(!Array.isArray(S.gastos.lancamentos)) S.gastos.lancamentos=[];
+  if(!S.estudo||!Array.isArray(S.estudo.cadernos)) S.estudo=defaultState().estudo;
 }
 function loadState(){
   const raw=lsGet();
@@ -372,6 +378,27 @@ function mesclarEstado(remoto){
     S.pesos=Object.values(porData).sort((a,b)=>a.data<b.data?-1:1);
   }
   if(outro.gamif) S.gamif.conquistas=[...new Set([...(S.gamif.conquistas||[]),...(outro.gamif.conquistas||[])])];
+
+  if(outro.gastos&&Array.isArray(outro.gastos.lancamentos)){
+    S.gastos.lancamentos=uniaoLanc(S.gastos.lancamentos,outro.gastos.lancamentos);
+  }
+  if(outro.treinos&&Array.isArray(outro.treinos.split)){
+    outro.treinos.split.forEach(ot=>{
+      const t=S.treinos.split.find(x=>x.id===ot.id); if(!t) return;
+      (ot.exercicios||[]).forEach(oe=>{
+        const ex=t.exercicios.find(x=>x.id===oe.id);
+        if(!ex) t.exercicios.push(JSON.parse(JSON.stringify(oe)));
+        else ex.registros=uniaoLanc(ex.registros,oe.registros);
+      });
+    });
+  }
+  if(outro.estudo&&Array.isArray(outro.estudo.cadernos)){
+    outro.estudo.cadernos.forEach(oc=>{
+      const c=S.estudo.cadernos.find(x=>x.id===oc.id);
+      if(!c) S.estudo.cadernos.push(JSON.parse(JSON.stringify(oc)));
+      else c.notas=uniaoLanc(c.notas,oc.notas);
+    });
+  }
   S.settings=settingsLocais;
   Object.keys(S.days).forEach(recalcXPQuiet);
 }
@@ -435,4 +462,81 @@ function blocoAtual(){
     if(ini>agora&&!prox) prox=b;
   }
   return {atual,prox};
+}
+
+function treinoPorId(id){ return S.treinos.split.find(t=>t.id===id)||null; }
+function treinoDeHoje(){
+  const dow=new Date().getDay();
+  const mapa={1:'a',3:'b',4:'c',6:'d'};
+  return mapa[dow]?treinoPorId(mapa[dow]):null;
+}
+function addExercicio(idTreino,nome){
+  const t=treinoPorId(idTreino); if(!t||!nome) return null;
+  const ex={id:uid(),nome:nome,registros:[]};
+  t.exercicios.push(ex); saveState(); return ex;
+}
+function removerExercicio(idTreino,idEx){
+  const t=treinoPorId(idTreino); if(!t) return;
+  t.exercicios=t.exercicios.filter(e=>e.id!==idEx); saveState();
+}
+function registrarCarga(idTreino,idEx,series,reps,carga){
+  const t=treinoPorId(idTreino); if(!t) return;
+  const ex=t.exercicios.find(e=>e.id===idEx); if(!ex) return;
+  ex.registros.push({id:uid(),data:hojeISO(),series:Number(series)||0,reps:Number(reps)||0,carga:round2(Number(String(carga).replace(',','.'))||0)});
+  saveState();
+}
+function ultimoRegistro(ex){
+  if(!ex.registros||!ex.registros.length) return null;
+  return ex.registros.slice().sort((a,b)=>a.data<b.data?1:-1)[0];
+}
+function evolucaoCarga(ex){
+
+  const porData={};
+  (ex.registros||[]).forEach(r=>{ porData[r.data]=Math.max(porData[r.data]||0, r.carga); });
+  return Object.keys(porData).sort().map(d=>({data:d, carga:porData[d]}));
+}
+
+function catGasto(id){ return S.gastos.categorias.find(c=>c.id===id)||{nome:'?',icone:'📦',cor:'var(--c-livre)'}; }
+function addGasto(valor,catId,descricao,dataISO){
+  const v=round2(Number(String(valor).replace(',','.'))||0);
+  if(v<=0) return;
+  S.gastos.lancamentos.push({id:uid(),valor:v,cat:catId,desc:descricao||'',data:dataISO||hojeISO()});
+  saveState();
+}
+function removerGasto(id){ S.gastos.lancamentos=S.gastos.lancamentos.filter(g=>g.id!==id); saveState(); }
+function gastosDoDia(iso){ iso=iso||hojeISO(); return S.gastos.lancamentos.filter(g=>g.data===iso); }
+function gastosDoMes(anoMes){
+  anoMes=anoMes||hojeISO().slice(0,7);
+  return S.gastos.lancamentos.filter(g=>g.data&&g.data.slice(0,7)===anoMes);
+}
+function totalLista(lista){ return lista.reduce((a,g)=>a+(g.valor||0),0); }
+function gastosPorCategoria(lista){
+  const m={};
+  lista.forEach(g=>{ m[g.cat]=(m[g.cat]||0)+g.valor; });
+  return S.gastos.categorias
+    .map(c=>({cat:c, total:m[c.id]||0}))
+    .filter(x=>x.total>0)
+    .sort((a,b)=>b.total-a.total);
+}
+function addCategoriaGasto(nome,icone){
+  if(!nome) return;
+  S.gastos.categorias.push({id:uid(),nome:nome,icone:icone||'📦',cor:'var(--c-livre)'});
+  saveState();
+}
+
+function cadernoPorId(id){ return S.estudo.cadernos.find(c=>c.id===id)||null; }
+function addCaderno(nome){
+  if(!nome) return null;
+  const c={id:uid(),nome:nome,notas:[]};
+  S.estudo.cadernos.push(c); saveState(); return c;
+}
+function removerCaderno(id){ S.estudo.cadernos=S.estudo.cadernos.filter(c=>c.id!==id); saveState(); }
+function addNota(idCaderno,texto){
+  const c=cadernoPorId(idCaderno); if(!c||!texto||!texto.trim()) return;
+  c.notas.push({id:uid(),data:hojeISO(),ts:new Date().toISOString(),texto:texto.trim()});
+  saveState();
+}
+function removerNota(idCaderno,idNota){
+  const c=cadernoPorId(idCaderno); if(!c) return;
+  c.notas=c.notas.filter(n=>n.id!==idNota); saveState();
 }

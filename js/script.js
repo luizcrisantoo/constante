@@ -475,7 +475,17 @@ const ACOES={
     S.profile.nome=n; saveState(); fecharModal(); render();
     setTimeout(()=>toast(saudacaoHora()+', '+n+'! Bem-vindo ao Constante 👋'),300);
   },
-  'nome-pular':()=>{ fecharModal(); }
+  'nome-pular':()=>{ fecharModal(); },
+
+  'assist-abrir':()=>abrirAssistente(),
+  'assist-foto':()=>{ const f=document.getElementById('assist-file'); if(f) f.click(); },
+  'assist-remimg':el=>{ _assistImgs.splice(Number(el.dataset.ix),1); const r=document.querySelector('.modal'); if(r) r.innerHTML=assistenteHTML(); },
+  'assist-enviar':()=>enviarAssistente(),
+  'assist-aplicar':()=>{
+    aplicarPlano(_planoPendente); _planoPendente=null;
+    fecharModal(); UI.tab='rotina'; render();
+    toast('✨ Rotina montada! Dá uma olhada e ajusta o que quiser.');
+  }
 };
 
 function pedirNome(){
@@ -593,6 +603,16 @@ function ligarEventos(){
     if(t.dataset.campo==='nota'){ getDia().nota=t.value; saveState(); return; }
     if(t.dataset.cfg){ setPath(S,t.dataset.cfg,t.value); saveState(); renderTopbar(); return; }
     if(t.dataset.cfgCheck){ setPath(S,t.dataset.cfgCheck,t.checked); saveState(); return; }
+    if(t.id==='assist-file'&&t.files&&t.files[0]){
+      const arq=t.files[0]; t.value='';
+      if(_assistImgs.length>=3){ assistStatus('Máximo de 3 fotos.',true); return; }
+      assistStatus('Carregando foto…');
+      lerImagemReduzida(arq).then(im=>{
+        _assistImgs.push(im);
+        const r=document.querySelector('.modal'); if(r) r.innerHTML=assistenteHTML();
+      }).catch(e=>assistStatus('❌ '+e.message,true));
+      return;
+    }
     if(t.id==='importar-arquivo'&&t.files&&t.files[0]){
       const fr=new FileReader();
       fr.onload=()=>{

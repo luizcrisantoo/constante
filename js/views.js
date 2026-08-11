@@ -79,10 +79,11 @@ function viewHoje(){
       +'<p class="sec">Esse é seu espaço pra construir constância — hábitos, rotina, dieta, treino, finanças e cabeça, tudo num lugar só.</p>'
       +'<p class="sec small mt">Comece adicionando o que fizer sentido pra você:</p>'
       +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-      +'<button class="btn" data-action="habito-add">+ hábito</button>'
-      +'<button class="btn sec-btn" data-nav="rotina">montar rotina</button>'
+      +(assistenteDisponivel()?'<button class="btn" data-action="assist-abrir">🤖 montar com o assistente</button>':'')
+      +'<button class="btn '+(assistenteDisponivel()?'sec-btn':'')+'" data-action="habito-add">+ hábito</button>'
+      +'<button class="btn sec-btn" data-nav="rotina">montar na mão</button>'
       +'</div>'
-      +'<p class="muted small mt">🤖 Em breve: um assistente que monta tudo pra você a partir de uma foto do seu horário, do PDF da sua dieta e do que você contar.</p>'
+      +(assistenteDisponivel()?'<p class="muted small mt">🤖 Manda uma foto do teu horário ou conta como é teu dia — eu monto pra você.</p>':'<p class="muted small mt">🤖 Em breve: um assistente que monta tudo a partir de uma foto do seu horário e do que você contar.</p>')
       +'</section>';
   }
 
@@ -224,8 +225,9 @@ function viewRotina(){
       +'<button class="edit" data-action="bloco-edit" data-d="'+dow+'" data-ix="'+ix+'" aria-label="Editar bloco">✎</button>'
       +'</div>';
   });
-  html+='<div class="acoes mt-lg" style="display:flex;gap:0.5rem">'
+  html+='<div class="acoes mt-lg" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
     +'<button class="btn sec-btn" data-action="bloco-add" data-d="'+dow+'">+ bloco</button>'
+    +(assistenteDisponivel()?'<button class="btn sec-btn" data-action="assist-abrir">🤖 pedir ajuda ao assistente</button>':'')
     +'</div></section>';
 
   html+='<section class="card"><h2>Treinos — toca pra registrar cargas 🏋️</h2>';

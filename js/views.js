@@ -142,13 +142,14 @@ function viewHoje(){
     +'<button class="btn mini sec-btn" data-action="agua" data-ml="-250">−250ml</button></div></section>';
 
   const so=d.sono||{};
-  html+='<section class="card"><h2>Sono (noite passada — Polar Loop)</h2>'
+  html+='<section class="card"><h2>Sono (noite passada)</h2>'
     +'<div class="sono-form">'
     +'<div><label>Deitou (ontem)</label><input type="time" data-sono="deitou" value="'+esc(so.deitou||'')+'"></div>'
     +'<div><label>Acordou (hoje)</label><input type="time" data-sono="acordou" value="'+esc(so.acordou||'')+'"></div>'
     +'<div><label>Horas dormidas</label><input type="number" step="0.1" min="0" max="16" placeholder="ex.: 7,5" data-sono="h" value="'+esc(so.h!=null?so.h:'')+'"></div>'
-    +'<div><label>Score Polar (0–100)</label><input type="number" min="0" max="100" data-sono="score" value="'+esc(so.score!=null?so.score:'')+'"></div>'
+    +'<div><label>Nota do sono (0–100)</label><input type="number" min="0" max="100" data-sono="score" value="'+esc(so.score!=null?so.score:'')+'"></div>'
     +'</div>'
+    +'<div class="muted small mt">A nota do sono é opcional — preenche se teu relógio ou app dá uma nota de 0 a 100 (Garmin, Fitbit, Apple Watch, Samsung, Polar, Oura…). Não usa nenhum? Deixa em branco: as horas dormidas já bastam.</div>'
     +'<div class="muted small mt">Meta: deitar '+esc(S.settings.sono.deitar)+' · acordar '+esc(S.settings.sono.acordar)+' · melatonina '+esc(S.settings.sono.melatonina)+'.</div>'
     +'</section>';
 

@@ -12,6 +12,26 @@ function sessaoAtual(){ return _sessao; }
 function tokenAcesso(){ return _sessao ? _sessao.access_token : null; }
 function usuarioAtual(){ return _sessao ? _sessao.user : null; }
 
+const TURNSTILE_SITEKEY='0x4AAAAAAEOHD4v9PCdTaFVC';
+let _captchaToken='';
+let _captchaWidgetId=null;
+function captchaToken(){ return _captchaToken; }
+function renderCaptcha(){
+  const box=document.getElementById('cf-turnstile');
+  if(!box) return;
+  if(typeof turnstile==='undefined'){ setTimeout(renderCaptcha,300); return; }
+  _captchaToken='';
+  try{ box.innerHTML=''; }catch(e){}
+  try{
+    _captchaWidgetId=turnstile.render(box,{
+      sitekey:TURNSTILE_SITEKEY,
+      callback:function(tk){ _captchaToken=tk; },
+      'expired-callback':function(){ _captchaToken=''; },
+      'error-callback':function(){ _captchaToken=''; }
+    });
+  }catch(e){}
+}
+
 function initAuth(aoMudar){
   if(!modoProduto() || typeof supabase==='undefined') return Promise.resolve(null);
   try{
@@ -26,28 +46,29 @@ function initAuth(aoMudar){
   return _sb.auth.getSession().then(({data})=>{ _sessao=data.session||null; return _sessao; }).catch(()=>null);
 }
 
-async function authEntrar(email,senha){
-  const {data,error}=await _sb.auth.signInWithPassword({email,password:senha});
+async function authEntrar(email,senha,captcha){
+  const {data,error}=await _sb.auth.signInWithPassword({email,password:senha,options:{captchaToken:captcha||''}});
   if(error) throw new Error(traduzErroAuth(error));
   return data;
 }
-async function authCadastrar(email,senha){
+async function authCadastrar(email,senha,captcha){
   const {data,error}=await _sb.auth.signUp({
     email, password:senha,
     options:{
       emailRedirectTo:urlDoApp(),
+      captchaToken:captcha||'',
       data:{ consent_lgpd_at:new Date().toISOString() }
     }
   });
   if(error) throw new Error(traduzErroAuth(error));
   return data;
 }
-async function authReenviarConfirmacao(email){
-  const {error}=await _sb.auth.resend({type:'signup',email,options:{emailRedirectTo:urlDoApp()}});
+async function authReenviarConfirmacao(email,captcha){
+  const {error}=await _sb.auth.resend({type:'signup',email,options:{emailRedirectTo:urlDoApp(),captchaToken:captcha||''}});
   if(error) throw new Error(traduzErroAuth(error));
 }
-async function authRecuperarSenha(email){
-  const {error}=await _sb.auth.resetPasswordForEmail(email,{redirectTo:urlDoApp()});
+async function authRecuperarSenha(email,captcha){
+  const {error}=await _sb.auth.resetPasswordForEmail(email,{redirectTo:urlDoApp(),captchaToken:captcha||''});
   if(error) throw new Error(traduzErroAuth(error));
 }
 async function authTrocarSenha(nova){
@@ -86,6 +107,7 @@ function traduzErroAuth(error){
   if(/at least \d+ characters|should be at least/i.test(m)) return 'A senha precisa ter pelo menos 8 caracteres.';
   if(/valid email/i.test(m)) return 'Esse e-mail não parece válido.';
   if(/rate limit|too many/i.test(m)) return 'Muitas tentativas em sequência — espera um minutinho e tenta de novo.';
+  if(/captcha/i.test(m)) return 'A verificação de segurança não passou — espera ela carregar (uns segundos) e tenta de novo.';
   if(/Failed to fetch|NetworkError/i.test(m)) return 'Sem conexão com o servidor — confere tua internet.';
   return 'Algo deu errado: '+m;
 }

@@ -312,8 +312,9 @@ const ACOES={
     const email=val('au-email');
     const senha=(document.getElementById('au-senha')||{}).value||'';
     if(!email||!senha){ UI.auth.erro='Preenche e-mail e senha.'; UI.auth.msg=''; renderLogin(); return; }
+    const tkE=(typeof captchaToken==='function')?captchaToken():'';
     UI.auth.email=email; UI.auth.erro=''; UI.auth.msg='Entrando…'; renderLogin();
-    try{ await authEntrar(email,senha);  }
+    try{ await authEntrar(email,senha,tkE);  }
     catch(e){ UI.auth.msg=''; UI.auth.erro=e.message; renderLogin(); }
   },
   'auth-cadastrar':async()=>{
@@ -326,9 +327,10 @@ const ACOES={
     const errSenhaC=validarSenha(s1); if(errSenhaC){ UI.auth.erro=errSenhaC; renderLogin(); return; }
     if(s1!==s2){ UI.auth.erro='As senhas não batem.'; renderLogin(); return; }
     if(!consent){ UI.auth.erro='Pra criar a conta, precisa aceitar a Política de Privacidade (LGPD).'; renderLogin(); return; }
+    const tkC=(typeof captchaToken==='function')?captchaToken():'';
     UI.auth.erro=''; UI.auth.msg='Criando conta…'; renderLogin();
     try{
-      const data=await authCadastrar(email,s1);
+      const data=await authCadastrar(email,s1,tkC);
       if(!data.session){ UI.auth={tela:'confirmar',email}; renderLogin(); }
 
     }catch(e){ UI.auth.msg=''; UI.auth.erro=e.message; renderLogin(); }
@@ -336,13 +338,15 @@ const ACOES={
   'auth-esqueci-enviar':async()=>{
     const email=val('au-email');
     if(!email){ UI.auth.erro='Digita teu e-mail.'; UI.auth.msg=''; renderLogin(); return; }
+    const tkR=(typeof captchaToken==='function')?captchaToken():'';
     UI.auth.email=email; UI.auth.erro=''; UI.auth.msg='Enviando…'; renderLogin();
-    try{ await authRecuperarSenha(email); UI.auth={tela:'entrar',email,msg:'Link enviado! Abre teu e-mail (e o spam) e clica nele.'}; }
+    try{ await authRecuperarSenha(email,tkR); UI.auth={tela:'entrar',email,msg:'Link enviado! Abre teu e-mail (e o spam) e clica nele.'}; }
     catch(e){ UI.auth.msg=''; UI.auth.erro=e.message; }
     renderLogin();
   },
   'auth-reenviar':async()=>{
-    try{ await authReenviarConfirmacao(UI.auth.email); UI.auth.msg='Reenviado! Confere o spam também.'; UI.auth.erro=''; }
+    const tkRe=(typeof captchaToken==='function')?captchaToken():'';
+    try{ await authReenviarConfirmacao(UI.auth.email,tkRe); UI.auth.msg='Reenviado! Confere o spam também.'; UI.auth.erro=''; }
     catch(e){ UI.auth.erro=e.message; UI.auth.msg=''; }
     renderLogin();
   },

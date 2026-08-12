@@ -12,6 +12,7 @@ function renderLogin(){
     corpo='<div class="campo"><label for="au-email">E-mail</label><input id="au-email" type="email" autocomplete="email" value="'+esc(a.email||'')+'"></div>'
       +'<div class="campo"><label for="au-senha">Senha</label><input id="au-senha" type="password" autocomplete="current-password"></div>'
       +erro+ok
+      +'<div id="cf-turnstile" class="mt"></div>'
       +'<button class="btn bloco mt" data-action="auth-entrar">Entrar</button>'
       +'<div class="login-links mt">'
       +'<button data-action="auth-tela" data-t="criar">criar conta</button>'
@@ -25,6 +26,7 @@ function renderLogin(){
       +'<label class="login-consent"><input type="checkbox" id="au-consent">'
       +'<span>Li e aceito a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a> e consinto com o tratamento dos dados que eu registrar — inclusive os sensíveis de saúde e hábitos (LGPD).</span></label>'
       +erro+ok
+      +'<div id="cf-turnstile" class="mt"></div>'
       +'<button class="btn bloco mt" data-action="auth-cadastrar">Criar minha conta</button>'
       +'<div class="login-links mt"><button data-action="auth-tela" data-t="entrar">já tenho conta</button><span></span></div>';
   }
@@ -32,12 +34,14 @@ function renderLogin(){
     corpo='<p class="sec small">Te enviamos um link pra redefinir a senha.</p>'
       +'<div class="campo mt"><label for="au-email">E-mail da conta</label><input id="au-email" type="email" autocomplete="email" value="'+esc(a.email||'')+'"></div>'
       +erro+ok
+      +'<div id="cf-turnstile" class="mt"></div>'
       +'<button class="btn bloco mt" data-action="auth-esqueci-enviar">Enviar link</button>'
       +'<div class="login-links mt"><button data-action="auth-tela" data-t="entrar">← voltar</button><span></span></div>';
   }
   else if(a.tela==='confirmar'){
     corpo='<div class="ok-box">📬 Enviamos um link de confirmação pra <b>'+esc(a.email||'seu e-mail')+'</b>.<br>Abre lá (olha o spam também) e clica no link — aí é só entrar.</div>'
       +erro+ok
+      +'<div id="cf-turnstile" class="mt"></div>'
       +'<button class="btn sec-btn bloco mt" data-action="auth-reenviar">reenviar e-mail</button>'
       +'<div class="login-links mt"><button data-action="auth-tela" data-t="entrar">← já confirmei, entrar</button><span></span></div>';
   }
@@ -57,6 +61,7 @@ function renderLogin(){
     +'<p class="centro muted small">Seus dados são só seus: protegidos por conta, sem anúncio, sem venda de dados.<br><a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a></p>'
     +'</div>';
   document.getElementById('top-stats').innerHTML='';
+  if(typeof renderCaptcha==='function') renderCaptcha();
 }
 
 function sairModoLogin(){

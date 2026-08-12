@@ -82,6 +82,8 @@ async function authSair(){
 }
 
 async function authApagarConta(){
+  // Apaga as fotos primeiro, pela Storage API — o banco bloqueia deletar direto de storage.objects.
+  try{ if(typeof apagarFotosDoUsuario==='function') await apagarFotosDoUsuario(); }catch(e){}
   const {error}=await _sb.rpc('delete_my_account');
   if(error) throw new Error('Não consegui apagar agora ('+(error.message||'erro')+'). Tenta de novo ou fala comigo pelo e-mail da política de privacidade.');
   await authSair();

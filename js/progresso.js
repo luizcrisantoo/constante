@@ -8,6 +8,20 @@ function progressoDisponivel(){
   return typeof produtoAtivo==='function' && produtoAtivo() && typeof clienteSB==='function' && clienteSB();
 }
 
+// Apaga TODAS as fotos do usuário no cofre (Storage API) — usado ao apagar a conta.
+async function apagarFotosDoUsuario(){
+  if(!progressoDisponivel()) return;
+  const u=(typeof usuarioAtual==='function')?usuarioAtual():null;
+  if(!u) return;
+  const sb=clienteSB();
+  try{
+    const {data,error}=await sb.storage.from('progresso').list(u.id,{limit:1000});
+    if(error||!Array.isArray(data)||!data.length) return;
+    const paths=data.filter(o=>o&&o.name).map(o=>u.id+'/'+o.name);
+    if(paths.length) await sb.storage.from('progresso').remove(paths);
+  }catch(e){}
+}
+
 function reduzirParaBlob(file, max, q){
   return new Promise((resolve,reject)=>{
     if(!file || !/^image\//.test(file.type)){ reject(new Error('arquivo não é imagem')); return; }
@@ -70,8 +84,7 @@ function fmtDataCurta(iso){
 function viewProgresso(){
   const fotos=(S.progresso||[]).slice().sort((a,b)=>String(b.data||'').localeCompare(String(a.data||'')));
   let html='<section class="card">'
-    +'<button class="btn mini sec-btn" data-action="voltar-sub">← voltar</button>'
-    +'<h2 class="mt">Progresso em fotos</h2>'
+    +'<h2>Progresso em fotos</h2>'
     +'<p class="sec small">Suas fotos ficam privadas — só você vê. Registre de vez em quando e compare a evolução.</p>'
     +'<button class="btn mt" data-action="foto-add">📷 adicionar foto</button>'
     +'<input type="file" id="foto-file" accept="image/*" class="escondido"></section>';
@@ -107,6 +120,12 @@ function viewProgresso(){
       +'</div>';
   });
   html+='</div></section>';
+  return html;
+}
+
+function viewProgressoTab(){
+  let html=viewProgresso();
+  if(typeof secaoConquistas==='function') html+=secaoConquistas();
   return html;
 }
 

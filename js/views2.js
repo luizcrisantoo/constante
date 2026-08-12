@@ -8,7 +8,7 @@ function viewGrana(){
     html+='<section class="card"><h2>Dívidas <span class="chip">opcional</span></h2>'
       +'<p class="muted small">Tem dívidas pra organizar? O Constante monta uma fila (bola de neve) e te mostra quando você fica livre delas.</p>'
       +'<button class="btn sec-btn mt" data-action="divida-add">+ adicionar dívida</button></section>';
-    return html+secaoReducao();
+    return html;
   }
 
   const fin=resumoFinanceiro();
@@ -57,7 +57,7 @@ function viewGrana(){
   }
   html+='</section>';
 
-  return html+secaoReducao();
+  return html;
 }
 
 function secaoReducao(){
@@ -152,16 +152,14 @@ function viewMente(){
     +'<button class="btn mt" data-action="sos-abrir">🌊 abrir o surf do impulso</button>'
     +'<p class="muted small mt">Dica: tirar o gatilho do alcance — app fora do celular, sem atalho, sem login salvo — reduz MUITO a força da onda.</p></section>';
 
-  if(produtoAtivo()){
-    html+='<section class="card"><h2>Progresso em fotos</h2>'
-      +'<p class="muted small">Registre fotos ao longo do tempo e compare sua evolução. Privadas, só você vê.</p>'
-      +'<button class="btn sec-btn mt" data-action="progresso-abrir">📷 abrir progresso</button></section>';
-  }
+  return html;
+}
 
+function secaoConquistas(){
   const todas=gerarConquistas();
   const ganhas=todas.filter(c=>c.ganha);
   const proximas=todas.filter(c=>c.proxima);
-  html+='<section class="card"><h2>Conquistas — '+ganhas.length+' desbloqueada'+(ganhas.length===1?'':'s')+'</h2>';
+  let html='<section class="card"><h2>Conquistas — '+ganhas.length+' desbloqueada'+(ganhas.length===1?'':'s')+'</h2>';
 
   html+='<div class="grupo-titulo">Próximas metas</div>';
   proximas.forEach(c=>{
@@ -183,8 +181,7 @@ function viewMente(){
   } else {
     html+='<p class="muted small mt">Suas conquistas aparecem aqui conforme você mantém a constância. Elas nunca param de crescer 🚀</p>';
   }
-  html+='</section>';
-  return html;
+  return html+'</section>';
 }
 
 function horasEntre(hm1,hm2){
@@ -205,10 +202,10 @@ function viewConfig(){
   const st=S.settings;
   let html='<section class="card"><h2>Perfil & metas</h2><div class="cfg-grid">'
     +cfgCampo('Nome','profile.nome','text',S.profile.nome)
-    +cfgCampo('Altura (cm)','profile.altura','number',S.profile.altura)
-    +cfgCampo('Meta kcal/dia','profile.kcalAlvo','number',S.profile.kcalAlvo)
-    +cfgCampo('Proteína mín. (g)','profile.protMin','number',S.profile.protMin)
-    +cfgCampo('Água (ml/dia)','profile.aguaAlvoMl','number',S.profile.aguaAlvoMl)
+    +cfgCampo('Altura (cm)','profile.altura','number',S.profile.altura,'ex.: 170')
+    +cfgCampo('Meta kcal/dia','profile.kcalAlvo','number',S.profile.kcalAlvo,'ex.: 2000')
+    +cfgCampo('Proteína mín. (g)','profile.protMin','number',S.profile.protMin,'ex.: 100')
+    +cfgCampo('Água (ml/dia)','profile.aguaAlvoMl','number',S.profile.aguaAlvoMl,'ex.: 2500')
     +'</div><p class="muted small mt">'+esc(S.profile.obsCalorimetria)+'</p></section>';
 
   html+='<section class="card"><h2>Sono</h2><div class="cfg-grid">'
@@ -228,15 +225,7 @@ function viewConfig(){
   });
   html+='</div></section>';
 
-  if(S.bets.ativo){
-    const uInfo=(UNIDADES[unidadeBets()]||UNIDADES.min);
-    html+='<section class="card"><h2>Plano de redução</h2><div class="cfg-grid">'
-      +cfgCampo('O que reduzir','bets.alvo','text',S.bets.alvo)
-      +cfgCampo('Limite inicial/semana ('+uInfo.abrev+')','bets.limiteSemanaInicial','number',S.bets.limiteSemanaInicial)
-      +cfgCampo('Semanas até a meta','bets.semanasParaZero','number',S.bets.semanasParaZero)
-      +'</div><button class="btn sec-btn mt" data-action="apostas-reiniciar">reiniciar plano a partir de hoje</button>'
-      +'<p class="muted small mt">Medindo em <b>'+esc(uInfo.nome)+'</b>. Início: '+fmtData(S.bets.inicioPlano)+'. Pra trocar a unidade, reative o plano na aba Grana.</p></section>';
-  }
+  // (plano de redução removido — dá pra marcar 'evitar' ao criar um hábito)
 
   html+='<section class="card"><h2>Rendas mensais</h2><div class="lista-edit">';
   S.finance.rendas.forEach((r,ix)=>{
@@ -286,6 +275,7 @@ function viewConfig(){
   return html;
 }
 
-function cfgCampo(rotulo,caminho,tipo,valor){
-  return '<div class="campo"><label>'+esc(rotulo)+'</label><input type="'+tipo+'" data-cfg="'+caminho+'" value="'+esc(valor)+'"'+(tipo==='number'?' step="any"':'')+'></div>';
+function cfgCampo(rotulo,caminho,tipo,valor,ph){
+  const v=(valor==null?'':valor);
+  return '<div class="campo"><label>'+esc(rotulo)+'</label><input type="'+tipo+'" data-cfg="'+caminho+'" value="'+esc(v)+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+(tipo==='number'?' step="any"':'')+'></div>';
 }

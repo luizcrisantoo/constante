@@ -132,7 +132,7 @@ function recalcXP(iso){
   habitosDoDia(iso).forEach(h=>{ if(d.habitos[h.id]) xp+=h.xp||10; });
   S.meds.grupos.forEach(g=>{ if(d.meds[g.id]) xp+=5; });
   S.diet.refeicoes.forEach(r=>{ if(d.refeicoes[r.id]) xp+=5; });
-  if((d.agua||0)>=S.profile.aguaAlvoMl) xp+=10;
+  if(Number(S.profile.aguaAlvoMl)>0 && (d.agua||0)>=Number(S.profile.aguaAlvoMl)) xp+=10;
   if(d.sono && (d.sono.h||d.sono.deitou)) xp+=10;
   if(d.humor) xp+=5;
   d.xp=xp;
@@ -215,7 +215,7 @@ function metricasConquista(){
     {chave:'ofensiva', titulo:'Dias de ofensiva', icone:'🔥', unidade:'dias seguidos', valor:melhorStreak(), fixos:MARCOS_DIAS, incr:500},
     {chave:'xp', titulo:'XP acumulado', icone:'🌟', unidade:'XP', valor:xpTotal(), fixos:MARCOS_XP, incr:50000},
     {chave:'dias', titulo:'Dias completos', icone:'✅', unidade:'dias batidos', valor:contaDias(d=>diaConta(d)), fixos:MARCOS_DIAS, incr:500},
-    {chave:'agua', titulo:'Hidratação', icone:'💧', unidade:'dias na meta de água', valor:contaDias(d=>(S.days[d].agua||0)>=S.profile.aguaAlvoMl), fixos:MARCOS_DIAS, incr:500},
+    {chave:'agua', titulo:'Hidratação', icone:'💧', unidade:'dias na meta de água', valor:contaDias(d=>Number(S.profile.aguaAlvoMl)>0 && (S.days[d].agua||0)>=Number(S.profile.aguaAlvoMl)), fixos:MARCOS_DIAS, incr:500},
     {chave:'sono', titulo:'Sono registrado', icone:'😴', unidade:'noites', valor:contaDias(d=>S.days[d].sono&&(S.days[d].sono.h||S.days[d].sono.deitou)), fixos:MARCOS_DIAS, incr:500}
   ];
 

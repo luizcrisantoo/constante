@@ -17,7 +17,7 @@ function render(){
   else if(UI.sub&&UI.sub.tipo==='progresso') html=viewProgresso();
   else {
     UI.sub=null;
-    const fn={hoje:viewHoje,rotina:viewRotina,dieta:viewDieta,grana:viewGrana,mente:viewMente,config:viewConfig}[UI.tab]||viewHoje;
+    const fn={hoje:viewHoje,rotina:viewRotina,dieta:viewDieta,grana:viewGrana,mente:viewMente,progresso:viewProgressoTab,config:viewConfig}[UI.tab]||viewHoje;
     html=fn();
   }
   view.innerHTML=html;
@@ -132,11 +132,12 @@ function viewHoje(){
   }
   html+='</div>'+(S.meds.aviso?'<p class="muted small mt">'+esc(S.meds.aviso)+'</p>':'')+'</section>';
 
-  const pctAgua=Math.min(100,Math.round(100*(d.agua||0)/S.profile.aguaAlvoMl));
+  const metaAgua=Number(S.profile.aguaAlvoMl)||0;
+  const pctAgua=metaAgua>0?Math.min(100,Math.round(100*(d.agua||0)/metaAgua)):0;
   html+='<section class="card"><h2>Água</h2>'
-    +'<div class="linha"><div class="esq"><span class="hero-num num">'+((d.agua||0)/1000).toFixed(2).replace('.',',')+'</span> <span class="muted">/ '+(S.profile.aguaAlvoMl/1000).toFixed(1).replace('.',',')+' L</span></div>'
-    +(pctAgua>=100?'<span class="chip">💧 meta batida</span>':'')+'</div>'
-    +'<div class="progress azul mt"><span style="width:'+pctAgua+'%"></span></div>'
+    +'<div class="linha"><div class="esq"><span class="hero-num num">'+((d.agua||0)/1000).toFixed(2).replace('.',',')+'</span> <span class="muted">'+(metaAgua>0?'/ '+(metaAgua/1000).toFixed(1).replace('.',',')+' L':'L registrados hoje')+'</span></div>'
+    +(metaAgua>0&&pctAgua>=100?'<span class="chip">💧 meta batida</span>':'')+'</div>'
+    +(metaAgua>0?'<div class="progress azul mt"><span style="width:'+pctAgua+'%"></span></div>':'<p class="muted small mt">Defina sua meta de água em Config → Perfil & metas pra acompanhar aqui.</p>')
     +'<div class="agua-controles mt"><button class="btn mini sec-btn" data-action="agua" data-ml="250">+250ml</button>'
     +'<button class="btn mini sec-btn" data-action="agua" data-ml="500">+500ml</button>'
     +'<button class="btn mini sec-btn" data-action="agua" data-ml="-250">−250ml</button></div></section>';
@@ -275,7 +276,7 @@ function viewDieta(){
 
   html+='<section class="card"><h2>Refeições <button class="btn mini sec-btn dir" data-action="ref-add">+ refeição</button></h2>';
   if(!S.diet.refeicoes.length){
-    html+='<p class="muted small">Monte seu plano: adicione suas refeições com os itens de cada uma. (Em breve dá pra enviar o PDF do seu nutricionista e o assistente monta pra você.)</p>';
+    html+='<p class="muted small">Monte seu plano: adicione suas refeições com os itens de cada uma — ou peça pro assistente 🤖 montar pra você.</p>';
   } else {
     S.diet.refeicoes.forEach(r=>{
       html+='<div class="refeicao-card">'
@@ -302,7 +303,6 @@ function viewDieta(){
     +(ult?'<span class="hero-num num">'+esc(String(ult.kg).replace('.',','))+'</span> <span class="muted">kg em '+fmtData(ult.data)+'</span>':'<span class="muted">Nenhum peso registrado ainda.</span>')
     +'</div><button class="btn mini" data-action="peso-add">registrar</button></div>'
     +graficoPeso()
-    +'<p class="muted small mt">Tendência estável = alvo certo. Subindo 2 sáb. seguidos → corta ~100 kcal do jantar; caindo sem querer → soma ~100 kcal no lanche.</p>'
     +'</section>';
   return html;
 }

@@ -12,8 +12,8 @@ function defaultState(){
     version: 4,
     criadoEm: hojeISO(),
     profile: {
-      nome:'', peso:70, altura:170, nascimento:'',
-      kcalAlvo:2000, protMin:100, aguaAlvoMl:2500,
+      nome:'', peso:null, altura:null, nascimento:'',
+      kcalAlvo:null, protMin:null, aguaAlvoMl:null,
       tmbMedida:null, obsCalorimetria:''
     },
     settings: {

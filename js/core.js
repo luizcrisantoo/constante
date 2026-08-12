@@ -46,6 +46,10 @@ function migrarLocalUmaVez(){
 
 let S=null;
 
+function categorias(){ return Array.isArray(S&&S.categorias)?S.categorias:[]; }
+function catPorId(id){ return categorias().find(c=>c&&c.id===id)||null; }
+function corCat(id){ const c=catPorId(id); return c?c.cor:'#565550'; }
+
 function deepFill(alvo,base){
   if(Array.isArray(base)) return (alvo===undefined)?JSON.parse(JSON.stringify(base)):alvo;
   if(base && typeof base==='object'){
@@ -75,6 +79,7 @@ function sanearEstado(){
   if(!Array.isArray(S.gastos.categorias)) S.gastos.categorias=defaultState().gastos.categorias;
   if(!Array.isArray(S.gastos.lancamentos)) S.gastos.lancamentos=[];
   if(!S.estudo||!Array.isArray(S.estudo.cadernos)) S.estudo=defaultState().estudo;
+  if(!Array.isArray(S.categorias)) S.categorias=defaultState().categorias;
 }
 function loadState(){
   const raw=lsGet();

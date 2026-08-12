@@ -200,7 +200,16 @@ function ultimoBurnout(){
 
 function viewConfig(){
   const st=S.settings;
-  let html='<section class="card"><h2>Perfil & metas</h2><div class="cfg-grid">'
+  const fotoP=S.profile&&S.profile.foto;
+  let html='<section class="card"><h2>Perfil & metas</h2>'
+    +'<div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.9rem">'
+    +(fotoP?'<img src="'+esc(fotoP)+'" alt="foto de perfil" style="width:64px;height:64px;border-radius:50%;object-fit:cover;flex:none;border:2px solid var(--brand-strong)">':'<div style="width:64px;height:64px;border-radius:50%;flex:none;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:1.7rem">🙂</div>')
+    +'<div class="acoes" style="display:flex;gap:0.4rem;flex-wrap:wrap">'
+    +'<button class="btn mini sec-btn" data-action="perfil-foto">'+(fotoP?'trocar foto':'adicionar foto')+'</button>'
+    +(fotoP?'<button class="btn mini perigo" data-action="perfil-foto-remover">remover</button>':'')
+    +'<input type="file" id="perfil-foto-file" accept="image/*" class="escondido"></div>'
+    +'</div>'
+    +'<div class="cfg-grid">'
     +cfgCampo('Nome','profile.nome','text',S.profile.nome)
     +cfgCampo('Altura (cm)','profile.altura','number',S.profile.altura,'ex.: 170')
     +cfgCampo('Meta kcal/dia','profile.kcalAlvo','number',S.profile.kcalAlvo,'ex.: 2000')
@@ -222,6 +231,17 @@ function viewConfig(){
       +' <span class="muted small">('+(hb.tipo==='evitar'?'evitar':'fazer')+' · '+hb.dias.map(d2=>DIAS_ABREV[d2]).join(',')+')</span></span>'
       +'<button class="btn mini sec-btn" data-action="habito-edit" data-id="'+esc(hb.id)+'">✎</button>'
       +'<button class="btn mini perigo" data-action="habito-del" data-id="'+esc(hb.id)+'">✕</button></div>';
+  });
+  html+='</div></section>';
+
+  html+='<section class="card"><h2>Categorias da rotina <button class="btn mini sec-btn dir" data-action="cat-add">+ nova</button></h2>'
+    +'<p class="muted small">Personalize os tipos de bloco da rotina — o nome e a cor. Apague as que não usa.</p>'
+    +'<div class="lista-edit">';
+  categorias().forEach(c=>{
+    html+='<div class="item-edit">'
+      +'<input type="color" value="'+esc(c.cor)+'" data-cat-cor="'+esc(c.id)+'" aria-label="cor" style="width:32px;height:28px;padding:0;border:none;background:none;flex:none">'
+      +'<input type="text" class="nome" value="'+esc(c.nome)+'" data-cat-nome="'+esc(c.id)+'" maxlength="24" style="flex:1;min-width:0">'
+      +'<button class="btn mini perigo" data-action="cat-del" data-id="'+esc(c.id)+'">✕</button></div>';
   });
   html+='</div></section>';
 

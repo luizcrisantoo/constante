@@ -53,9 +53,12 @@ function viewHoje(){
   const nv=nivelAtual();
 
   const nome=(S.profile.nome||'').trim();
+  const foto=S.profile&&S.profile.foto;
   let html='<section class="card saudacao">'
-    +'<h1>'+sauda+(nome?', '+esc(nome):'')+' 👋</h1>'
-    +'<div class="muted">'+fmtDataLonga(iso)+'</div>'
+    +'<div style="display:flex;align-items:center;gap:0.7rem">'
+    +(foto?'<img src="'+esc(foto)+'" alt="foto de perfil" style="width:52px;height:52px;border-radius:50%;object-fit:cover;flex:none;border:2px solid var(--brand-strong)">':'')
+    +'<div><h1 style="margin:0">'+sauda+(nome?', '+esc(nome):'')+' 👋</h1>'
+    +'<div class="muted">'+fmtDataLonga(iso)+'</div></div></div>'
     +'<div class="frase">“'+esc(frase)+'”</div>';
   if(atual) html+='<div class="agora"><b>Agora:</b> '+esc(atual.t)+' <span class="muted num">('+esc(atual.i)+(atual.f?'–'+esc(atual.f):'')+')</span></div>';
   if(prox) html+='<div class="agora" style="border-color:var(--baseline)"><b>Depois:</b> '+esc(prox.t)+' <span class="muted num">('+esc(prox.i)+')</span></div>';
@@ -221,8 +224,7 @@ function viewRotina(){
   const agoraMin=hmParaMin(agoraHM());
   if(!blocos.length) html+='<p class="muted mt">Dia sem blocos — toca em “editar” pra montar.</p>';
   blocos.forEach((b,ix)=>{
-    const tipoSeguro=TIPO_LABEL[b.tipo]?b.tipo:'livre';
-    const cor='var(--c-'+tipoSeguro+')';
+    const cor=corCat(b.tipo);
     const ehAgora=dow===hojeDow&&b.f&&agoraMin>=hmParaMin(b.i)&&agoraMin<hmParaMin(b.f);
     html+='<div class="bloco '+(ehAgora?'agora-marca':'')+'">'
       +'<span class="tag" style="background:'+cor+'"></span>'
@@ -259,8 +261,8 @@ function viewRotina(){
   html+='</section>';
 
   html+='<section class="card"><h2>Legenda</h2><div style="display:flex;flex-wrap:wrap;gap:0.4rem">';
-  Object.keys(TIPO_LABEL).forEach(t=>{
-    html+='<span class="chip"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--c-'+t+');margin-right:4px"></span>'+TIPO_LABEL[t]+'</span>';
+  categorias().forEach(c=>{
+    html+='<span class="chip"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:'+esc(c.cor)+';margin-right:4px"></span>'+esc(c.nome)+'</span>';
   });
   html+='</div></section>';
   return html;

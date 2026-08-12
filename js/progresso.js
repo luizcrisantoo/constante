@@ -22,6 +22,31 @@ async function apagarFotosDoUsuario(){
   }catch(e){}
 }
 
+async function definirFotoPerfil(file){
+  try{
+    const url=await fotoPerfilDataURL(file, 160, 0.8);
+    if(S.profile) S.profile.foto=url;
+    saveState(); render(); toast('📷 Foto de perfil atualizada!');
+  }catch(e){ toast('❌ '+(e.message||'falha na imagem')); }
+}
+function fotoPerfilDataURL(file, max, q){
+  return new Promise((resolve,reject)=>{
+    if(!file || !/^image\//.test(file.type)){ reject(new Error('arquivo não é imagem')); return; }
+    const img=new Image(), fr=new FileReader();
+    fr.onload=()=>{ img.src=fr.result; };
+    fr.onerror=()=>reject(new Error('falha ao ler'));
+    img.onload=()=>{
+      const lado=Math.min(img.width,img.height);
+      const sx=(img.width-lado)/2, sy=(img.height-lado)/2;
+      const cv=document.createElement('canvas'); cv.width=max; cv.height=max;
+      cv.getContext('2d').drawImage(img, sx, sy, lado, lado, 0, 0, max, max);
+      try{ resolve(cv.toDataURL('image/jpeg', q||0.8)); }catch(e){ reject(new Error('falha ao processar')); }
+    };
+    img.onerror=()=>reject(new Error('imagem inválida'));
+    fr.readAsDataURL(file);
+  });
+}
+
 function reduzirParaBlob(file, max, q){
   return new Promise((resolve,reject)=>{
     if(!file || !/^image\//.test(file.type)){ reject(new Error('arquivo não é imagem')); return; }

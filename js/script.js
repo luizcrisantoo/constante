@@ -240,6 +240,17 @@ const ACOES={
     toast(score<=3?'🟢 Radar verde — bora':score<=6?'🟡 Amarelo — pega leve essa semana':'🔴 Vermelho — reduz a carga, tá combinado?');
   },
 
+  'perfil-foto':()=>{ const el=document.getElementById('perfil-foto-file'); if(el) el.click(); },
+  'perfil-foto-remover':()=>{ if(S.profile){ S.profile.foto=null; } saveState(); render(); toast('Foto removida'); },
+  'cat-add':()=>{
+    if(!Array.isArray(S.categorias)) S.categorias=[];
+    S.categorias.push({id:'c'+uid(), nome:'Nova categoria', cor:'#9085e9'});
+    saveState(); render();
+  },
+  'cat-del':el=>{
+    S.categorias=categorias().filter(c=>c.id!==el.dataset.id);
+    saveState(); render();
+  },
   'habito-add':()=>abrirModalHabito(null),
   'habito-edit':el=>abrirModalHabito(el.dataset.id),
   'habito-salvar':el=>{
@@ -577,7 +588,7 @@ function campo(id,rotulo,tipo,valor){
 
 function abrirModalBloco(d,ix){
   const b=ix!=null?blocosDoDia(d)[ix]:null;
-  const tipos=Object.keys(TIPO_LABEL).map(t=>'<option value="'+t+'" '+(b&&b.tipo===t?'selected':'')+'>'+TIPO_LABEL[t]+'</option>').join('');
+  const tipos=categorias().map(c=>'<option value="'+esc(c.id)+'" '+(b&&b.tipo===c.id?'selected':'')+'>'+esc(c.nome)+'</option>').join('');
   abrirModal('<h3>'+(b?'Editar':'Novo')+' bloco — '+DIAS_NOME[d]+'</h3>'
     +'<div class="grid-2">'+campo('bl-ini','Início','time',b?b.i:'')+campo('bl-fim','Fim (vazio = marco)','time',b&&b.f?b.f:'')+'</div>'
     +campo('bl-titulo','Título','text',b?b.t:'')
@@ -656,6 +667,9 @@ function ligarEventos(){
     if(t.dataset.campo==='nota'){ getDia().nota=t.value; saveState(); return; }
     if(t.dataset.cfg){ setPath(S,t.dataset.cfg,t.value); saveState(); renderTopbar(); return; }
     if(t.dataset.cfgCheck){ setPath(S,t.dataset.cfgCheck,t.checked); saveState(); return; }
+    if(t.dataset.catNome!==undefined){ const c=catPorId(t.dataset.catNome); if(c){ c.nome=String(t.value||'').slice(0,24)||'—'; saveState(); } return; }
+    if(t.dataset.catCor!==undefined){ const c=catPorId(t.dataset.catCor); if(c){ c.cor=t.value; saveState(); render(); } return; }
+    if(t.id==='perfil-foto-file'&&t.files&&t.files[0]){ const arq=t.files[0]; t.value=''; definirFotoPerfil(arq); return; }
     if(t.id==='assist-file'&&t.files&&t.files[0]){
       const arq=t.files[0]; t.value='';
       if(_assistImgs.length>=3){ toast('Máximo de 3 fotos.'); return; }

@@ -12,7 +12,7 @@ function defaultState(){
     version: 4,
     criadoEm: hojeISO(),
     profile: {
-      nome:'', peso:null, altura:null, nascimento:'',
+      nome:'', foto:null, peso:null, altura:null, nascimento:'',
       kcalAlvo:null, protMin:null, aguaAlvoMl:null,
       tmbMedida:null, obsCalorimetria:''
     },
@@ -75,6 +75,22 @@ function defaultState(){
     },
     progresso: [],
     lembretes: [],
+    categorias: [
+      {id:'aula', nome:'Aula', cor:'#3987e5'},
+      {id:'estagio', nome:'Estágio', cor:'#199e70'},
+      {id:'treino', nome:'Treino', cor:'#d95926'},
+      {id:'refeicao', nome:'Refeição', cor:'#c98500'},
+      {id:'estudo', nome:'Estudo', cor:'#9085e9'},
+      {id:'sites', nome:'Sites', cor:'#d55181'},
+      {id:'idioma', nome:'Idiomas', cor:'#3987e5'},
+      {id:'leitura', nome:'Leitura', cor:'#199e70'},
+      {id:'sono', nome:'Sono', cor:'#6d6a8f'},
+      {id:'livre', nome:'Livre', cor:'#565550'},
+      {id:'pausa', nome:'Pausa', cor:'#565550'},
+      {id:'desloc', nome:'Deslocamento', cor:'#45443f'},
+      {id:'remedios', nome:'Remédios', cor:'#e66767'},
+      {id:'revisao', nome:'Revisão', cor:'#c98500'}
+    ],
     days: {},
     gamif: { xpTotal:0, conquistas:[] }
   };

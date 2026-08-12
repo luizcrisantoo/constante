@@ -715,9 +715,10 @@ let _emRecuperacao=false;
 let _usuarioLogado=null;
 
 function sincronizarPosLogin(){
-  syncAgora()
+  return syncAgora()
     .then(()=>{ if(!document.body.classList.contains('modo-login')) render(); })
-    .catch(e=>toast('⚠️ '+e.message));
+    .catch(e=>toast('⚠️ '+e.message))
+    .then(()=>{ if(typeof boasVindas==='function' && !document.body.classList.contains('modo-login')) boasVindas(); });
 }
 
 function carregarEstadoDaConta(u){
@@ -739,7 +740,6 @@ function aoMudarAuth(evento,sessao,antes){
     carregarEstadoDaConta(sessao.user);
     sairModoLogin(); renderSeguro();
     sincronizarPosLogin();
-    boasVindas();
     return;
   }
   if(evento==='SIGNED_OUT'){
@@ -757,7 +757,7 @@ function boot(){
     if(/type=recovery/.test(location.hash)||/type=recovery/.test(location.search)) _emRecuperacao=true;
     initAuth(aoMudarAuth).then(sessao=>{
       if(_emRecuperacao){ if(!UI.auth) UI.auth={tela:'nova-senha'}; renderLogin(); return; }
-      if(sessao){ carregarEstadoDaConta(sessao.user); renderSeguro(); sincronizarPosLogin(); boasVindas(); }
+      if(sessao){ carregarEstadoDaConta(sessao.user); renderSeguro(); sincronizarPosLogin(); }
       else renderLogin();
     });
   } else {

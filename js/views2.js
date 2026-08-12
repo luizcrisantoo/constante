@@ -44,7 +44,8 @@ function viewGrana(){
   const proj=projecaoDividas();
   html+='<section class="card"><h2>Projeção de quitação</h2>';
   if(proj.incompleta){
-    html+='<div class="aviso">Com o aporte atual, a quitação passa de 10 anos — aumenta o aporte mensal pra encurtar isso.</div>';
+    html+='<div class="aviso">Com o aporte atual, a quitação passa de 10 anos — aumenta o aporte mensal pra encurtar isso.</div>'
+      +'<button class="btn sec-btn mt" data-action="aporte-edit">ajustar aporte mensal</button>';
   } else if(proj.fim){
     html+='<div class="ok-box">Mantendo '+fmtBRL(S.finance.aporteMensal)+'/mês, você fica <b>livre de dívidas em '+esc(proj.fim)+'</b> 🕊️ — e cada economia que virar pagamento antecipa isso.</div>';
     html+='<details class="mt"><summary class="muted small">ver mês a mês</summary><table class="tabela mt"><thead><tr><th>Mês</th><th>Pagamentos</th><th class="num">Resta</th></tr></thead><tbody>';
@@ -53,7 +54,8 @@ function viewGrana(){
     });
     html+='</tbody></table></details>';
   } else {
-    html+='<p class="muted">Define um aporte mensal maior que zero pra ver a projeção.</p>';
+    html+='<p class="muted">Define um aporte mensal maior que zero pra ver a projeção.</p>'
+      +'<button class="btn sec-btn mt" data-action="aporte-edit">definir aporte mensal</button>';
   }
   html+='</section>';
 

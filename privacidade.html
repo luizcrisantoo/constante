@@ -26,13 +26,23 @@
     <ul>
       <li><b>Conta:</b> seu e-mail e senha (a senha é guardada de forma criptografada pelo Supabase; nem nós conseguimos vê-la).</li>
       <li><b>Seus registros no app:</b> rotina, hábitos, sono, humor e energia, refeições, remédios/suplementos que você mesmo cadastrar, treinos, finanças (dívidas, rendas, gastos) e hábitos que você queira reduzir. Alguns desses são <b>dados sensíveis de saúde</b> — você decide o que registra.</li>
+      <li><b>Fotos de progresso (opcional):</b> se você usar essa função, as fotos que enviar ficam num cofre privado no servidor (Supabase Storage), acessíveis só pela sua conta. São <b>dados sensíveis</b> — só você decide se envia, e elas são apagadas junto com a conta.</li>
     </ul>
 
     <h2>Pra que usamos</h2>
-    <p>Exclusivamente pra fazer o app funcionar pra você: mostrar seu dia, calcular suas sequências e projeções e sincronizar entre seus aparelhos. <b>Não vendemos nem compartilhamos seus dados com terceiros. Não exibimos anúncios.</b></p>
+    <p>Exclusivamente pra fazer o app funcionar pra você: mostrar seu dia, calcular suas sequências e projeções e sincronizar entre seus aparelhos. <b>Não vendemos seus dados nem os compartilhamos com terceiros para marketing ou publicidade. Não exibimos anúncios.</b> (Pra operar, o app se apoia em alguns prestadores técnicos — veja abaixo.)</p>
 
     <h2>Onde ficam</h2>
     <p>No seu aparelho (armazenamento local do navegador) e, quando você está logado, no banco de dados do projeto (Supabase), protegidos por regras de acesso em nível de linha: <b>cada conta só consegue ler e escrever os próprios dados</b> — isso é garantido pelo banco, não só pelo aplicativo.</p>
+
+    <h2>Quem processa (sub-processadores)</h2>
+    <p>Pra funcionar, o Constante se apoia em alguns prestadores técnicos, que tratam dados apenas para operar o serviço:</p>
+    <ul>
+      <li><b>Supabase</b> — hospedagem do banco de dados, autenticação e cofre das fotos.</li>
+      <li><b>Cloudflare Turnstile</b> — verificação anti-robô no login e no cadastro (processa seu endereço IP nesse momento, para barrar abuso).</li>
+      <li><b>Provedor de IA</b> — só quando você usa o assistente: o texto (e as fotos que você anexar à conversa) são enviados a um provedor de IA para gerar a resposta. Se você não usa o assistente, nada é enviado.</li>
+    </ul>
+    <p>Nenhum deles recebe seus dados para marketing ou publicidade.</p>
 
     <h2>Seus direitos (LGPD)</h2>
     <ul>

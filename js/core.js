@@ -63,7 +63,7 @@ function sanearEstado(){
 
   S.pesos=S.pesos.filter(p=>p&&typeof p.data==='string'&&isFinite(Number(p.kg)))
                  .map(p=>({data:p.data,kg:Number(p.kg)}));
-  if(!S.pesos.length) S.pesos=[{data:hojeISO(),kg:Number(S.profile&&S.profile.peso)||72}];
+  // não fabrica um peso inicial: quem é novo começa sem registro (a tela mostra vazio)
   if(!Array.isArray(S.finance.dividas)) S.finance.dividas=[];
   if(!Array.isArray(S.finance.rendas)) S.finance.rendas=[];
   if(!Array.isArray(S.finance.extras)) S.finance.extras=[];
@@ -83,7 +83,9 @@ function loadState(){
     catch(e){ S=defaultState(); }
   } else S=defaultState();
   sanearEstado();
-  if(!S._ts) S._ts=new Date().toISOString();
+  // Não carimba estado novo/vazio com a hora atual: senão um aparelho recém-aberto
+  // (estado vazio) venceria a mesclagem e apagaria os dados vindos da nuvem. Sem _ts,
+  // ele conta como o mais antigo e o dado real remoto entra como base.
   return S;
 }
 
@@ -448,6 +450,14 @@ function mesclarEstado(remoto){
       else c.notas=uniaoLanc(c.notas,oc.notas);
     });
   }
+  // Seções de configuração em lista: união por id, pra somar o que foi criado em
+  // aparelhos diferentes em vez de um sobrescrever o outro (hábitos, rotina,
+  // lembretes, fotos de progresso, refeições e remédios).
+  ['habits','routine','lembretes','progresso'].forEach(k=>{
+    if(Array.isArray(outro[k])) S[k]=uniaoLanc(S[k],outro[k]);
+  });
+  if(outro.diet&&Array.isArray(outro.diet.refeicoes)) S.diet.refeicoes=uniaoLanc(S.diet.refeicoes,outro.diet.refeicoes);
+  if(outro.meds&&Array.isArray(outro.meds.grupos)) S.meds.grupos=uniaoLanc(S.meds.grupos,outro.meds.grupos);
   S.settings=settingsLocais;
   Object.keys(S.days).forEach(recalcXPQuiet);
 }

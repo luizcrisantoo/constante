@@ -673,8 +673,10 @@ function ligarEventos(){
           S=deepFill(dados,defaultState());
           sanearEstado();
           Object.keys(S.days).forEach(recalcXPQuiet);
-          saveState(); render(); toast('✅ Backup importado');
-        }catch(e){ toast('❌ Arquivo de backup inválido — nada foi alterado'); loadState(); }
+          render();            // valida a renderização ANTES de persistir
+          saveState();         // só salva se renderizou sem erro
+          toast('✅ Backup importado');
+        }catch(e){ loadState(); render(); toast('❌ Arquivo de backup inválido — nada foi alterado'); }
       };
       fr.readAsText(t.files[0]);
       t.value='';
@@ -707,7 +709,8 @@ function carregarEstadoDaConta(u){
   if(raw){ try{ S=deepFill(JSON.parse(raw),defaultState()); }catch(e){ S=defaultState(); } }
   else S=defaultState();
   sanearEstado();
-  if(!S._ts) S._ts=new Date().toISOString();
+  // (ver core.js) não carimba estado recém-carregado sem dados com a hora atual —
+  // deixa a nuvem vencer a 1ª mesclagem em vez de sobrescrevê-la com o vazio.
   lsSet(JSON.stringify(S));
 }
 function aoMudarAuth(evento,sessao,antes){

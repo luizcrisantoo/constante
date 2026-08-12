@@ -16,6 +16,25 @@ function permissaoNotif(){
   return (typeof Notification!=='undefined') ? Notification.permission : 'default';
 }
 
+// Estado REAL da inscrição de push neste aparelho (não só a permissão):
+//   null = ainda não checou · true = inscrito de fato · false = permissão ok, mas sem inscrição
+let _pushInscrito=null, _verificandoPush=false;
+async function verificarPush(){
+  if(_verificandoPush) return;
+  if(typeof produtoAtivo!=='function' || !produtoAtivo() || !pushSuportado()) return;
+  _verificandoPush=true;
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    const novo=!!sub;
+    if(novo!==_pushInscrito){
+      _pushInscrito=novo;
+      if(typeof render==='function' && !document.body.classList.contains('modo-login')) render();
+    }
+  }catch(e){}
+  finally{ _verificandoPush=false; }
+}
+
 function b64ParaUint8(base64){
   const pad='='.repeat((4 - base64.length % 4) % 4);
   const b64=(base64+pad).replace(/-/g,'+').replace(/_/g,'/');
@@ -38,11 +57,19 @@ function secaoNotificacoes(){
       +'<li>Abra o Constante pelo ícone novo e volte aqui pra ativar.</li>'
       +'</ol>';
   } else if(permissaoNotif()==='granted'){
-    corpo='<div class="ok-box">🔔 Lembretes ativados neste aparelho.</div>'
-      +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-      +'<button class="btn sec-btn" data-action="notif-exemplo">ver exemplo</button>'
-      +'<button class="btn sec-btn" data-action="notif-desativar">desativar aqui</button><button class="btn" data-action="notif-ativar">reativar</button></div>'
-      +'<p class="muted small mt">O agendamento dos lembretes (dormir, refeições, hábitos) entra na próxima atualização.</p>';
+    if(_pushInscrito===null){ verificarPush(); }
+    if(_pushInscrito===true){
+      corpo='<div class="ok-box">🔔 Lembretes ativados neste aparelho.</div>'
+        +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+        +'<button class="btn sec-btn" data-action="notif-exemplo">ver exemplo</button>'
+        +'<button class="btn sec-btn" data-action="notif-desativar">desativar aqui</button><button class="btn" data-action="notif-ativar">reativar</button></div>'
+        +'<p class="muted small mt">O agendamento dos lembretes (dormir, refeições, hábitos) entra na próxima atualização.</p>';
+    } else if(_pushInscrito===false){
+      corpo='<div class="aviso">🔔 Falta um passo: a permissão tá concedida, mas os lembretes ainda não foram registrados neste aparelho.</div>'
+        +'<button class="btn mt" data-action="notif-ativar">finalizar ativação</button>';
+    } else {
+      corpo='<p class="muted small">Verificando os lembretes deste aparelho…</p>';
+    }
   } else if(permissaoNotif()==='denied'){
     corpo='<p class="muted small">As notificações estão bloqueadas para este site nas configurações do navegador. Libere lá e volte aqui.</p>';
   } else {
@@ -63,6 +90,7 @@ async function ativarLembretes(){
       sub=await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:b64ParaUint8(VAPID_PUBLICA) });
     }
     await guardarInscricao(sub);
+    _pushInscrito=true;
     toast('🔔 Lembretes ativados!');
     render();
   }catch(e){ toast('❌ '+(e.message||'falha ao ativar')); render(); }
@@ -94,6 +122,7 @@ async function desativarLembretes(){
       try{ if(u && clienteSB()) await clienteSB().from('push_subs').delete().eq('user_id',u.id).eq('endpoint',sub.endpoint); }catch(e){}
       await sub.unsubscribe();
     }
+    _pushInscrito=false;
     toast('Lembretes desativados neste aparelho');
     render();
   }catch(e){ toast('❌ '+e.message); }

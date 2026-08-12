@@ -19,7 +19,7 @@ select cron.schedule('constante-lembretes', '* * * * *', $$
     url     := 'https://piiigvazptshbdfgdngw.supabase.co/functions/v1/enviar-lembretes',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'x-cron-secret', 'COLE_AQUI_O_SEU_CRON_SECRET''
+      'x-cron-secret', 'COLE_AQUI_O_SEU_CRON_SECRET'
     ),
     body    := '{}'::jsonb
   );

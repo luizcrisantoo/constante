@@ -47,7 +47,7 @@ function viewHoje(){
   const iso=hojeISO();
   const d=getDia(iso);
   const sauda=saudacaoHora();
-  const frase=FRASES[diffDias('2026-01-01',iso)%FRASES.length];
+  const frase=FRASES[((diffDias('2026-01-01',iso)%FRASES.length)+FRASES.length)%FRASES.length];
   const {atual,prox}=blocoAtual();
   const xpHoje=recalcXP(iso), xpPoss=xpPossivel(iso);
   const nv=nivelAtual();
@@ -150,7 +150,7 @@ function viewHoje(){
     +'<div><label>Nota do sono (0–100)</label><input type="number" min="0" max="100" data-sono="score" value="'+esc(so.score!=null?so.score:'')+'"></div>'
     +'</div>'
     +'<div class="muted small mt">A nota do sono é opcional — preenche se teu relógio ou app dá uma nota de 0 a 100 (Garmin, Fitbit, Apple Watch, Samsung, Polar, Oura…). Não usa nenhum? Deixa em branco: as horas dormidas já bastam.</div>'
-    +'<div class="muted small mt">Meta: deitar '+esc(S.settings.sono.deitar)+' · acordar '+esc(S.settings.sono.acordar)+' · melatonina '+esc(S.settings.sono.melatonina)+'.</div>'
+    +'<div class="muted small mt">Meta: deitar '+esc(S.settings.sono.deitar)+' · acordar '+esc(S.settings.sono.acordar)+(S.settings.sono.melatonina?' · melatonina '+esc(S.settings.sono.melatonina):'')+'.</div>'
     +'</section>';
 
   const EMO=['😞','😕','😐','🙂','😄'];
@@ -292,14 +292,15 @@ function viewDieta(){
   }
   html+='</section>';
 
-  html+='<section class="card"><h2>Regras de energia constante</h2><ul style="margin-left:1.1rem" class="sec small">'
-    +S.diet.constante.map(c=>'<li style="margin:0.25rem 0">'+esc(c)+'</li>').join('')
-    +'</ul><p class="muted small mt">💧 '+esc(S.diet.hidratacao)+'</p></section>';
+  html+='<section class="card"><h2>Regras de energia constante</h2>'
+    +(S.diet.constante.length?'<ul style="margin-left:1.1rem" class="sec small">'+S.diet.constante.map(c=>'<li style="margin:0.25rem 0">'+esc(c)+'</li>').join('')+'</ul>':'')
+    +'<p class="muted small mt">💧 '+esc(S.diet.hidratacao)+'</p></section>';
 
-  const ult=S.pesos[S.pesos.length-1]||{kg:S.profile.peso||72,data:hojeISO()};
+  const ult=S.pesos.length?S.pesos[S.pesos.length-1]:null;
   html+='<section class="card"><h2>Peso (sábado, em jejum)</h2>'
-    +'<div class="linha"><div class="esq"><span class="hero-num num">'+esc(String(ult.kg).replace('.',','))+'</span> <span class="muted">kg em '+fmtData(ult.data)+'</span></div>'
-    +'<button class="btn mini" data-action="peso-add">registrar</button></div>'
+    +'<div class="linha"><div class="esq">'
+    +(ult?'<span class="hero-num num">'+esc(String(ult.kg).replace('.',','))+'</span> <span class="muted">kg em '+fmtData(ult.data)+'</span>':'<span class="muted">Nenhum peso registrado ainda.</span>')
+    +'</div><button class="btn mini" data-action="peso-add">registrar</button></div>'
     +graficoPeso()
     +'<p class="muted small mt">Tendência estável = alvo certo. Subindo 2 sáb. seguidos → corta ~100 kcal do jantar; caindo sem querer → soma ~100 kcal no lanche.</p>'
     +'</section>';

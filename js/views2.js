@@ -120,7 +120,7 @@ function viewMente(){
     +'<div class="linha-chart">'+barras+'</div>'
     +'<div class="linha mt"><span class="esq muted small">Média: <b class="num">'+(n?(soma/n).toFixed(1).replace('.',','):'—')+'h</b> · meta '+metaH.toFixed(1).replace('.',',')+'h ('+esc(S.settings.sono.deitar)+'→'+esc(S.settings.sono.acordar)+')</span>'
     +'<span class="chip">verde = na meta</span></div>'
-    +'<p class="muted small mt">Sono é a fundação: protege o Reconter fazendo efeito, o treino rendendo e a cabeça no lugar. Registra pela manhã: as horas que dormiu e, se tiver, a nota do teu dispositivo.</p></section>';
+    +'<p class="muted small mt">Sono é a fundação: protege teus remédios/suplementos fazendo efeito, o treino rendendo e a cabeça no lugar. Registra pela manhã: as horas que dormiu e, se tiver, a nota do teu dispositivo.</p></section>';
 
   const EMO=['😞','😕','😐','🙂','😄'];
   let hb='',eb='';
@@ -282,7 +282,7 @@ function viewConfig(){
     +'</div>'
     +'<button class="btn perigo bloco mt-lg" data-action="zerar">apagar tudo e recomeçar</button></section>';
 
-  html+='<p class="centro muted small">Constante v1 — feito sob medida pro Luiz 🟣<br>Remédios e dieta: valide com seu médico e nutricionista.</p>';
+  html+='<p class="centro muted small">Constante v1 🟣<br>Remédios e dieta: valide com seu médico e nutricionista.</p>';
   return html;
 }
 

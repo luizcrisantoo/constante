@@ -18,7 +18,7 @@ function abrirAssistente(){
       +'<div class="acoes"><button class="btn" data-action="fechar-modal">ok</button></div>');
     return;
   }
-  _assistMsgs = [{de:'ia', texto:'Oi! 👋 Me conta o que você quer montar ou ajustar. Posso criar do zero, adicionar, ou mexer no que já existe — ex.: "divide o lanche da tarde nas outras refeições". Pode mandar foto do seu horário também.', plano:null}];
+  _assistMsgs = [{de:'ia', texto:'Oi! 👋 Eu organizo e ajusto o teu dia aqui — rotina, hábitos, sono, e a dieta/treino que você já tem. Ex.: "não fiz o lanche da tarde, dá pra diluir nas outras refeições?" ou "põe academia terça 19h". Pode mandar foto do teu horário também. Dieta e treino eu não invento (isso é com teu nutri/personal) — eu encaixo e ajusto o que você trouxer.', plano:null}];
   _assistBusy = false;
   abrirModal(chatHTML());
   const th=document.getElementById('chat-thread'); if(th) th.scrollTop=th.scrollHeight;

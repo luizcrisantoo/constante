@@ -41,7 +41,7 @@ function secaoNotificacoes(){
     corpo='<div class="ok-box">🔔 Lembretes ativados neste aparelho.</div>'
       +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
       +'<button class="btn sec-btn" data-action="notif-exemplo">ver exemplo</button>'
-      +'<button class="btn sec-btn" data-action="notif-desativar">desativar aqui</button></div>'
+      +'<button class="btn sec-btn" data-action="notif-desativar">desativar aqui</button><button class="btn" data-action="notif-ativar">reativar</button></div>'
       +'<p class="muted small mt">O agendamento dos lembretes (dormir, refeições, hábitos) entra na próxima atualização.</p>';
   } else if(permissaoNotif()==='denied'){
     corpo='<p class="muted small">As notificações estão bloqueadas para este site nas configurações do navegador. Libere lá e volte aqui.</p>';

@@ -18,7 +18,7 @@ function abrirAssistente(){
       +'<div class="acoes"><button class="btn" data-action="fechar-modal">ok</button></div>');
     return;
   }
-  _assistMsgs = [{de:'ia', texto:'Oi! 👋 Eu organizo e ajusto o teu dia aqui — rotina, hábitos, sono, e a dieta/treino que você já tem. Ex.: "não fiz o lanche da tarde, dá pra diluir nas outras refeições?" ou "põe academia terça 19h". Pode mandar foto do teu horário também. Dieta e treino eu não invento (isso é com teu nutri/personal) — eu encaixo e ajusto o que você trouxer.', plano:null}];
+  _assistMsgs = [{de:'ia', texto:'Oi! 👋 Eu organizo e ajusto o teu dia aqui — rotina, hábitos, sono, e a dieta/treino que você já tem. Manda tua dieta ou teu treino em PDF (ou foto) que eu encaixo nos horários e dias. E é só pedir os ajustes: "não fiz o lanche da tarde, dá pra diluir nas outras refeições?". Dieta e treino eu não invento (isso é com teu nutri/personal) — só organizo e ajusto o que você trouxer.', plano:null}];
   _assistBusy = false;
   abrirModal(chatHTML());
   const th=document.getElementById('chat-thread'); if(th) th.scrollTop=th.scrollHeight;
@@ -45,14 +45,14 @@ function chatHTML(){
   if(_assistBusy){
     thread+='<div style="display:flex;justify-content:flex-start;margin:6px 0"><div style="background:var(--surface-2);color:var(--ink-mute);padding:0.5rem 0.7rem;border-radius:14px">digitando… ⏳</div></div>';
   }
-  const chips=_assistImgs.map((im,ix)=>'<span class="chip">📷 '+(ix+1)+' <button data-action="assist-remimg" data-ix="'+ix+'" style="color:var(--critical)">✕</button></span>').join(' ');
+  const chips=_assistImgs.map((im,ix)=>'<span class="chip">'+(im&&im.media_type==='application/pdf'?'📄 '+esc(im.nome||'PDF'):'📷 '+(ix+1))+' <button data-action="assist-remimg" data-ix="'+ix+'" style="color:var(--critical)">✕</button></span>').join(' ');
   return '<h3>🤖 Assistente</h3>'
     +'<div id="chat-thread" style="max-height:46vh;overflow-y:auto;padding:4px 2px;margin-bottom:8px">'+thread+'</div>'
     +(chips?'<div class="small" style="margin-bottom:6px">'+chips+'</div>':'')
     +'<textarea id="assist-texto" rows="2" placeholder="Escreve aqui… ex.: divide o lanche da tarde nas outras refeições"'+(_assistBusy?' disabled':'')+'></textarea>'
-    +'<input type="file" id="assist-file" accept="image/*" class="escondido">'
+    +'<input type="file" id="assist-file" accept="image/*,application/pdf" class="escondido">'
     +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-    +'<button class="btn sec-btn" data-action="assist-foto"'+(_assistBusy?' disabled':'')+'>📷 foto</button>'
+    +'<button class="btn sec-btn" data-action="assist-foto"'+(_assistBusy?' disabled':'')+'>📎 anexar</button>'
     +'<button class="btn sec-btn" data-action="fechar-modal">fechar</button>'
     +'<button class="btn" data-action="assist-enviar"'+(_assistBusy?' disabled':'')+'>enviar ▸</button>'
     +'</div>'
@@ -88,6 +88,21 @@ function lerImagemReduzida(file){
       resolve({base64, media_type:'image/jpeg'});
     };
     img.onerror=()=>reject(new Error('imagem inválida'));
+    fr.readAsDataURL(file);
+  });
+}
+
+function lerPdfBase64(file){
+  return new Promise((resolve,reject)=>{
+    if(!file || file.type!=='application/pdf'){ reject(new Error('não é PDF')); return; }
+    const fr=new FileReader();
+    fr.onerror=()=>reject(new Error('falha ao ler o PDF'));
+    fr.onload=()=>{
+      const s=String(fr.result||'');
+      const base64=s.includes(',')?s.split(',')[1]:s;
+      if(!base64){ reject(new Error('PDF vazio')); return; }
+      resolve({base64, media_type:'application/pdf', nome:String(file.name||'documento.pdf').slice(0,60)});
+    };
     fr.readAsDataURL(file);
   });
 }

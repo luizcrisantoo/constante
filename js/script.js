@@ -672,8 +672,13 @@ function ligarEventos(){
     if(t.id==='perfil-foto-file'&&t.files&&t.files[0]){ const arq=t.files[0]; t.value=''; definirFotoPerfil(arq); return; }
     if(t.id==='assist-file'&&t.files&&t.files[0]){
       const arq=t.files[0]; t.value='';
-      if(_assistImgs.length>=3){ toast('Máximo de 3 fotos.'); return; }
-      lerImagemReduzida(arq).then(im=>{ _assistImgs.push(im); renderAssist(); }).catch(e=>toast('❌ '+e.message));
+      if(_assistImgs.length>=3){ toast('Máximo de 3 anexos.'); return; }
+      if(arq.type==='application/pdf'){
+        if(arq.size>4*1024*1024){ toast('PDF muito grande (máx. ~4MB).'); return; }
+        lerPdfBase64(arq).then(an=>{ _assistImgs.push(an); renderAssist(); }).catch(e=>toast('❌ '+e.message));
+      } else {
+        lerImagemReduzida(arq).then(im=>{ _assistImgs.push(im); renderAssist(); }).catch(e=>toast('❌ '+e.message));
+      }
       return;
     }
     if(t.id==='foto-file'&&t.files&&t.files[0]){ const arq=t.files[0]; t.value=''; subirFoto(arq); return; }

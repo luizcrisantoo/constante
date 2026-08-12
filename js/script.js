@@ -12,6 +12,7 @@ function setPath(obj,caminho,valor){
 const ACOES={
   'fechar-modal':()=>{ fecharModal(); render(); },
   'sos-abrir':()=>abrirSOS(),
+  'ver-senha':el=>{ const i=document.getElementById(el.dataset.alvo); if(!i) return; const oculto=i.type==='password'; i.type=oculto?'text':'password'; el.textContent=oculto?'🙈':'👁'; },
 
   'habit':el=>{
     const id=el.dataset.id; const d=getDia();
@@ -387,7 +388,7 @@ const ACOES={
   'conta-trocar-senha':()=>{
     abrirModal('<h3>Trocar senha</h3>'
       +campo('cs-s1','Nova senha','password','')
-      +'<p class="muted small">Mín. 8 caracteres, com maiúscula, minúscula, número e símbolo.</p>'
+      +'<p class="muted small">Mín. 8 caracteres, com maiúscula, minúscula e número.</p>'
       +campo('cs-s2','Repete a nova senha','password','')
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
       +'<button class="btn" data-action="conta-trocar-senha-salvar">salvar</button></div>');
@@ -583,6 +584,9 @@ function linhas(id){ return val(id).split('\n').map(s=>s.trim()).filter(Boolean)
 function campo(id,rotulo,tipo,valor){
 
   const t=tipo==='number'?'text':tipo;
+  if(tipo==='password'){
+    return '<div class="campo"><label>'+esc(rotulo)+'</label>'+senhaInput(id,'new-password')+'</div>';
+  }
   return '<div class="campo"><label>'+esc(rotulo)+'</label><input id="'+id+'" type="'+t+'" value="'+esc(valor)+'"'+(tipo==='number'?' inputmode="decimal"':'')+'></div>';
 }
 

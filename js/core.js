@@ -96,7 +96,7 @@ function saveState(opts){
 
   if(!(opts&&opts.skipSync) && S.settings.syncAuto && syncConfigurado() && S.settings.ultimaSync){
     clearTimeout(_saveTimer);
-    _saveTimer=setTimeout(()=>syncPush().catch(()=>{}),1500);
+    _saveTimer=setTimeout(()=>syncAgora().catch(()=>{}),1500);
   }
 }
 

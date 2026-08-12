@@ -16,6 +16,7 @@ const TURNSTILE_SITEKEY='0x4AAAAAAEOHD4v9PCdTaFVC';
 let _captchaToken='';
 let _captchaWidgetId=null;
 function captchaToken(){ return _captchaToken; }
+function captchaFaltando(){ return _captchaWidgetId!=null && !_captchaToken; }
 function renderCaptcha(){
   const box=document.getElementById('cf-turnstile');
   if(!box) return;

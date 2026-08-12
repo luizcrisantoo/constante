@@ -323,7 +323,7 @@ const ACOES={
     const consent=(document.getElementById('au-consent')||{}).checked;
     UI.auth.email=email; UI.auth.msg='';
     if(!email){ UI.auth.erro='Preenche teu e-mail.'; renderLogin(); return; }
-    if(s1.length<6){ UI.auth.erro='A senha precisa ter pelo menos 6 caracteres.'; renderLogin(); return; }
+    const errSenhaC=validarSenha(s1); if(errSenhaC){ UI.auth.erro=errSenhaC; renderLogin(); return; }
     if(s1!==s2){ UI.auth.erro='As senhas não batem.'; renderLogin(); return; }
     if(!consent){ UI.auth.erro='Pra criar a conta, precisa aceitar a Política de Privacidade (LGPD).'; renderLogin(); return; }
     UI.auth.erro=''; UI.auth.msg='Criando conta…'; renderLogin();
@@ -349,7 +349,7 @@ const ACOES={
   'auth-nova-senha-salvar':async()=>{
     const s1=(document.getElementById('au-senha')||{}).value||'';
     const s2=(document.getElementById('au-senha2')||{}).value||'';
-    if(s1.length<6){ UI.auth.erro='Mínimo 6 caracteres.'; renderLogin(); return; }
+    const errSenhaN=validarSenha(s1); if(errSenhaN){ UI.auth.erro=errSenhaN; renderLogin(); return; }
     if(s1!==s2){ UI.auth.erro='As senhas não batem.'; renderLogin(); return; }
     try{
       await authTrocarSenha(s1);
@@ -367,7 +367,8 @@ const ACOES={
   'auth-sair-confirma':async()=>{ fecharModal(); await flushSyncPendente(); await authSair();  },
   'conta-trocar-senha':()=>{
     abrirModal('<h3>Trocar senha</h3>'
-      +campo('cs-s1','Nova senha (mín. 6)','password','')
+      +campo('cs-s1','Nova senha','password','')
+      +'<p class="muted small">Mín. 8 caracteres, com maiúscula, minúscula, número e símbolo.</p>'
       +campo('cs-s2','Repete a nova senha','password','')
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
       +'<button class="btn" data-action="conta-trocar-senha-salvar">salvar</button></div>');
@@ -375,7 +376,7 @@ const ACOES={
   'conta-trocar-senha-salvar':async()=>{
     const s1=(document.getElementById('cs-s1')||{}).value||'';
     const s2=(document.getElementById('cs-s2')||{}).value||'';
-    if(s1.length<6){ toast('Mínimo 6 caracteres'); return; }
+    const errSenhaT=validarSenha(s1); if(errSenhaT){ toast(errSenhaT); return; }
     if(s1!==s2){ toast('As senhas não batem'); return; }
     try{ await authTrocarSenha(s1); fecharModal(); render(); toast('🔒 Senha trocada'); }
     catch(e){ toast('❌ '+e.message); }

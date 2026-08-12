@@ -20,7 +20,7 @@ function renderLogin(){
   }
   else if(a.tela==='criar'){
     corpo='<div class="campo"><label for="au-email">E-mail</label><input id="au-email" type="email" autocomplete="email" value="'+esc(a.email||'')+'"></div>'
-      +'<div class="campo"><label for="au-senha">Senha (mín. 6)</label><input id="au-senha" type="password" autocomplete="new-password"></div>'
+      +'<div class="campo"><label for="au-senha">Senha</label><input id="au-senha" type="password" autocomplete="new-password"><span class="muted small">Mín. 8 caracteres, com maiúscula, minúscula, número e símbolo.</span></div>'
       +'<div class="campo"><label for="au-senha2">Repete a senha</label><input id="au-senha2" type="password" autocomplete="new-password"></div>'
       +'<label class="login-consent"><input type="checkbox" id="au-consent">'
       +'<span>Li e aceito a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a> e consinto com o tratamento dos dados que eu registrar — inclusive os sensíveis de saúde e hábitos (LGPD).</span></label>'
@@ -43,7 +43,7 @@ function renderLogin(){
   }
   else if(a.tela==='nova-senha'){
     corpo='<p class="sec small">Cria tua nova senha:</p>'
-      +'<div class="campo mt"><label for="au-senha">Nova senha (mín. 6)</label><input id="au-senha" type="password" autocomplete="new-password"></div>'
+      +'<div class="campo mt"><label for="au-senha">Nova senha</label><input id="au-senha" type="password" autocomplete="new-password"><span class="muted small">Mín. 8 caracteres, com maiúscula, minúscula, número e símbolo.</span></div>'
       +'<div class="campo"><label for="au-senha2">Repete a nova senha</label><input id="au-senha2" type="password" autocomplete="new-password"></div>'
       +erro+ok
       +'<button class="btn bloco mt" data-action="auth-nova-senha-salvar">Salvar e entrar</button>';

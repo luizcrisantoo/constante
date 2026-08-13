@@ -12,6 +12,19 @@ function setPath(obj,caminho,valor){
 const ACOES={
   'fechar-modal':()=>{ fecharModal(); render(); },
   'sos-abrir':()=>abrirSOS(),
+  'novidades-ok':()=>{ marcarNovidadesVistas(); render(); },
+  'novidades-todas':()=>{
+    marcarNovidadesVistas();
+    let corpo='';
+    (typeof NOVIDADES!=='undefined'?NOVIDADES:[]).forEach(n=>{
+      corpo+='<div class="grupo-titulo">'+esc(n.titulo)+' <span class="muted small num">· '+fmtData(n.data)+'</span></div>'
+        +'<ul class="sec small" style="margin:0.3rem 0 0.6rem 1.1rem;padding:0">'
+        +n.itens.map(it=>'<li style="margin:0.3rem 0">'+esc(it)+'</li>').join('')+'</ul>';
+    });
+    abrirModal('<h3>✨ Novidades</h3>'
+      +'<div style="max-height:56vh;overflow-y:auto">'+corpo+'</div>'
+      +'<div class="acoes"><button class="btn" data-action="fechar-modal">fechar</button></div>');
+  },
   'ver-senha':el=>{ const i=document.getElementById(el.dataset.alvo); if(!i) return; const oculto=i.type==='password'; i.type=oculto?'text':'password'; el.textContent=oculto?'🙈':'👁'; },
 
   'habit':el=>{
@@ -345,6 +358,7 @@ const ACOES={
     UI.auth.erro=''; UI.auth.msg='Criando conta…'; renderLogin();
     try{
       const data=await authCadastrar(email,s1,tkC);
+      if(typeof metrica==='function') metrica('cadastro');
       if(!data.session){ UI.auth={tela:'confirmar',email}; renderLogin(); }
 
     }catch(e){ UI.auth.msg=''; UI.auth.erro=e.message; renderLogin(); }
@@ -648,13 +662,15 @@ function ligarEventos(){
     const nav=ev.target.closest('[data-nav]');
     if(nav){
       if(document.body.classList.contains('modo-login')) return;
-      UI.tab=nav.dataset.nav; render(); window.scrollTo({top:0}); return;
+      UI.tab=nav.dataset.nav; render(); window.scrollTo({top:0});
+      if(typeof metrica==='function') metrica('tab:'+nav.dataset.nav);
+      return;
     }
     const alvo=ev.target.closest('[data-action]');
     if(!alvo) return;
     const acao=alvo.dataset.action;
     if(acao==='fechar-modal-fundo'){ if(ev.target===alvo){ fecharModal(); render(); } return; }
-    if(ACOES[acao]) ACOES[acao](alvo);
+    if(ACOES[acao]){ ACOES[acao](alvo); if(typeof metrica==='function') metrica(acao); }
   });
 
   document.body.addEventListener('change',ev=>{
@@ -728,6 +744,7 @@ function sincronizarPosLogin(){
 function carregarEstadoDaConta(u){
   _usuarioLogado=u.id;
   setUserKey(u.id);
+  if(typeof metricaIdentificar==='function') metricaIdentificar(u.id);
   let raw=lsGet();
   if(!raw) raw=migrarLocalUmaVez();
   if(raw){ try{ S=deepFill(JSON.parse(raw),defaultState()); }catch(e){ S=defaultState(); } }
@@ -744,6 +761,7 @@ function aoMudarAuth(evento,sessao,antes){
     carregarEstadoDaConta(sessao.user);
     sairModoLogin(); renderSeguro();
     sincronizarPosLogin();
+    if(typeof metrica==='function') metrica('login');
     return;
   }
   if(evento==='SIGNED_OUT'){
@@ -756,6 +774,7 @@ function aoMudarAuth(evento,sessao,antes){
 function boot(){
   loadState();
   ligarEventos();
+  if(typeof metrica==='function') metrica('app-aberto');
   if(typeof modoProduto==='function'&&modoProduto()){
 
     if(/type=recovery/.test(location.hash)||/type=recovery/.test(location.search)) _emRecuperacao=true;

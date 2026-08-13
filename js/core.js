@@ -588,6 +588,22 @@ function addCategoriaGasto(nome,icone){
   saveState();
 }
 
+// ---------- Novidades (changelog pro usuário) ----------
+const NOVIDADES_KEY='constante_novidades_v';
+function versaoApp(){ return (typeof NOVIDADES!=='undefined'&&NOVIDADES.length)?NOVIDADES[0].v:1; }
+function novidadesVistas(){ try{ return Number(localStorage.getItem(NOVIDADES_KEY))||0; }catch(e){ return versaoApp(); } }
+function marcarNovidadesVistas(){ try{ localStorage.setItem(NOVIDADES_KEY,String(versaoApp())); }catch(e){} }
+function novidadesNaoVistas(){
+  if(typeof NOVIDADES==='undefined') return [];
+  const vistas=novidadesVistas();
+  if(vistas>=versaoApp()) return [];
+  // Estreante (ainda sem hábitos/rotina/refeições): tudo é novo — não faz
+  // sentido mostrar "o que mudou"; marca como visto em silêncio e segue.
+  const novato=!((S&&S.habits||[]).length || (S&&S.routine||[]).length || (S&&S.diet&&S.diet.refeicoes||[]).length);
+  if(!vistas && novato){ marcarNovidadesVistas(); return []; }
+  return NOVIDADES.filter(n=>n.v>vistas);
+}
+
 function cadernoPorId(id){ return S.estudo.cadernos.find(c=>c.id===id)||null; }
 function addCaderno(nome){
   if(!nome) return null;

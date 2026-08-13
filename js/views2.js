@@ -285,6 +285,10 @@ function viewConfig(){
   html+=secaoNotificacoes();
   html+=secaoLembretes();
 
+  html+='<section class="card"><h2>Novidades</h2>'
+    +'<p class="muted small">O que mudou nas últimas atualizações do app.</p>'
+    +'<button class="btn mini sec-btn" data-action="novidades-todas">📜 ver histórico de novidades</button></section>';
+
   html+='<section class="card"><h2>Backup & dados</h2>'
     +'<div class="acoes" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
     +'<button class="btn sec-btn" data-action="exportar">⬇ exportar backup</button>'
@@ -293,7 +297,7 @@ function viewConfig(){
     +'</div>'
     +'<button class="btn perigo bloco mt-lg" data-action="zerar">apagar tudo e recomeçar</button></section>';
 
-  html+='<p class="centro muted small">Constante v1 🟣<br>Remédios e dieta: valide com seu médico e nutricionista.</p>';
+  html+='<p class="centro muted small">Constante v'+versaoApp()+' 🟣<br>Remédios e dieta: valide com seu médico e nutricionista.</p>';
   return html;
 }
 

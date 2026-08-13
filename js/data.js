@@ -115,3 +115,24 @@ const FRASES = [
   'Feito é melhor que perfeito.',
   'Sua ofensiva não quebra num dia ruim. Quebra quando você desiste.'
 ];
+
+// ============================================================
+// NOVIDADES — o que mudou a cada atualização grande.
+// A entrada mais NOVA fica em primeiro. "v" acompanha a versão do
+// service worker (sw.js). Só entra aqui o que o usuário percebe:
+// escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
+// ============================================================
+const NOVIDADES = [
+  { v:30, data:'2026-08-13', titulo:'Central de novidades', itens:[
+    '✨ O app agora te conta o que mudou: toda atualização importante aparece aqui no Hoje, e o histórico completo fica em ⚙️ Config → Novidades.'
+  ]},
+  { v:29, data:'2026-08-12', titulo:'Últimas melhorias', itens:[
+    '📄 O assistente aceita PDF: manda a dieta do nutri ou a ficha de treino que ele organiza pra você.',
+    '🖼 Foto de perfil: adiciona a sua em ⚙️ Config → Perfil & metas.',
+    '📈 Nova aba Progresso: fotos, peso e conquistas num lugar só.',
+    '🎨 Categorias da rotina do teu jeito: renomeia, troca as cores e cria novas em ⚙️ Config.',
+    '👁 Campos de senha ganharam o "olhinho" — toca nele pra conferir o que digitou.',
+    '🔑 Senha mais simples: não precisa mais de símbolo — mín. 8 caracteres, com maiúscula, minúscula e número.',
+    '🚪 Criou a conta? Já entra direto, sem esperar e-mail de confirmação.'
+  ]}
+];

@@ -528,9 +528,22 @@ const ACOES={
     saveState(); fecharModal(); render(); toast('Foto removida');
   },
   'abrir-treino-dia':el=>{
-    const t=treinoDoDia(Number(el.dataset.d));
-    if(t){ UI.tab='rotina'; UI.sub={tipo:'treino',id:t.id}; render(); window.scrollTo({top:0}); }
-    else toast('Nenhuma ficha ligada a esse dia ainda — na seção Treinos, toca no ✎ de uma ficha e define o dia 😉');
+    const d=Number(el.dataset.d);
+    const t=treinoDoDia(d);
+    if(t){ UI.tab='rotina'; UI.sub={tipo:'treino',id:t.id}; render(); window.scrollTo({top:0}); return; }
+    const ativa=(S.treinos.semanaAtiva==='B')?'B':'A';
+    const fichas=S.treinos.split.filter(x=>x.semana===ativa);
+    abrirModal('<h3>Qual ficha é o treino de '+DIAS_NOME[d]+'?</h3>'
+      +'<p class="sec small">Escolhe a ficha (semana '+ativa+') que eu ligo a '+DIAS_NOME[d]+' e já abro pra anotar as cargas.</p>'
+      +fichas.map(x=>'<button class="btn sec-btn bloco mt" data-action="ligar-treino-dia" data-id="'+esc(x.id)+'" data-d="'+d+'">'+esc(x.nome)+(x.foco?' — '+esc(x.foco):'')+(x.diaSemana!=null?' <span class="muted small">(hoje: '+DIAS_ABREV[x.diaSemana]+')</span>':'')+'</button>').join('')
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button></div>');
+  },
+  'ligar-treino-dia':el=>{
+    const t=treinoPorId(el.dataset.id); if(!t) return;
+    t.diaSemana=Number(el.dataset.d);
+    saveState(); fecharModal();
+    UI.tab='rotina'; UI.sub={tipo:'treino',id:t.id}; render(); window.scrollTo({top:0});
+    toast('Ficha ligada a '+DIAS_NOME[t.diaSemana]+' ✓');
   },
   'abrir-treino':el=>{ UI.tab='rotina'; UI.sub={tipo:'treino',id:el.dataset.id}; render(); window.scrollTo({top:0}); },
   'abrir-caderno':el=>{ UI.tab='rotina'; UI.sub={tipo:'caderno',id:el.dataset.id}; render(); window.scrollTo({top:0}); },

@@ -123,6 +123,9 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:35, data:'2026-08-13', titulo:'Cargas sem beco sem saída', itens:[
+    '🏋️ Tocou em "Cargas ›" num dia sem ficha ligada? Agora o app pergunta qual ficha é o treino daquele dia, liga com um toque e já abre pra anotar.'
+  ]},
   { v:34, data:'2026-08-13', titulo:'Caminho das cargas', itens:[
     '🏋️ Os blocos de treino na Rotina ganharam o botão "Cargas ›" — vai direto pra ficha do dia, sem caçar.',
     '🧭 O card Treino do Hoje agora sempre mostra o próximo passo: "montar exercícios" quando a ficha está vazia, "registrar cargas" quando já tem.'

@@ -539,7 +539,8 @@ const ACOES={
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button></div>');
   },
   'ligar-treino-dia':el=>{
-    const t=treinoPorId(el.dataset.id); if(!t) return;
+    const t=treinoPorId(el.dataset.id);
+    if(!t){ toast('Não achei a ficha "'+(el.dataset.id||'?')+'" nos teus dados — me manda print disso!',{fixo:true}); return; }
     t.diaSemana=Number(el.dataset.d);
     saveState(); fecharModal();
     UI.tab='rotina'; UI.sub={tipo:'treino',id:t.id}; render(); window.scrollTo({top:0});
@@ -780,7 +781,11 @@ function ligarEventos(){
     if(!alvo) return;
     const acao=alvo.dataset.action;
     if(acao==='fechar-modal-fundo'){ if(ev.target===alvo){ fecharModal(); render(); } return; }
-    if(ACOES[acao]){ ACOES[acao](alvo); if(typeof metrica==='function') metrica(acao); }
+    if(ACOES[acao]){
+      try{ ACOES[acao](alvo); }
+      catch(e){ toast('❌ Deu erro nessa ação ('+(e&&e.message||e)+') — me manda print disso!',{fixo:true}); }
+      if(typeof metrica==='function') metrica(acao);
+    }
   });
 
   document.body.addEventListener('change',ev=>{

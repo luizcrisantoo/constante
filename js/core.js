@@ -75,6 +75,19 @@ function sanearEstado(){
   if(!Array.isArray(S.meds.grupos)) S.meds.grupos=defaultState().meds.grupos;
   if(!S.treinos||!Array.isArray(S.treinos.split)) S.treinos=defaultState().treinos;
   S.treinos.split.forEach(t=>{ if(!Array.isArray(t.exercicios)) t.exercicios=[]; });
+  // Fichas antigas podiam vir SEM id interno (aí toque/editar falhava em silêncio) — regenera:
+  const idsPadraoT=['a','b','c','d','e','f','g','h'];
+  S.treinos.split.forEach((t,ix)=>{
+    if(!t||typeof t!=='object') return;
+    if(!t.id){
+      const cand=idsPadraoT[ix];
+      t.id=(cand && !S.treinos.split.some(o=>o&&o!==t&&o.id===cand)) ? cand : 't'+uid();
+    }
+    t.exercicios.forEach(e=>{
+      if(e&&!e.id) e.id='ex'+uid();
+      if(e&&Array.isArray(e.registros)) e.registros.forEach(r=>{ if(r&&!r.id) r.id='rg'+uid(); });
+    });
+  });
   // Semanas A/B: 4 fichas extras (e-h) pra quem alterna treinos (padrão × metabólico)
   if(S.treinos.semanaAtiva!=='B') S.treinos.semanaAtiva='A';
   ['e','f','g','h'].forEach((id,ix)=>{

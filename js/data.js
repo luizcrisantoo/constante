@@ -123,6 +123,10 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:37, data:'2026-08-13', titulo:'Fichas destravadas + assistente organiza exercícios', itens:[
+    '🧩 Conserto importante: fichas de treino antigas (sem identidade interna) voltaram a abrir e editar — o toque nelas funciona de novo.',
+    '📋 O assistente agora ORGANIZA os exercícios nas tuas fichas: cola o texto da ficha do teu personal (ou manda foto/PDF) e pede pra organizar nos treinos — ele preenche nome, foco, dia da semana e exercícios (semana A e B). Séries e cargas você registra treinando.'
+  ]},
   { v:35, data:'2026-08-13', titulo:'Cargas sem beco sem saída', itens:[
     '🏋️ Tocou em "Cargas ›" num dia sem ficha ligada? Agora o app pergunta qual ficha é o treino daquele dia, liga com um toque e já abre pra anotar.'
   ]},

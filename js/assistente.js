@@ -221,11 +221,23 @@ function aplicarPlano(p){
     S.diet.refeicoes.push({id:'ref'+uid(), nome:String(r.nome).slice(0,60), hora:String(r.hora||'').slice(0,20),
       kcal:0, prot:0, itens:Array.isArray(r.itens)?r.itens.map(x=>String(x).slice(0,120)).slice(0,40):[], subs:[]});
   });
-  if(Array.isArray(p.treinos)) p.treinos.forEach((t,i)=>{
-    const alvo=S.treinos.split.filter(x=>x.semana!=='B')[i]; if(!alvo||!t) return;
-    if(t.nome) alvo.nome=String(t.nome).slice(0,40);
-    if(t.dia) alvo.dia=String(t.dia).slice(0,20);
-    if(t.foco) alvo.foco=String(t.foco).slice(0,140);
-  });
+  if(Array.isArray(p.treinos)){
+    const contSem={A:0,B:0};
+    p.treinos.forEach(t=>{
+      if(!t) return;
+      const sem=(t.semana==='B')?'B':'A';
+      const fichas=S.treinos.split.filter(x=>x.semana===sem);
+      const alvo=fichas[contSem[sem]++]; if(!alvo) return;
+      if(t.nome) alvo.nome=String(t.nome).slice(0,40);
+      if(t.dia) alvo.dia=String(t.dia).slice(0,20);
+      if(t.foco) alvo.foco=String(t.foco).slice(0,140);
+      if(Number.isInteger(t.diaSemana)&&t.diaSemana>=0&&t.diaSemana<=6) alvo.diaSemana=t.diaSemana;
+      if(Array.isArray(t.exercicios)) t.exercicios.slice(0,25).forEach(nomeEx=>{
+        const nomeL=String(nomeEx||'').trim().slice(0,80); if(!nomeL) return;
+        if(!alvo.exercicios.some(e=>e&&e.nome&&e.nome.toLowerCase()===nomeL.toLowerCase()))
+          alvo.exercicios.push({id:'ex'+uid(), nome:nomeL, registros:[]});
+      });
+    });
+  }
   saveState();
 }

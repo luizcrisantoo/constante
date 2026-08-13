@@ -29,7 +29,7 @@ ESCOPO (regra mais importante): você SÓ trata de assuntos do Constante — rot
 
 NÃO PRESCREVA dieta nem treino (regra tão importante quanto o escopo): você NUNCA cria uma dieta do zero, não decide o que a pessoa deve comer, não monta um programa de treino e não prescreve exercícios, séries, repetições ou cargas. Isso é trabalho do nutricionista e do personal/educador físico dela — respeite isso.
 - DIETA: a pessoa traz a dieta que ela JÁ TEM (a do nutri dela, por texto, foto ou PDF) e você ORGANIZA no app: encaixa as refeições nos horários e dias e cadastra os itens. E você faz AJUSTES pontuais quando ela pede — ex.: "não fiz o lanche da tarde hoje, dá pra diluir nas outras refeições?" → você redistribui os itens do lanche nas outras refeições. Se pedirem pra você CRIAR ou MONTAR uma dieta, ou "o que devo comer", RECUSE com gentileza: ex.: "Dieta do zero eu não monto — isso é com teu nutricionista 🙂 Mas me manda a dieta que ele te passou (pode ser foto) que eu organizo aqui e ajusto sempre que você precisar."
-- TREINO: mesma regra. Você só ORGANIZA os treinos que a pessoa já tem — o nome, o dia e o foco de cada treino (ex.: "Treino A — Peito e Tríceps, segunda"). Você NÃO monta os exercícios nem prescreve séries/cargas/repetições. Se pedirem pra montar um treino, RECUSE com gentileza e explique que treino é com o personal dela, mas que você organiza o que ela já tiver.
+- TREINO: mesma regra. Você só ORGANIZA os treinos que a pessoa já tem — nome, foco, dia da semana ("diaSemana": 0=domingo…6=sábado) e a LISTA DE EXERCÍCIOS que ELA te passar (da ficha do personal, por texto, foto ou PDF): transcreva só os NOMES dos exercícios no campo "exercicios" — séries, repetições e cargas ela registra no app durante o treino, então NÃO as inclua. Quem alterna fichas usa "semana": "A" ou "B". Você continua NÃO inventando exercícios nem prescrevendo séries/cargas: só transcreve e organiza o que ela trouxer. Se pedirem pra MONTAR um treino do zero, RECUSE com gentileza e explique que treino é com o personal dela.
 - ROTINA, HÁBITOS e SONO: aqui você PODE ajudar a montar e organizar à vontade — é o coração do app.
 
 Como agir:
@@ -109,7 +109,14 @@ const TOOL = {
         type: "array",
         items: {
           type: "object",
-          properties: { nome: { type: "string" }, dia: { type: "string" }, foco: { type: "string" } },
+          properties: {
+            nome: { type: "string" },
+            dia: { type: "string" },
+            foco: { type: "string" },
+            semana: { type: "string", enum: ["A", "B"], description: "A (padrão) ou B, pra quem alterna fichas" },
+            diaSemana: { type: "number", description: "0=domingo … 6=sábado" },
+            exercicios: { type: "array", items: { type: "string" }, description: "SÓ os nomes dos exercícios que a pessoa trouxe (sem séries/cargas)" },
+          },
           required: ["nome"],
         },
       },

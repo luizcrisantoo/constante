@@ -27,6 +27,7 @@
       <li><b>Conta:</b> seu e-mail e senha (a senha é guardada de forma criptografada pelo Supabase; nem nós conseguimos vê-la).</li>
       <li><b>Seus registros no app:</b> rotina, hábitos, sono, humor e energia, refeições, remédios/suplementos que você mesmo cadastrar, treinos, finanças (dívidas, rendas, gastos) e hábitos que você queira reduzir. Alguns desses são <b>dados sensíveis de saúde</b> — você decide o que registra.</li>
       <li><b>Fotos de progresso (opcional):</b> se você usar essa função, as fotos que enviar ficam num cofre privado no servidor (Supabase Storage), acessíveis só pela sua conta. São <b>dados sensíveis</b> — só você decide se envia, e elas são apagadas junto com a conta.</li>
+      <li><b>Métricas de uso (anônimas):</b> pra melhorar o app, registramos apenas <b>o tipo de ação</b> feita nele (ex.: "abriu o app", "marcou um hábito", "registrou água") — <b>nunca o conteúdo</b>: nenhum valor, texto, nota, peso ou qualquer dado de saúde sai do seu registro, e seu e-mail não é enviado. Essas métricas usam um identificador pseudonimizado e ficam em servidor na União Europeia.</li>
     </ul>
 
     <h2>Pra que usamos</h2>
@@ -41,6 +42,7 @@
       <li><b>Supabase</b> — hospedagem do banco de dados, autenticação e cofre das fotos.</li>
       <li><b>Cloudflare Turnstile</b> — verificação anti-robô no login e no cadastro (processa seu endereço IP nesse momento, para barrar abuso).</li>
       <li><b>Provedor de IA</b> — só quando você usa o assistente: o texto (e as fotos que você anexar à conversa) são enviados a um provedor de IA para gerar a resposta. Se você não usa o assistente, nada é enviado.</li>
+      <li><b>PostHog (região UE)</b> — métricas de uso anônimas descritas acima (só o tipo de ação, nunca o conteúdo), para entendermos o que melhorar no app.</li>
     </ul>
     <p>Nenhum deles recebe seus dados para marketing ou publicidade.</p>
 

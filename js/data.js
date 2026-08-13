@@ -123,6 +123,12 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:32, data:'2026-08-13', titulo:'Check de treino + recomeço leve', itens:[
+    '🏋️ Novo check "Treinei hoje" na aba Hoje: um toque e valeu — academia, corrida, futevôlei, vôlei, cardio, qualquer treino. Dá +10 XP de bônus (e descansar não desconta nada).',
+    '🏆 Nova conquista "Treinos feitos": cada treino do seu histórico soma.',
+    '🌱 Voltou depois de uns dias fora? O app te recebe com um recomeço leve — sem culpa: constância inclui recomeçar.',
+    '💜 Linguagem mais nossa: "ofensiva" virou "constância", e o 🔥 zerado virou 🌱 (novo começo).'
+  ]},
   { v:31, data:'2026-08-13', titulo:'Polimento geral', itens:[
     '☁️ Agora dá pra VER se teus dados estão na nuvem: a nuvenzinha no topo mostra o estado, avisa se faltar internet e tenta de novo sozinha.',
     '💪 Treino: registrou uma carga errada? Agora dá pra apagar o registro (no Histórico do exercício).',

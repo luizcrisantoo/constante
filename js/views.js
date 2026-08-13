@@ -52,7 +52,7 @@ function renderTopbar(){
   const nv=nivelAtual();
   document.getElementById('top-stats').innerHTML=
     pillSync()
-    +'<span class="pill" title="Ofensiva: dias seguidos com o dia batido">🔥 <span class="num">'+st+'</span></span>'
+    +(st>0?'<span class="pill" title="Constância: dias seguidos com o dia batido">🔥 <span class="num">'+st+'</span></span>':'<span class="pill" title="Novo começo — cada dia somado conta">🌱</span>')
     +'<span class="pill" title="'+esc(nv.nome)+' — '+nv.xp+' XP">'+nv.icone+' <span class="num">'+nv.xp+'</span> XP</span>';
   const ba=document.getElementById('btn-assist');
   if(ba) ba.style.display=assistenteDisponivel()?'':'none';
@@ -79,6 +79,12 @@ function viewHoje(){
   if(prox) html+='<div class="agora" style="border-color:var(--baseline)"><b>Depois:</b> '+esc(prox.t)+' <span class="muted num">('+esc(prox.i)+')</span></div>';
   html+='</section>';
 
+  if(UI.recomecoLeve){
+    html+='<section class="card" style="border-left:3px solid var(--good)"><h2>🌱 Bom te ver de novo</h2>'
+      +'<p class="sec small">Ficar uns dias fora acontece — recomeçar também é constância. Começa leve: marca UMA coisa hoje (uma água já conta).</p>'
+      +'<div class="acoes mt"><button class="btn mini" data-action="recomeco-ok">Bora 🌱</button></div></section>';
+  }
+
   // Card de novidades: curto de propósito — no máx. 3 itens, o resto fica no histórico.
   const nvs=(typeof novidadesNaoVistas==='function')?novidadesNaoVistas():[];
   if(nvs.length){
@@ -94,19 +100,12 @@ function viewHoje(){
       +'</div></section>';
   }
 
-  const tHoje=treinoDeHoje();
-  if(tHoje&&tHoje.exercicios.length){
-    html+='<button class="card esq" data-action="abrir-treino" data-id="'+esc(tHoje.id)+'" style="width:100%;display:flex;align-items:center;gap:0.7rem;border-left:3px solid var(--c-treino)">'
-      +'<span style="font-size:1.5rem">🏋️</span>'
-      +'<span class="esq" style="text-align:left"><b>Treino de hoje: '+esc(tHoje.nome)+'</b><br><span class="muted small">'+(tHoje.foco?esc(tHoje.foco)+' — ':'')+'toque pra registrar as cargas</span></span>'
-      +'<span class="muted">›</span></button>';
-  }
 
   html+='<section class="card"><h2>Seu dia</h2>'
     +'<div class="linha"><div class="esq"><span class="hero-num num">'+xpHoje+'</span> <span class="muted">/ '+xpPoss+' XP</span></div>'
     +'<div>'+nv.icone+' <b>'+esc(nv.nome)+'</b>'+(nv.prox?' <span class="muted small">→ '+nv.prox.icone+' aos '+nv.prox.xp+'</span>':'')+'</div></div>'
     +'<div class="progress mt"><span style="width:'+Math.min(100,Math.round(100*xpHoje/Math.max(1,xpPoss)))+'%"></span></div>'
-    +'<div class="muted small mt">Dia conta pra ofensiva com '+Math.min(80,Math.round(xpPoss*0.5))+'+ XP.</div>'
+    +'<div class="muted small mt">Dia conta pra constância com '+Math.min(80,Math.round(xpPoss*0.5))+'+ XP.</div>'
     +barraSemana()
     +'</section>';
 
@@ -136,6 +135,19 @@ function viewHoje(){
       html+='<div class="grupo-titulo">Evitar hoje (marca no fim do dia se venceu)</div>';
       evitar.forEach(hb=>{ html+=habRow(hb,d); });
     }
+  }
+  html+='</section>';
+
+  const treinoHoje=treinoDeHoje();
+  html+='<section class="card"><h2>Treino</h2>'
+    +'<button class="hab '+(d.treino?'feito':'')+'" data-action="treino-check" style="width:100%">'
+    +'<span class="ic">🏋️</span>'
+    +'<span class="nome">Treinei hoje<span class="sub">Vale qualquer um: academia, corrida, futevôlei, vôlei, cardio…</span></span>'
+    +'<span class="check">✓</span></button>';
+  const nTr=treinosNaSemana();
+  if(nTr>0) html+='<p class="muted small mt">💪 '+nTr+' treino'+(nTr>1?'s':'')+' nos últimos 7 dias.</p>';
+  if(treinoHoje&&treinoHoje.exercicios.length){
+    html+='<button class="btn sec-btn bloco mt" data-action="abrir-treino" data-id="'+esc(treinoHoje.id)+'">'+esc(treinoHoje.nome)+(treinoHoje.foco?' — '+esc(treinoHoje.foco):'')+' · registrar cargas ›</button>';
   }
   html+='</section>';
 

@@ -112,7 +112,7 @@ function diaVazio(){
   return { habitos:{}, refeicoes:{}, meds:{}, agua:0,
            sono:{h:null,score:null,deitou:'',acordou:''},
            humor:null, energia:null, nota:'',
-           apostas:[], deslizes:{}, treinoNota:'', xp:0 };
+           apostas:[], deslizes:{}, treino:false, treinoNota:'', xp:0 };
 }
 function getDia(iso){
   iso=iso||hojeISO();
@@ -141,6 +141,7 @@ function recalcXP(iso){
   if(Number(S.profile.aguaAlvoMl)>0 && (d.agua||0)>=Number(S.profile.aguaAlvoMl)) xp+=10;
   if(d.sono && (d.sono.h||d.sono.deitou)) xp+=10;
   if(d.humor) xp+=5;
+  if(d.treino) xp+=10; // treino é bônus: soma quando acontece; descansar não desconta
   d.xp=xp;
   return xp;
 }
@@ -218,11 +219,12 @@ function metricasConquista(){
   const dias=Object.keys(S.days);
   const contaDias=fn=>dias.filter(fn).length;
   const cats=[
-    {chave:'ofensiva', titulo:'Dias de ofensiva', icone:'🔥', unidade:'dias seguidos', valor:melhorStreak(), fixos:MARCOS_DIAS, incr:500},
+    {chave:'ofensiva', titulo:'Dias de constância', icone:'🔥', unidade:'dias seguidos', valor:melhorStreak(), fixos:MARCOS_DIAS, incr:500},
     {chave:'xp', titulo:'XP acumulado', icone:'🌟', unidade:'XP', valor:xpTotal(), fixos:MARCOS_XP, incr:50000},
     {chave:'dias', titulo:'Dias completos', icone:'✅', unidade:'dias batidos', valor:contaDias(d=>diaConta(d)), fixos:MARCOS_DIAS, incr:500},
     {chave:'agua', titulo:'Hidratação', icone:'💧', unidade:'dias na meta de água', valor:contaDias(d=>Number(S.profile.aguaAlvoMl)>0 && (S.days[d].agua||0)>=Number(S.profile.aguaAlvoMl)), fixos:MARCOS_DIAS, incr:500},
-    {chave:'sono', titulo:'Sono registrado', icone:'😴', unidade:'noites', valor:contaDias(d=>S.days[d].sono&&(S.days[d].sono.h||S.days[d].sono.deitou)), fixos:MARCOS_DIAS, incr:500}
+    {chave:'sono', titulo:'Sono registrado', icone:'😴', unidade:'noites', valor:contaDias(d=>S.days[d].sono&&(S.days[d].sono.h||S.days[d].sono.deitou)), fixos:MARCOS_DIAS, incr:500},
+    {chave:'treino', titulo:'Treinos feitos', icone:'🏋️', unidade:'treinos', valor:contaDias(d=>S.days[d].treino===true), fixos:MARCOS_DIAS, incr:500}
   ];
 
   S.habits.filter(h=>h.tipo==='fazer').forEach(h=>{
@@ -552,6 +554,7 @@ function mesclarDia(a,b){
   out.nota=(b.nota&&b.nota.length>=(a.nota||'').length)?b.nota:(a.nota||'');
   out.apostas=uniaoLanc(a.apostas,b.apostas);
   out.deslizes=Object.assign({},a.deslizes,b.deslizes);
+  out.treino=!!(a.treino||b.treino);
   out.treinoNota=b.treinoNota||a.treinoNota||'';
   out.burnout=b.burnout||a.burnout;
   out._m=(a._m||b._m)||undefined;
@@ -571,6 +574,12 @@ function blocoAtual(){
     if(ini>agora&&!prox) prox=b;
   }
   return {atual,prox};
+}
+
+function treinosNaSemana(){
+  let n=0;
+  for(let i=0;i<7;i++){ const rec=S.days[addDias(hojeISO(),-i)]; if(rec&&rec.treino) n++; }
+  return n;
 }
 
 function treinoPorId(id){ return S.treinos.split.find(t=>t.id===id)||null; }

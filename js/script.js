@@ -59,7 +59,7 @@ const ACOES={
     const id=el.dataset.id;
     if(id==='apostas'){ ACOES['apostar'](); return; }
     abrirModal('<h3>Registrar deslize — '+esc(nomeHabito(id))+'</h3>'
-      +'<p class="sec small">Sem culpa: registrar é o que transforma deslize em dado. A ofensiva desse hábito reinicia, o resto do dia continua valendo.</p>'
+      +'<p class="sec small">Sem culpa: registrar é o que transforma deslize em dado. A sequência desse hábito recomeça, o resto do dia continua valendo.</p>'
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
       +'<button class="btn perigo" data-action="deslize-confirmar" data-id="'+esc(id)+'">Registrar</button></div>'
       +'<p class="muted small mt">Dica: depois de registrar, usa o 🌊 se a vontade continuar.</p>');
@@ -75,6 +75,9 @@ const ACOES={
   'agua':el=>{ const d=getDia(); d.agua=Math.max(0,(d.agua||0)+Number(el.dataset.ml)); recalcXP(hojeISO()); saveState(); render(); },
   'humor':el=>{ const d=getDia(); d.humor=Number(el.dataset.v); recalcXP(hojeISO()); saveState(); render(); },
   'energia':el=>{ const d=getDia(); d.energia=Number(el.dataset.v); recalcXP(hojeISO()); saveState(); render(); },
+
+  'treino-check':()=>{ const d=getDia(); d.treino=!d.treino; recalcXP(hojeISO()); saveState(); if(d.treino) toast('💪 Treino contou! (+10 XP de bônus)'); render(); },
+  'recomeco-ok':()=>{ UI.recomecoLeve=false; render(); toast('Um passo de cada vez 💜'); },
 
   'rotina-dia':el=>{ UI.rotinaDia=Number(el.dataset.d); render(); },
   'bloco-add':el=>abrirModalBloco(Number(el.dataset.d),null),
@@ -648,6 +651,7 @@ function boasVindas(){
   if(!ult) msg=saudacaoHora()+', '+nome+'! 👋';
   else{
     const dd=diffDias(ult,hojeISO());
+    if(dd>=4 && typeof UI!=='undefined' && !document.body.classList.contains('modo-login')){ UI.recomecoLeve=true; try{ render(); }catch(e){} }
     if(dd===1) msg='Bom te ver de novo, '+nome+'! 👋';
     else if(dd<7) msg='Que bom que você voltou, '+nome+'! 💜';
     else msg='Senti sua falta, '+nome+'! Bora retomar 🚀';

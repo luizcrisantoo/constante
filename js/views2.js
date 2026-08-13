@@ -7,7 +7,7 @@ function viewGrana(){
   if(!temDividas){
     html+='<section class="card"><h2>Dívidas <span class="chip">opcional</span></h2>'
       +'<p class="muted small">Tem dívidas pra organizar? O Constante monta uma fila (bola de neve) e te mostra quando você fica livre delas.</p>'
-      +'<button class="btn sec-btn mt" data-action="divida-add">+ adicionar dívida</button></section>';
+      +'<button class="btn sec-btn mt" data-action="divida-add">+ Adicionar dívida</button></section>';
     return html;
   }
 
@@ -15,13 +15,13 @@ function viewGrana(){
   const pct=fin.total?Math.round(100*fin.pago/fin.total):0;
   html+='<section class="card"><h2>Dívidas — visão geral</h2>'
     +'<div class="linha"><div class="esq"><span class="hero-num num">'+fmtBRL(fin.saldo)+'</span><div class="hero-sub">faltam · já pagou '+fmtBRL(fin.pago)+' de '+fmtBRL(fin.total)+'</div></div>'
-    +'<span class="chip num">'+pct+'%</span></div>'
+    +'<span class="chip num">'+pct+'% pago</span></div>'
     +'<div class="progress verde mt"><span style="width:'+pct+'%"></span></div>'
     +'<div class="linha mt"><span class="esq muted small">Renda: <b class="num">'+fmtBRL(fin.renda)+'</b>/mês</span>'
-    +'<span class="muted small">Aporte: <b class="num">'+fmtBRL(S.finance.aporteMensal)+'</b>/mês <button class="btn mini sec-btn" data-action="aporte-edit">mudar</button></span></div>'
+    +'<span class="muted small">Aporte: <b class="num">'+fmtBRL(S.finance.aporteMensal)+'</b>/mês <button class="btn mini sec-btn" data-action="aporte-edit">Mudar</button></span></div>'
     +'</section>';
 
-  html+='<section class="card"><h2>Fila de pagamento (bola de neve) <button class="btn mini sec-btn dir" data-action="divida-add">+ dívida</button></h2>';
+  html+='<section class="card"><h2>Fila de pagamento (bola de neve) <button class="btn mini sec-btn dir" data-action="divida-add">+ Dívida</button></h2>';
   S.finance.dividas.forEach((dv,ix)=>{
     const saldo=saldoDivida(dv);
     const pctD=Math.round(100*(dv.total-saldo)/dv.total);
@@ -32,10 +32,10 @@ function viewGrana(){
       +'<span class="valores num">'+(quit?'✅ quitada!':fmtBRL(saldo)+' de '+fmtBRL(dv.total))+'</span></div>'
       +'<div class="progress verde fina"><span style="width:'+pctD+'%"></span></div>'
       +'<div class="linha mt">'
-      +(quit?'':'<button class="btn mini esq" data-action="pagar" data-id="'+idSeguro+'">💸 registrar pagamento</button>')
-      +'<button class="btn mini sec-btn" data-action="divida-edit" data-id="'+idSeguro+'">✎</button>'
+      +(quit?'':'<button class="btn mini esq" data-action="pagar" data-id="'+idSeguro+'">💸 Registrar pagamento</button>')
+      +'<button class="btn mini sec-btn" data-action="divida-edit" data-id="'+idSeguro+'" aria-label="Editar dívida">✎</button>'
       +'</div>'
-      +(dv.pagos.length?'<details><summary>histórico ('+dv.pagos.length+')</summary><ul style="margin-left:1.1rem" class="small sec">'
+      +(dv.pagos.length?'<details><summary>Histórico ('+dv.pagos.length+')</summary><ul style="margin-left:1.1rem" class="small sec">'
         +dv.pagos.map(p=>'<li class="num">'+fmtData(p.data)+' — '+fmtBRL(p.valor)+'</li>').join('')+'</ul></details>':'')
       +'</div>';
   });
@@ -45,17 +45,17 @@ function viewGrana(){
   html+='<section class="card"><h2>Projeção de quitação</h2>';
   if(proj.incompleta){
     html+='<div class="aviso">Com o aporte atual, a quitação passa de 10 anos — aumenta o aporte mensal pra encurtar isso.</div>'
-      +'<button class="btn sec-btn mt" data-action="aporte-edit">ajustar aporte mensal</button>';
+      +'<button class="btn sec-btn mt" data-action="aporte-edit">Ajustar aporte mensal</button>';
   } else if(proj.fim){
     html+='<div class="ok-box">Mantendo '+fmtBRL(S.finance.aporteMensal)+'/mês, você fica <b>livre de dívidas em '+esc(proj.fim)+'</b> 🕊️ — e cada economia que virar pagamento antecipa isso.</div>';
-    html+='<details class="mt"><summary class="muted small">ver mês a mês</summary><table class="tabela mt"><thead><tr><th>Mês</th><th>Pagamentos</th><th class="num">Resta</th></tr></thead><tbody>';
+    html+='<details class="mt"><summary class="muted small">Ver mês a mês</summary><table class="tabela mt"><thead><tr><th>Mês</th><th>Pagamentos</th><th class="num">Resta</th></tr></thead><tbody>';
     proj.meses.forEach(mm=>{
       html+='<tr><td class="num">'+esc(mm.label)+'</td><td>'+mm.pagamentos.map(p=>esc(p.nome)+' '+fmtBRL(p.valor)+(p.quitou?' ✅':'')).join('<br>')+'</td><td class="num">'+fmtBRL(mm.resta)+'</td></tr>';
     });
     html+='</tbody></table></details>';
   } else {
     html+='<p class="muted">Define um aporte mensal maior que zero pra ver a projeção.</p>'
-      +'<button class="btn sec-btn mt" data-action="aporte-edit">definir aporte mensal</button>';
+      +'<button class="btn sec-btn mt" data-action="aporte-edit">Definir aporte mensal</button>';
   }
   html+='</section>';
 
@@ -67,7 +67,7 @@ function secaoReducao(){
   if(!S.bets.ativo && !jaUsou){
     return '<section class="card"><h2>Reduzir um hábito <span class="chip">opcional</span></h2>'
       +'<p class="muted small">Tem algum hábito que você quer diminuir aos poucos — redes sociais, jogos, telas de madrugada, doces, cigarro? Sem corte seco: o Constante define um limite semanal que cai sozinho até a meta, com um apoio pra quando bater a vontade.</p>'
-      +'<button class="btn sec-btn mt" data-action="apostas-ativar">ativar plano de redução</button></section>';
+      +'<button class="btn sec-btn mt" data-action="apostas-ativar">Ativar plano de redução</button></section>';
   }
   const u=unidadeBets();
   const nomeAlvo=(S.bets.alvo||'').trim()||'seu hábito';
@@ -84,17 +84,17 @@ function secaoReducao(){
     +(estourou?'<div class="aviso mt">⚠️ Passou do limite desta semana. Sem culpa — registra, respira (🌊) e volta pro plano. O que importa é a tendência.</div>'
              :'<div class="muted small mt">Ainda dentro do limite nesta semana: <b class="num">'+fmtUnidade(resto,u)+'</b>.</div>')
     +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-    +'<button class="btn sec-btn" data-action="apostar">registrar uso</button>'
-    +'<button class="btn" data-action="sos-abrir">🌊 tô com vontade</button>'
+    +'<button class="btn sec-btn" data-action="apostar">Registrar uso</button>'
+    +'<button class="btn" data-action="sos-abrir">🌊 Tô com vontade</button>'
     +'</div>';
   if(u==='brl' && econ>0 && S.finance.dividas.length){
     html+='<div class="ok-box mt">💰 Você deixou de gastar <b class="num">'+fmtBRL(econ)+'</b> nas semanas fechadas. '
-      +'<button class="btn mini mt" data-action="economia-transferir">transformar em pagamento de dívida</button></div>';
+      +'<button class="btn mini mt" data-action="economia-transferir">Transformar em pagamento de dívida</button></div>';
   } else if(u!=='brl' && econ>0){
     html+='<div class="ok-box mt">🎉 Você ficou <b class="num">'+fmtUnidade(econ,u)+'</b> abaixo do limite nas semanas fechadas. Cada semana dentro da meta é um degrau.</div>';
   }
   if(wk>0){
-    html+='<details class="mt"><summary class="muted small">semanas anteriores</summary><table class="tabela mt"><thead><tr><th>Semana</th><th class="num">Limite</th><th class="num">Registrado</th><th>Status</th></tr></thead><tbody>';
+    html+='<details class="mt"><summary class="muted small">Semanas anteriores</summary><table class="tabela mt"><thead><tr><th>Semana</th><th class="num">Limite</th><th class="num">Registrado</th><th>Status</th></tr></thead><tbody>';
     for(let w=Math.max(0,wk-8);w<wk;w++){
       const g=gastoNaSemana(w), l=limiteSemana(w);
       html+='<tr><td class="num">'+(w+1)+'</td><td class="num">'+fmtUnidade(l,u)+'</td><td class="num">'+fmtUnidade(g,u)+'</td><td>'+(g<=l?'✅ dentro':'❌ passou')+'</td></tr>';
@@ -147,11 +147,11 @@ function viewMente(){
   } else {
     html+='<p class="muted small">Faz o primeiro check — leva 30 segundos. Ideal: todo domingo na revisão semanal.</p>';
   }
-  html+='<button class="btn sec-btn mt" data-action="burnout-abrir">fazer check-in de burnout</button></section>';
+  html+='<button class="btn sec-btn mt" data-action="burnout-abrir">Fazer check-in de burnout</button></section>';
 
   html+='<section class="card"><h2>Quando bate a vontade</h2>'
     +'<p class="sec small">Impulso é onda: cresce, faz pico e passa — surfar 10 minutos costuma bastar. O botão 🌊 te guia numa respiração 4-7-8 até a onda baixar.</p>'
-    +'<button class="btn mt" data-action="sos-abrir">🌊 abrir o surf do impulso</button>'
+    +'<button class="btn mt" data-action="sos-abrir">🌊 Abrir o surf do impulso</button>'
     +'<p class="muted small mt">Dica: tirar o gatilho do alcance — app fora do celular, sem atalho, sem login salvo — reduz MUITO a força da onda.</p></section>';
 
   return html;
@@ -208,7 +208,7 @@ function viewConfig(){
     +(fotoP?'<img src="'+esc(fotoP)+'" alt="foto de perfil" style="width:64px;height:64px;border-radius:50%;object-fit:cover;flex:none;border:2px solid var(--brand-strong)">':'<div style="width:64px;height:64px;border-radius:50%;flex:none;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:1.7rem">🙂</div>')
     +'<div class="acoes" style="display:flex;gap:0.4rem;flex-wrap:wrap">'
     +'<button class="btn mini sec-btn" data-action="perfil-foto">'+(fotoP?'trocar foto':'adicionar foto')+'</button>'
-    +(fotoP?'<button class="btn mini perigo" data-action="perfil-foto-remover">remover</button>':'')
+    +(fotoP?'<button class="btn mini perigo" data-action="perfil-foto-remover">Remover</button>':'')
     +'<input type="file" id="perfil-foto-file" accept="image/*" class="escondido"></div>'
     +'</div>'
     +'<div class="cfg-grid">'
@@ -227,23 +227,23 @@ function viewConfig(){
     +cfgCampo('Melatonina','settings.sono.melatonina','time',st.sono.melatonina)
     +'</div></section>';
 
-  html+='<section class="card"><h2>Hábitos <button class="btn mini sec-btn dir" data-action="habito-add">+ novo</button></h2><div class="lista-edit">';
+  html+='<section class="card"><h2>Hábitos <button class="btn mini sec-btn dir" data-action="habito-add">+ Novo</button></h2><div class="lista-edit">';
   S.habits.forEach(hb=>{
     html+='<div class="item-edit"><span>'+esc(hb.icone)+'</span><span class="nome">'+esc(hb.nome)
       +' <span class="muted small">('+(hb.tipo==='evitar'?'evitar':'fazer')+' · '+hb.dias.map(d2=>DIAS_ABREV[d2]).join(',')+')</span></span>'
-      +'<button class="btn mini sec-btn" data-action="habito-edit" data-id="'+esc(hb.id)+'">✎</button>'
-      +'<button class="btn mini perigo" data-action="habito-del" data-id="'+esc(hb.id)+'">✕</button></div>';
+      +'<button class="btn mini sec-btn" data-action="habito-edit" data-id="'+esc(hb.id)+'" aria-label="Editar hábito">✎</button>'
+      +'<button class="btn mini perigo" data-action="habito-del" data-id="'+esc(hb.id)+'" aria-label="Excluir hábito">✕</button></div>';
   });
   html+='</div></section>';
 
-  html+='<section class="card"><h2>Categorias da rotina <button class="btn mini sec-btn dir" data-action="cat-add">+ nova</button></h2>'
+  html+='<section class="card"><h2>Categorias da rotina <button class="btn mini sec-btn dir" data-action="cat-add">+ Nova</button></h2>'
     +'<p class="muted small">Personalize os tipos de bloco da rotina — o nome e a cor. Apague as que não usa.</p>'
     +'<div class="lista-edit">';
   categorias().forEach(c=>{
     html+='<div class="item-edit">'
       +'<input type="color" value="'+esc(c.cor)+'" data-cat-cor="'+esc(c.id)+'" aria-label="cor" style="width:32px;height:28px;padding:0;border:none;background:none;flex:none">'
       +'<input type="text" class="nome" value="'+esc(c.nome)+'" data-cat-nome="'+esc(c.id)+'" maxlength="24" style="flex:1;min-width:0">'
-      +'<button class="btn mini perigo" data-action="cat-del" data-id="'+esc(c.id)+'">✕</button></div>';
+      +'<button class="btn mini perigo" data-action="cat-del" data-id="'+esc(c.id)+'" aria-label="Excluir categoria">✕</button></div>';
   });
   html+='</div></section>';
 
@@ -252,22 +252,25 @@ function viewConfig(){
   html+='<section class="card"><h2>Rendas mensais</h2><div class="lista-edit">';
   S.finance.rendas.forEach((r,ix)=>{
     html+='<div class="item-edit"><span class="nome">'+esc(r.nome)+'</span><span class="num">'+fmtBRL(r.valor)+'</span>'
-      +'<button class="btn mini sec-btn" data-action="renda-edit" data-ix="'+ix+'">✎</button></div>';
+      +'<button class="btn mini sec-btn" data-action="renda-edit" data-ix="'+ix+'" aria-label="Editar renda">✎</button></div>';
   });
-  html+='</div><button class="btn mini sec-btn mt" data-action="renda-add">+ renda</button></section>';
+  html+='</div><button class="btn mini sec-btn mt" data-action="renda-add">+ Renda</button></section>';
 
   if(produtoAtivo()){
     const u=usuarioAtual();
+    const _se=(typeof syncEstado==='function')?syncEstado():'local';
+    const _seTxt={ok:'☁️ Salvo na nuvem',pendente:'☁️ Mudança recente a caminho da nuvem',sincronizando:'☁️ Sincronizando…',offline:'✈️ Sem conexão — salvo neste aparelho',erro:'☁️ A última sincronização falhou — tenta de novo abaixo'}[_se]||'';
     html+='<section class="card"><h2>Conta</h2>'
       +'<p class="sec">Logado como <b>'+esc(u?u.email:'—')+'</b></p>'
+      +(_seTxt?'<p class="sec small mt">'+_seTxt+' · <span class="muted">'+(st.ultimaSync?'última sync '+new Date(st.ultimaSync).toLocaleString('pt-BR'):'ainda não sincronizado')+'</span></p>':'')
       +'<div class="linha mt"><label class="esq small sec"><input type="checkbox" style="width:auto" data-cfg-check="settings.syncAuto" '+(st.syncAuto?'checked':'')+'> sincronizar automático ao salvar</label></div>'
       +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-      +'<button class="btn" data-action="sync-agora">🔄 sincronizar agora</button>'
-      +'<button class="btn sec-btn" data-action="conta-trocar-senha">trocar senha</button>'
-      +'<button class="btn sec-btn" data-action="auth-sair">sair</button>'
+      +'<button class="btn" data-action="sync-agora">🔄 Sincronizar agora</button>'
+      +'<button class="btn sec-btn" data-action="conta-trocar-senha">Trocar senha</button>'
+      +'<button class="btn sec-btn" data-action="auth-sair">Sair</button>'
       +'</div>'
       +'<p class="muted small mt">'+(st.ultimaSync?'Última sync: '+new Date(st.ultimaSync).toLocaleString('pt-BR'):'Ainda não sincronizado')+' · <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a></p>'
-      +'<button class="btn perigo bloco mt-lg" data-action="conta-apagar">apagar minha conta e todos os dados (LGPD)</button>'
+      +'<button class="btn perigo bloco mt-lg" data-action="conta-apagar">Apagar minha conta e todos os dados (LGPD)</button>'
       +'</section>';
   } else {
     html+='<section class="card"><h2>Sincronização (celular ↔ notebook)</h2>'
@@ -276,8 +279,8 @@ function viewConfig(){
       +'<div class="campo"><label>Código de sincronização (igual nos 2 aparelhos — trata como senha)</label><input type="text" data-cfg="settings.syncCode" value="'+esc(st.syncCode)+'" placeholder="ex.: luiz-quadril-2026-x7k9"></div>'
       +'<div class="linha"><label class="esq small sec"><input type="checkbox" style="width:auto" data-cfg-check="settings.syncAuto" '+(st.syncAuto?'checked':'')+'> sincronizar automático ao salvar</label></div>'
       +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-      +'<button class="btn" data-action="sync-agora">🔄 sincronizar agora</button>'
-      +'<button class="btn sec-btn" data-action="sync-baixar">⬇ baixar da nuvem</button>'
+      +'<button class="btn" data-action="sync-agora">🔄 Sincronizar agora</button>'
+      +'<button class="btn sec-btn" data-action="sync-baixar">⬇ Baixar da nuvem</button>'
       +'</div>'
       +'<p class="muted small mt">'+(st.ultimaSync?'Última sync: '+new Date(st.ultimaSync).toLocaleString('pt-BR'):'Nunca sincronizado')+' · passo a passo no GUIA-PUBLICACAO.md</p></section>';
   }
@@ -287,15 +290,15 @@ function viewConfig(){
 
   html+='<section class="card"><h2>Novidades</h2>'
     +'<p class="muted small">O que mudou nas últimas atualizações do app.</p>'
-    +'<button class="btn mini sec-btn" data-action="novidades-todas">📜 ver histórico de novidades</button></section>';
+    +'<button class="btn mini sec-btn" data-action="novidades-todas">📜 Ver histórico de novidades</button></section>';
 
   html+='<section class="card"><h2>Backup & dados</h2>'
     +'<div class="acoes" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-    +'<button class="btn sec-btn" data-action="exportar">⬇ exportar backup</button>'
-    +'<button class="btn sec-btn" data-action="importar">⬆ importar backup</button>'
+    +'<button class="btn sec-btn" data-action="exportar">⬇ Exportar backup</button>'
+    +'<button class="btn sec-btn" data-action="importar">⬆ Importar backup</button>'
     +'<input type="file" id="importar-arquivo" accept="application/json" class="escondido">'
     +'</div>'
-    +'<button class="btn perigo bloco mt-lg" data-action="zerar">apagar tudo e recomeçar</button></section>';
+    +'<button class="btn perigo bloco mt-lg" data-action="zerar">Apagar tudo e recomeçar</button></section>';
 
   html+='<p class="centro muted small">Constante v'+versaoApp()+' 🟣<br>Remédios e dieta: valide com seu médico e nutricionista.</p>';
   return html;

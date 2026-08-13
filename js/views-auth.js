@@ -15,8 +15,8 @@ function renderLogin(){
       +'<div id="cf-turnstile" class="mt"></div>'
       +'<button class="btn bloco mt" data-action="auth-entrar">Entrar</button>'
       +'<div class="login-links mt">'
-      +'<button data-action="auth-tela" data-t="criar">criar conta</button>'
-      +'<button data-action="auth-tela" data-t="esqueci">esqueci a senha</button>'
+      +'<button data-action="auth-tela" data-t="criar">Criar conta</button>'
+      +'<button data-action="auth-tela" data-t="esqueci">Esqueci a senha</button>'
       +'</div>';
   }
   else if(a.tela==='criar'){
@@ -28,22 +28,22 @@ function renderLogin(){
       +erro+ok
       +'<div id="cf-turnstile" class="mt"></div>'
       +'<button class="btn bloco mt" data-action="auth-cadastrar">Criar minha conta</button>'
-      +'<div class="login-links mt"><button data-action="auth-tela" data-t="entrar">já tenho conta</button><span></span></div>';
+      +'<div class="login-links mt"><button data-action="auth-tela" data-t="entrar">Já tenho conta</button><span></span></div>';
   }
   else if(a.tela==='esqueci'){
-    corpo='<p class="sec small">Te enviamos um link pra redefinir a senha.</p>'
+    corpo='<p class="sec small">Digita o e-mail da tua conta que a gente te envia um link pra criar uma senha nova.</p>'
       +'<div class="campo mt"><label for="au-email">E-mail da conta</label><input id="au-email" type="email" autocomplete="email" value="'+esc(a.email||'')+'"></div>'
       +erro+ok
       +'<div id="cf-turnstile" class="mt"></div>'
       +'<button class="btn bloco mt" data-action="auth-esqueci-enviar">Enviar link</button>'
-      +'<div class="login-links mt"><button data-action="auth-tela" data-t="entrar">← voltar</button><span></span></div>';
+      +'<div class="login-links mt"><button data-action="auth-tela" data-t="entrar">← Voltar</button><span></span></div>';
   }
   else if(a.tela==='confirmar'){
     corpo='<div class="ok-box">📬 Enviamos um link de confirmação pra <b>'+esc(a.email||'seu e-mail')+'</b>.<br>Abre lá (olha o spam também) e clica no link — aí é só entrar.</div>'
       +erro+ok
       +'<div id="cf-turnstile" class="mt"></div>'
-      +'<button class="btn sec-btn bloco mt" data-action="auth-reenviar">reenviar e-mail</button>'
-      +'<div class="login-links mt"><button data-action="auth-tela" data-t="entrar">← já confirmei, entrar</button><span></span></div>';
+      +'<button class="btn sec-btn bloco mt" data-action="auth-reenviar">Reenviar e-mail</button>'
+      +'<div class="login-links mt"><button data-action="auth-tela" data-t="entrar">← Já confirmei, entrar</button><span></span></div>';
   }
   else if(a.tela==='nova-senha'){
     corpo='<p class="sec small">Cria tua nova senha:</p>'

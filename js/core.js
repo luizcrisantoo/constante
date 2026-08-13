@@ -101,9 +101,10 @@ function saveState(opts){
   if(dHoje) dHoje._m=S._ts;
   lsSet(JSON.stringify(S));
 
+  if(!(opts&&opts.skipSync) && syncConfigurado()) setSyncEstado('pendente');
   if(!(opts&&opts.skipSync) && S.settings.syncAuto && syncConfigurado() && S.settings.ultimaSync){
     clearTimeout(_saveTimer);
-    _saveTimer=setTimeout(()=>syncAgora().catch(()=>{}),1500);
+    _saveTimer=setTimeout(()=>syncAgora().catch(falhaSync),1500);
   }
 }
 
@@ -241,7 +242,7 @@ function gerarConquistas(){
     }));
     out.push({
       id:c.chave+'_'+proximo, icone:c.icone, nome:c.titulo+' — '+proximo,
-      desc:'Faltam '+(proximo-c.valor)+' pra '+proximo+' '+c.unidade, ganha:false, cat:c.chave,
+      desc:((proximo-c.valor)===1?'Falta 1':'Faltam '+(proximo-c.valor))+' pra '+proximo+' '+c.unidade, ganha:false, cat:c.chave,
       meta:proximo, valor:c.valor, proxima:true
     });
   });
@@ -343,7 +344,7 @@ function _syncHeaders(){
 }
 async function syncPush(opts){
   if(!syncConfigurado()) throw new Error(produtoAtivo()?'Entra na tua conta primeiro':'Sync não configurada');
-
+  setSyncEstado('sincronizando');
   const payload={...S}; delete payload.settings;
   let url, linha;
   if(produtoAtivo()){
@@ -363,10 +364,12 @@ async function syncPush(opts){
   if(!r.ok) throw new Error('Falha ao enviar ('+r.status+')');
   S.settings.ultimaSync=new Date().toISOString();
   lsSet(JSON.stringify(S));
+  sucessoSync();
   return true;
 }
 async function syncPull(){
   if(!syncConfigurado()) throw new Error(produtoAtivo()?'Entra na tua conta primeiro':'Sync não configurada');
+  setSyncEstado('sincronizando');
   const url=produtoAtivo()
     ? _syncBase()+'/rest/v1/constante_accounts?user_id=eq.'+encodeURIComponent(usuarioAtual().id)+'&select=payload,updated_at'
     : _syncBase()+'/rest/v1/constante_state?sync_code=eq.'+encodeURIComponent(S.settings.syncCode)+'&select=payload,updated_at';
@@ -378,11 +381,13 @@ async function syncPull(){
 
     S.settings.ultimaSync=new Date().toISOString();
     lsSet(JSON.stringify(S));
+    sucessoSync();
     return false;
   }
   mesclarEstado(rows[0].payload);
   S.settings.ultimaSync=new Date().toISOString();
   saveState({skipSync:true});
+  sucessoSync();
   return true;
 }
 async function syncAgora(){
@@ -393,7 +398,47 @@ async function syncAgora(){
 
 async function flushSyncPendente(){
   clearTimeout(_saveTimer);
-  if(syncConfigurado()){ try{ await syncPush(); }catch(e){} }
+  if(syncConfigurado()){ try{ await syncPush(); }catch(e){ falhaSync(e); } }
+}
+
+// ---------- Estado VISÍVEL da sincronização (P0 da auditoria) ----------
+// 'local' = sem conta/sync (não mostra nada) · 'ok' = salvo na nuvem ·
+// 'pendente' = mudança ainda não enviada · 'sincronizando' · 'offline' · 'erro'
+let _syncEstado='local';
+let _syncAvisou=false;     // já avisou desta sequência de falhas? (anti-spam)
+let _syncTinhaErro=false;  // pra comemorar quando voltar a funcionar
+function syncEstado(){ return _syncEstado; }
+function setSyncEstado(s){
+  if(_syncEstado===s) return;
+  _syncEstado=s;
+  if(typeof renderTopbar==='function' && !document.body.classList.contains('modo-login')){
+    try{ renderTopbar(); }catch(e){}
+  }
+}
+function traduzErroSync(e){
+  const m=(e&&e.message)||'';
+  if(/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'Sem internet agora — teus registros estão salvos no aparelho e sobem sozinhos quando a conexão voltar.';
+  if(/Sessão expirada/i.test(m)) return '';
+  if(/\(5\d\d\)|\(4\d\d\)/.test(m)) return 'O servidor teve um soluço — teus dados continuam no aparelho, vou tentar de novo sozinho.';
+  return 'A sincronização falhou ('+m+') — teus dados continuam salvos no aparelho.';
+}
+function falhaSync(e){
+  const semRede=(typeof navigator!=='undefined' && navigator.onLine===false);
+  setSyncEstado(semRede?'offline':'erro');
+  _syncTinhaErro=true;
+  if(!_syncAvisou){
+    _syncAvisou=true;
+    const msg=traduzErroSync(e);
+    if(msg && typeof toast==='function') toast('☁️ '+msg,{fixo:true});
+  }
+}
+function sucessoSync(){
+  setSyncEstado('ok');
+  _syncAvisou=false;
+  if(_syncTinhaErro){
+    _syncTinhaErro=false;
+    if(typeof toast==='function') toast('☁️ Sincronizado de novo ✓');
+  }
 }
 
 let _tratandoSessao=false;

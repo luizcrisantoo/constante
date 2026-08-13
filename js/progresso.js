@@ -111,7 +111,7 @@ function viewProgresso(){
   let html='<section class="card">'
     +'<h2>Progresso em fotos</h2>'
     +'<p class="sec small">Suas fotos ficam privadas — só você vê. Registre de vez em quando e compare a evolução.</p>'
-    +'<button class="btn mt" data-action="foto-add">📷 adicionar foto</button>'
+    +'<button class="btn mt" data-action="foto-add">📷 Adicionar foto</button>'
     +'<input type="file" id="foto-file" accept="image/*" class="escondido"></section>';
 
   if(!fotos.length){
@@ -124,7 +124,7 @@ function viewProgresso(){
     const b=S.progresso.find(f=>f.id===_fotoCompare[1]);
     if(a&&b){
       html+='<section class="card"><div class="linha"><h2>Comparando</h2>'
-        +'<button class="btn mini sec-btn" data-action="foto-comparar-limpar">limpar</button></div>'
+        +'<button class="btn mini sec-btn" data-action="foto-comparar-limpar">Limpar</button></div>'
         +'<div style="display:flex;gap:6px;margin-top:8px">'
         +'<div style="flex:1"><img data-path="'+esc(a.path)+'" style="width:100%;border-radius:8px" alt=""><div class="muted small centro">'+esc(fmtData(a.data))+'</div></div>'
         +'<div style="flex:1"><img data-path="'+esc(b.path)+'" style="width:100%;border-radius:8px" alt=""><div class="muted small centro">'+esc(fmtData(b.data))+'</div></div>'
@@ -133,7 +133,7 @@ function viewProgresso(){
   }
 
   html+='<section class="card"><div class="linha"><h2>Linha do tempo <span class="muted small">'+fotos.length+'</span></h2>'
-    +'<button class="btn mini '+(_fotoCompareModo?'':'sec-btn')+'" data-action="foto-comparar-modo">'+(_fotoCompareModo?'✓ escolhendo 2':'comparar')+'</button></div>';
+    +'<button class="btn mini '+(_fotoCompareModo?'':'sec-btn')+'" data-action="foto-comparar-modo">'+(_fotoCompareModo?'✓ Escolhendo 2':'Comparar')+'</button></div>';
   if(_fotoCompareModo) html+='<p class="muted small mt">Toque em duas fotos pra comparar.</p>';
   html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px">';
   fotos.forEach(f=>{
@@ -160,7 +160,7 @@ function abrirFoto(id){
   abrirModal('<h3>'+esc(fmtData(f.data))+'</h3>'
     +'<img data-path="'+esc(f.path)+'" style="width:100%;border-radius:8px;background:var(--surface-2)" alt="">'
     +(f.nota?'<p class="sec small mt">'+esc(f.nota)+'</p>':'')
-    +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap"><button class="btn sec-btn" data-action="fechar-modal">fechar</button>'
-    +'<button class="btn perigo" data-action="foto-del" data-id="'+esc(f.id)+'">apagar</button></div>');
+    +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap"><button class="btn sec-btn" data-action="fechar-modal">Fechar</button>'
+    +'<button class="btn perigo" data-action="foto-del" data-id="'+esc(f.id)+'">Apagar</button></div>');
   hidratarFotos();
 }

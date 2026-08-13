@@ -61,12 +61,12 @@ function secaoNotificacoes(){
     if(_pushInscrito===true){
       corpo='<div class="ok-box">🔔 Lembretes ativados neste aparelho.</div>'
         +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-        +'<button class="btn sec-btn" data-action="notif-exemplo">ver exemplo</button>'
-        +'<button class="btn sec-btn" data-action="notif-desativar">desativar aqui</button><button class="btn" data-action="notif-ativar">reativar</button></div>'
+        +'<button class="btn sec-btn" data-action="notif-exemplo">Ver exemplo</button>'
+        +'<button class="btn sec-btn" data-action="notif-desativar">Desativar aqui</button><button class="btn" data-action="notif-ativar">Reativar</button></div>'
         +'<p class="muted small mt">O agendamento dos lembretes (dormir, refeições, hábitos) entra na próxima atualização.</p>';
     } else if(_pushInscrito===false){
       corpo='<div class="aviso">🔔 Falta um passo: a permissão tá concedida, mas os lembretes ainda não foram registrados neste aparelho.</div>'
-        +'<button class="btn mt" data-action="notif-ativar">finalizar ativação</button>';
+        +'<button class="btn mt" data-action="notif-ativar">Finalizar ativação</button>';
     } else {
       corpo='<p class="muted small">Verificando os lembretes deste aparelho…</p>';
     }
@@ -74,7 +74,7 @@ function secaoNotificacoes(){
     corpo='<p class="muted small">As notificações estão bloqueadas para este site nas configurações do navegador. Libere lá e volte aqui.</p>';
   } else {
     corpo='<p class="sec small">Receba lembretes na hora certa, mesmo com o app fechado.</p>'
-      +'<button class="btn mt" data-action="notif-ativar">🔔 ativar lembretes</button>';
+      +'<button class="btn mt" data-action="notif-ativar">🔔 Ativar lembretes</button>';
   }
   return '<section class="card"><h2>Lembretes (notificações)</h2>'+corpo+'</section>';
 }
@@ -131,7 +131,7 @@ async function desativarLembretes(){
 function secaoLembretes(){
   if(typeof produtoAtivo!=='function' || !produtoAtivo()) return '';
   const ls=(S.lembretes||[]).slice().sort((a,b)=>String(a.hora||'').localeCompare(String(b.hora||'')));
-  let html='<section class="card"><h2>Meus lembretes <button class="btn mini sec-btn dir" data-action="lembrete-add">+ novo</button></h2>';
+  let html='<section class="card"><h2>Meus lembretes <button class="btn mini sec-btn dir" data-action="lembrete-add">+ Novo</button></h2>';
   if(!ls.length){
     html+='<p class="muted small">Nenhum lembrete ainda. Crie um (ex.: 22:00 · hora de dormir) — com as notificações ligadas, eles chegam sozinhos na hora certa.</p>';
   } else {
@@ -140,16 +140,16 @@ function secaoLembretes(){
       const dias=(Array.isArray(l.dias)&&l.dias.length&&l.dias.length<7)?l.dias.map(d=>DIAS_ABREV[d]).join(','):'todo dia';
       html+='<div class="item-edit"'+(l.ativo===false?' style="opacity:0.55"':'')+'><span class="num">'+esc(l.hora||'--:--')+'</span>'
         +'<span class="nome">'+esc(l.texto||'')+' <span class="muted small">('+esc(dias)+')</span></span>'
-        +'<button class="btn mini sec-btn" data-action="lembrete-toggle" data-id="'+esc(l.id)+'">'+(l.ativo===false?'ligar':'pausar')+'</button>'
-        +'<button class="btn mini sec-btn" data-action="lembrete-edit" data-id="'+esc(l.id)+'">✎</button>'
-        +'<button class="btn mini perigo" data-action="lembrete-del" data-id="'+esc(l.id)+'">✕</button></div>';
+        +'<button class="btn mini sec-btn" data-action="lembrete-toggle" data-id="'+esc(l.id)+'">'+(l.ativo===false?'Ligar':'Pausar')+'</button>'
+        +'<button class="btn mini sec-btn" data-action="lembrete-edit" data-id="'+esc(l.id)+'" aria-label="Editar lembrete">✎</button>'
+        +'<button class="btn mini perigo" data-action="lembrete-del" data-id="'+esc(l.id)+'" aria-label="Excluir lembrete">✕</button></div>';
     });
     html+='</div>';
   }
   html+='<div class="acoes mt" style="display:flex;gap:0.4rem;flex-wrap:wrap">'
-    +'<button class="btn mini sec-btn" data-action="lembrete-preset" data-p="dormir">+ dormir</button>'
-    +'<button class="btn mini sec-btn" data-action="lembrete-preset" data-p="agua">+ água</button>'
-    +'<button class="btn mini sec-btn" data-action="lembrete-preset" data-p="estudar">+ estudar</button></div>';
+    +'<button class="btn mini sec-btn" data-action="lembrete-preset" data-p="dormir">+ Dormir</button>'
+    +'<button class="btn mini sec-btn" data-action="lembrete-preset" data-p="agua">+ Água</button>'
+    +'<button class="btn mini sec-btn" data-action="lembrete-preset" data-p="estudar">+ Estudar</button></div>';
   html+='<p class="muted small mt">Valem em todos os seus aparelhos com notificação ligada. Horário de Brasília.</p></section>';
   return html;
 }
@@ -165,8 +165,8 @@ function abrirModalLembrete(id){
     +'<div class="campo"><label>Horário</label><input type="time" id="lb-hora" value="'+esc(l.hora||'22:00')+'"></div>'
     +'<div class="campo"><label>Mensagem</label><input type="text" id="lb-texto" maxlength="120" value="'+esc(l.texto||'')+'" placeholder="Ex.: Hora de dormir 😴"></div>'
     +'<div class="campo"><label>Dias (nenhum marcado = todo dia)</label><div style="line-height:2">'+checks+'</div></div>'
-    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">cancelar</button>'
-    +'<button class="btn" data-action="lembrete-salvar" data-id="'+esc(id||'')+'">salvar</button></div>');
+    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+    +'<button class="btn" data-action="lembrete-salvar" data-id="'+esc(id||'')+'">Salvar</button></div>');
 }
 
 function salvarLembrete(id){

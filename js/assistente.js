@@ -14,8 +14,8 @@ function abrirAssistente(){
   _assistImgs = [];
   if(!assistenteDisponivel()){
     abrirModal('<h3>🤖 Assistente</h3>'
-      +'<p class="sec small">O assistente conversa com você pra montar e ajustar sua rotina — mas só funciona com a conta conectada (modo produto).</p>'
-      +'<div class="acoes"><button class="btn" data-action="fechar-modal">ok</button></div>');
+      +'<p class="sec small">O assistente funciona quando você está na sua conta — é assim que ele enxerga tua rotina e te acompanha em qualquer aparelho. Entra (ou cria a conta) e volta aqui 🙂</p>'
+      +'<div class="acoes"><button class="btn" data-action="fechar-modal">Ok</button></div>');
     return;
   }
   _assistMsgs = [{de:'ia', texto:'Oi! 👋 Eu organizo e ajusto o teu dia aqui — rotina, hábitos, sono, e a dieta/treino que você já tem. Manda tua dieta ou teu treino em PDF (ou foto) que eu encaixo nos horários e dias. E é só pedir os ajustes: "não fiz o lanche da tarde, dá pra diluir nas outras refeições?". Dieta e treino eu não invento (isso é com teu nutri/personal) — só organizo e ajusto o que você trouxer.', plano:null}];
@@ -36,7 +36,7 @@ function chatHTML(){
       if(m.plano){
         thread+='<div class="ok-box" style="margin-top:6px">🔧 '+esc(previaPlano(m.plano));
         if(m.aplicado) thread+=' <b>✅ aplicado</b>';
-        else thread+='<div class="mt"><button class="btn mini" data-action="assist-aplicar" data-ix="'+ix+'">aplicar</button></div>';
+        else thread+='<div class="mt"><button class="btn mini" data-action="assist-aplicar" data-ix="'+ix+'">Aplicar</button></div>';
         thread+='</div>';
       }
       thread+='</div></div>';
@@ -52,9 +52,9 @@ function chatHTML(){
     +'<textarea id="assist-texto" rows="2" placeholder="Escreve aqui… ex.: divide o lanche da tarde nas outras refeições"'+(_assistBusy?' disabled':'')+'></textarea>'
     +'<input type="file" id="assist-file" accept="image/*,application/pdf" class="escondido">'
     +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-    +'<button class="btn sec-btn" data-action="assist-foto"'+(_assistBusy?' disabled':'')+'>📎 anexar</button>'
-    +'<button class="btn sec-btn" data-action="fechar-modal">fechar</button>'
-    +'<button class="btn" data-action="assist-enviar"'+(_assistBusy?' disabled':'')+'>enviar ▸</button>'
+    +'<button class="btn sec-btn" data-action="assist-foto"'+(_assistBusy?' disabled':'')+'>📎 Anexar</button>'
+    +'<button class="btn sec-btn" data-action="fechar-modal">Fechar</button>'
+    +'<button class="btn" data-action="assist-enviar"'+(_assistBusy?' disabled':'')+'>Enviar ▸</button>'
     +'</div>'
     +'<p class="muted small mt">O assistente enxerga sua rotina/dieta atual pra sugerir com contexto. Tudo o que ele propõe você revê e aplica.</p>';
 }

@@ -123,6 +123,13 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:31, data:'2026-08-13', titulo:'Polimento geral', itens:[
+    '☁️ Agora dá pra VER se teus dados estão na nuvem: a nuvenzinha no topo mostra o estado, avisa se faltar internet e tenta de novo sozinha.',
+    '💪 Treino: registrou uma carga errada? Agora dá pra apagar o registro (no Histórico do exercício).',
+    '🍽 Refeições: dá pra remover uma refeição do plano (toca no ✎ dela → Remover).',
+    '😴 O sono confirma que salvou — e as horas dormidas aparecem na hora.',
+    '📝 Textos, botões e alinhamentos padronizados no app inteiro — e excluir algo agora pede confirmação (chega de sustos).'
+  ]},
   { v:30, data:'2026-08-13', titulo:'Central de novidades', itens:[
     '✨ O app agora te conta o que mudou: toda atualização importante aparece aqui no Hoje, e o histórico completo fica em ⚙️ Config → Novidades.'
   ]},

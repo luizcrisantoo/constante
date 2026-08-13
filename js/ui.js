@@ -19,12 +19,18 @@ function fecharModal(){
 }
 
 let _toastTimer=null;
-function toast(msg){
+function toast(msg,opts){
   let el=document.getElementById('toast');
-  if(!el){ el=document.createElement('div'); el.id='toast'; el.className='toast'; document.body.appendChild(el); }
+  if(!el){
+    el=document.createElement('div'); el.id='toast'; el.className='toast';
+    el.style.cursor='pointer';
+    el.addEventListener('click',()=>{ el.style.display='none'; });
+    document.body.appendChild(el);
+  }
   el.textContent=msg; el.style.display='block';
   clearTimeout(_toastTimer);
-  _toastTimer=setTimeout(()=>{ el.style.display='none'; },2600);
+  // fixo:true → não some sozinho (erros que precisam de leitura); fecha no toque
+  if(!(opts&&opts.fixo)) _toastTimer=setTimeout(()=>{ el.style.display='none'; },2600);
 }
 
 let _respTimer=null;

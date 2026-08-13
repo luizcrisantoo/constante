@@ -4,7 +4,7 @@ function viewTreinoDetalhe(idTreino){
   const t=treinoPorId(idTreino);
   if(!t){ UI.sub=null; return viewRotina(); }
   let html='<section class="card">'
-    +'<button class="btn mini sec-btn" data-action="voltar-sub">← voltar</button>'
+    +'<button class="btn mini sec-btn" data-action="voltar-sub">← Voltar</button>'
     +'<h2 class="mt">'+esc(t.nome)+' <span class="muted small">'+esc(t.dia)+'</span></h2>'
     +'<p class="sec small">'+esc(t.foco)+'</p></section>';
 
@@ -16,15 +16,16 @@ function viewTreinoDetalhe(idTreino){
     const ult=ultimoRegistro(ex);
     html+='<section class="card">'
       +'<div class="linha"><b class="esq">'+esc(ex.nome)+'</b>'
-      +'<button class="btn mini sec-btn" data-action="carga-add" data-t="'+esc(t.id)+'" data-e="'+esc(ex.id)+'">+ série</button>'
+      +'<button class="btn mini sec-btn" data-action="carga-add" data-t="'+esc(t.id)+'" data-e="'+esc(ex.id)+'">+ Série</button>'
       +'<button class="edit" data-action="ex-remover" data-t="'+esc(t.id)+'" data-e="'+esc(ex.id)+'" aria-label="Remover exercício">✕</button></div>';
     if(ult){
       html+='<div class="muted small mt">Última vez ('+fmtData(ult.data)+'): <b class="sec">'+ult.series+'×'+ult.reps+' · '+String(ult.carga).replace('.',',')+' kg</b></div>';
       html+=graficoEvolucao(ex);
 
       const recentes=ex.registros.slice().sort((a,b)=>a.data<b.data?1:-1).slice(0,6);
-      html+='<details class="mt"><summary class="muted small">histórico ('+ex.registros.length+')</summary><table class="tabela mt"><thead><tr><th>Data</th><th class="num">Séries×Reps</th><th class="num">Carga</th></tr></thead><tbody>';
-      recentes.forEach(r=>{ html+='<tr><td class="num">'+fmtData(r.data)+'</td><td class="num">'+r.series+'×'+r.reps+'</td><td class="num">'+String(r.carga).replace('.',',')+' kg</td></tr>'; });
+      html+='<details class="mt"><summary class="muted small">Histórico ('+ex.registros.length+')</summary><table class="tabela mt"><thead><tr><th>Data</th><th class="num">Séries×Reps</th><th class="num">Carga</th><th></th></tr></thead><tbody>';
+      recentes.forEach(r=>{ html+='<tr><td class="num">'+fmtData(r.data)+'</td><td class="num">'+r.series+'×'+r.reps+'</td><td class="num">'+String(r.carga).replace('.',',')+' kg</td>'
+        +'<td><button class="edit" data-action="carga-del" data-t="'+esc(t.id)+'" data-e="'+esc(ex.id)+'" data-r="'+esc(r.id||'')+'" aria-label="Apagar este registro">✕</button></td></tr>'; });
       html+='</tbody></table></details>';
     } else {
       html+='<div class="muted small mt">Sem registro ainda — toque em “+ série” pra lançar a primeira.</div>';
@@ -32,7 +33,7 @@ function viewTreinoDetalhe(idTreino){
     html+='</section>';
   });
 
-  html+='<section class="card"><button class="btn bloco" data-action="ex-add" data-t="'+esc(t.id)+'">+ adicionar exercício</button></section>';
+  html+='<section class="card"><button class="btn bloco" data-action="ex-add" data-t="'+esc(t.id)+'">+ Adicionar exercício</button></section>';
   return html;
 }
 
@@ -66,7 +67,7 @@ function secaoGastos(){
   let html='<section class="card"><h2>Gastos</h2>'
     +'<div class="linha"><div class="esq"><span class="hero-num num">'+fmtBRL(totDia)+'</span><div class="hero-sub">gasto hoje</div></div>'
     +'<div style="text-align:right"><b class="num">'+fmtBRL(totMes)+'</b><div class="hero-sub">no mês</div></div></div>'
-    +'<button class="btn bloco mt" data-action="gasto-add">+ registrar gasto</button>';
+    +'<button class="btn bloco mt" data-action="gasto-add">+ Registrar gasto</button>';
 
   if(porCat.length){
     const max=porCat[0].total;
@@ -101,11 +102,11 @@ function viewCadernoDetalhe(idCaderno){
   const c=cadernoPorId(idCaderno);
   if(!c){ UI.sub=null; return viewRotina(); }
   let html='<section class="card">'
-    +'<button class="btn mini sec-btn" data-action="voltar-sub">← voltar</button>'
+    +'<button class="btn mini sec-btn" data-action="voltar-sub">← Voltar</button>'
     +'<div class="linha mt"><h2 class="esq">📓 '+esc(c.nome)+'</h2>'
     +'<button class="edit" data-action="caderno-remover" data-id="'+esc(c.id)+'" aria-label="Excluir caderno">✕</button></div>'
     +'<div class="campo mt"><textarea id="nota-nova" rows="3" placeholder="O que você estudou/aprendeu? (uma anotação)"></textarea></div>'
-    +'<button class="btn bloco" data-action="nota-salvar" data-id="'+esc(c.id)+'">adicionar anotação</button>'
+    +'<button class="btn bloco" data-action="nota-salvar" data-id="'+esc(c.id)+'">Adicionar anotação</button>'
     +'<p class="muted small mt">Depois dá pra pedir um resumo ou mapa mental disso (chega na próxima fase 🤖).</p>'
     +'</section>';
 

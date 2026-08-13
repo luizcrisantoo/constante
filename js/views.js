@@ -33,11 +33,26 @@ function render(){
   }
 }
 
+function pillSync(){
+  if(typeof syncEstado!=='function') return '';
+  const s=syncEstado();
+  if(s==='local') return '';
+  const M={
+    ok:['☁️','Salvo na nuvem',''],
+    pendente:['☁️ …','Mudança recente — enviando em instantes',''],
+    sincronizando:['☁️ …','Sincronizando…',''],
+    offline:['✈️','Sem conexão — teus registros estão salvos no aparelho','warn'],
+    erro:['☁️ !','Problema pra sincronizar — toca pra ver','warn']
+  }[s]||['☁️','',''];
+  return '<button class="pill '+M[2]+'" data-action="sync-status" aria-label="Nuvem: '+esc(M[1])+'" title="'+esc(M[1])+'">'+M[0]+'</button>';
+}
+
 function renderTopbar(){
   const st=streakGeral();
   const nv=nivelAtual();
   document.getElementById('top-stats').innerHTML=
-    '<span class="pill" title="Ofensiva: dias seguidos com o dia batido">🔥 <span class="num">'+st+'</span></span>'
+    pillSync()
+    +'<span class="pill" title="Ofensiva: dias seguidos com o dia batido">🔥 <span class="num">'+st+'</span></span>'
     +'<span class="pill" title="'+esc(nv.nome)+' — '+nv.xp+' XP">'+nv.icone+' <span class="num">'+nv.xp+'</span> XP</span>';
   const ba=document.getElementById('btn-assist');
   if(ba) ba.style.display=assistenteDisponivel()?'':'none';
@@ -74,8 +89,8 @@ function viewHoje(){
       +mostraNv.map(it=>'<li style="margin:0.3rem 0">'+esc(it)+'</li>').join('')+'</ul>'
       +(restoNv>0?'<p class="muted small">+ '+restoNv+' outras melhorias no histórico.</p>':'')
       +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-      +'<button class="btn mini" data-action="novidades-ok">entendi 👍</button>'
-      +'<button class="btn mini sec-btn" data-action="novidades-todas">ver histórico</button>'
+      +'<button class="btn mini" data-action="novidades-ok">Entendi 👍</button>'
+      +'<button class="btn mini sec-btn" data-action="novidades-todas">Ver histórico</button>'
       +'</div></section>';
   }
 
@@ -101,9 +116,9 @@ function viewHoje(){
       +'<p class="sec">Esse é seu espaço pra construir constância — hábitos, rotina, dieta, treino, finanças e cabeça, tudo num lugar só.</p>'
       +'<p class="sec small mt">Comece adicionando o que fizer sentido pra você:</p>'
       +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-      +(assistenteDisponivel()?'<button class="btn" data-action="assist-abrir">🤖 montar com o assistente</button>':'')
-      +'<button class="btn '+(assistenteDisponivel()?'sec-btn':'')+'" data-action="habito-add">+ hábito</button>'
-      +'<button class="btn sec-btn" data-nav="rotina">montar na mão</button>'
+      +(assistenteDisponivel()?'<button class="btn" data-action="assist-abrir">🤖 Montar com o assistente</button>':'')
+      +'<button class="btn '+(assistenteDisponivel()?'sec-btn':'')+'" data-action="habito-add">+ Hábito</button>'
+      +'<button class="btn sec-btn" data-nav="rotina">Montar minha rotina</button>'
       +'</div>'
       +(assistenteDisponivel()?'<p class="muted small mt">🤖 Manda uma foto do teu horário ou conta como é teu dia — eu monto pra você.</p>':'<p class="muted small mt">🤖 Em breve: um assistente que monta tudo a partir de uma foto do seu horário e do que você contar.</p>')
       +'</section>';
@@ -112,9 +127,9 @@ function viewHoje(){
   const habs=habitosDoDia(iso);
   const fazer=habs.filter(x=>x.tipo==='fazer');
   const evitar=habs.filter(x=>x.tipo==='evitar');
-  html+='<section class="card"><h2>Hábitos de hoje <button class="btn mini sec-btn dir" data-action="habito-add">+ hábito</button></h2>';
+  html+='<section class="card"><h2>Hábitos de hoje <button class="btn mini sec-btn dir" data-action="habito-add">+ Hábito</button></h2>';
   if(!habs.length){
-    html+='<p class="muted small">Nenhum hábito pra hoje. Toque em “+ hábito” pra criar o primeiro.</p>';
+    html+='<p class="muted small">Nenhum hábito pra hoje. Toque em “+ Hábito” pra criar o primeiro.</p>';
   } else {
     fazer.forEach(hb=>{ html+=habRow(hb,d); });
     if(evitar.length){
@@ -124,7 +139,7 @@ function viewHoje(){
   }
   html+='</section>';
 
-  html+='<section class="card"><h2>Refeições <button class="btn mini sec-btn dir" data-action="ref-add">+ refeição</button></h2>';
+  html+='<section class="card"><h2>Refeições <button class="btn mini sec-btn dir" data-action="ref-add">+ Refeição</button></h2>';
   if(!S.diet.refeicoes.length){
     html+='<p class="muted small">Sem refeições no plano ainda. Adicione uma ou monte tudo na aba Dieta.</p>';
   } else {
@@ -138,9 +153,9 @@ function viewHoje(){
   }
   html+='</section>';
 
-  html+='<section class="card"><h2>Remédios & suplementos <button class="btn mini sec-btn dir" data-action="med-add">+ grupo</button></h2><div class="check-lista">';
+  html+='<section class="card"><h2>Remédios & suplementos <button class="btn mini sec-btn dir" data-action="med-add">+ Remédio</button></h2><div class="check-lista">';
   if(!S.meds.grupos.length){
-    html+='<p class="muted small">Nenhum remédio/suplemento cadastrado. Toque em “+ grupo” pra adicionar.</p>';
+    html+='<p class="muted small">Nenhum remédio ou suplemento cadastrado. Toque em “+ Remédio” pra adicionar.</p>';
   } else {
     S.meds.grupos.forEach(g=>{
       const ok=!!d.meds[g.id];
@@ -153,9 +168,9 @@ function viewHoje(){
   const metaAgua=Number(S.profile.aguaAlvoMl)||0;
   const pctAgua=metaAgua>0?Math.min(100,Math.round(100*(d.agua||0)/metaAgua)):0;
   html+='<section class="card"><h2>Água</h2>'
-    +'<div class="linha"><div class="esq"><span class="hero-num num">'+((d.agua||0)/1000).toFixed(2).replace('.',',')+'</span> <span class="muted">'+(metaAgua>0?'/ '+(metaAgua/1000).toFixed(1).replace('.',',')+' L':'L registrados hoje')+'</span></div>'
+    +'<div class="linha"><div class="esq"><span class="hero-num num">'+fmtQtd((d.agua||0)/1000)+'</span> <span class="muted">'+(metaAgua>0?'/ '+fmtQtd(metaAgua/1000)+' L':'L registrados hoje')+'</span></div>'
     +(metaAgua>0&&pctAgua>=100?'<span class="chip">💧 meta batida</span>':'')+'</div>'
-    +(metaAgua>0?'<div class="progress azul mt"><span style="width:'+pctAgua+'%"></span></div>':'<p class="muted small mt">Defina sua meta de água em Config → Perfil & metas pra acompanhar aqui.</p>')
+    +(metaAgua>0?'<div class="progress azul mt"><span style="width:'+pctAgua+'%"></span></div>':'<p class="muted small mt"><button class="deslize-btn" data-action="meta-agua">Definir minha meta de água</button></p>')
     +'<div class="agua-controles mt"><button class="btn mini sec-btn" data-action="agua" data-ml="250">+250ml</button>'
     +'<button class="btn mini sec-btn" data-action="agua" data-ml="500">+500ml</button>'
     +'<button class="btn mini sec-btn" data-action="agua" data-ml="-250">−250ml</button></div></section>';
@@ -193,7 +208,7 @@ function habRow(hb,d){
   if(hb.desc) sub='<span class="sub">'+esc(hb.desc)+'</span>';
   let extra='';
   if(hb.tipo==='evitar'&&v!==false){
-    extra='<button class="deslize-btn" data-action="deslize" data-id="'+esc(hb.id)+'">deslize?</button>';
+    extra='<button class="deslize-btn" data-action="deslize" data-id="'+esc(hb.id)+'">Deslize?</button>';
   }
   return '<div class="linha"><button class="hab '+classe+' esq" data-action="habit" data-id="'+esc(hb.id)+'" style="flex:1">'
     +'<span class="ic">'+esc(hb.icone)+'</span>'
@@ -237,7 +252,7 @@ function viewRotina(){
   html+='</div>';
   const blocos=blocosDoDia(dow);
   const agoraMin=hmParaMin(agoraHM());
-  if(!blocos.length) html+='<p class="muted mt">Dia sem blocos — toca em “editar” pra montar.</p>';
+  if(!blocos.length) html+='<p class="muted mt">Dia sem blocos ainda — toca em “+ Bloco” aqui embaixo pra montar.</p>';
   blocos.forEach((b,ix)=>{
     const cor=corCat(b.tipo);
     const ehAgora=dow===hojeDow&&b.f&&agoraMin>=hmParaMin(b.i)&&agoraMin<hmParaMin(b.f);
@@ -249,8 +264,8 @@ function viewRotina(){
       +'</div>';
   });
   html+='<div class="acoes mt-lg" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-    +'<button class="btn sec-btn" data-action="bloco-add" data-d="'+dow+'">+ bloco</button>'
-    +(assistenteDisponivel()?'<button class="btn sec-btn" data-action="assist-abrir">🤖 pedir ajuda ao assistente</button>':'')
+    +'<button class="btn sec-btn" data-action="bloco-add" data-d="'+dow+'">+ Bloco</button>'
+    +(assistenteDisponivel()?'<button class="btn sec-btn" data-action="assist-abrir">🤖 Pedir ajuda ao assistente</button>':'')
     +'</div></section>';
 
   html+='<section class="card"><h2>Treinos — toca pra registrar cargas 🏋️</h2>';
@@ -264,7 +279,7 @@ function viewRotina(){
   });
   html+='<div class="aviso mt">⚠️ '+esc(S.treinos.aviso)+'</div></section>';
 
-  html+='<section class="card"><h2>Cadernos de estudo 📓 <button class="btn mini sec-btn dir" data-action="caderno-add">+ tema</button></h2>';
+  html+='<section class="card"><h2>Cadernos de estudo 📓 <button class="btn mini sec-btn dir" data-action="caderno-add">+ Tema</button></h2>';
   if(!S.estudo.cadernos.length) html+='<p class="muted small">Cria um tema pra guardar suas anotações.</p>';
   S.estudo.cadernos.forEach(c=>{
     const n=c.notas.length;
@@ -291,7 +306,7 @@ function viewDieta(){
       +(S.diet.aviso?'<div class="aviso mt">📋 '+esc(S.diet.aviso)+'</div>':'')+'</section>';
   }
 
-  html+='<section class="card"><h2>Refeições <button class="btn mini sec-btn dir" data-action="ref-add">+ refeição</button></h2>';
+  html+='<section class="card"><h2>Refeições <button class="btn mini sec-btn dir" data-action="ref-add">+ Refeição</button></h2>';
   if(!S.diet.refeicoes.length){
     html+='<p class="muted small">Monte seu plano: adicione suas refeições com os itens de cada uma — ou peça pro assistente 🤖 montar pra você.</p>';
   } else {
@@ -301,7 +316,7 @@ function viewDieta(){
         +((r.kcal||r.prot)?'<span class="chip num">~'+r.kcal+' kcal · '+r.prot+'g prot</span>':'')
         +'<button class="edit" data-action="ref-edit" data-id="'+esc(r.id)+'" aria-label="Editar">✎</button></div>'
         +'<ul>'+r.itens.map(i=>'<li>'+esc(i)+'</li>').join('')+'</ul>'
-        +(r.subs&&r.subs.length?'<details class="subs"><summary>substituições</summary><ul>'+r.subs.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ul></details>':'')
+        +(r.subs&&r.subs.length?'<details class="subs"><summary>Substituições</summary><ul>'+r.subs.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ul></details>':'')
         +'</div>';
     });
     const somaK=S.diet.refeicoes.reduce((a,r)=>a+r.kcal,0);
@@ -318,7 +333,7 @@ function viewDieta(){
   html+='<section class="card"><h2>Peso (sábado, em jejum)</h2>'
     +'<div class="linha"><div class="esq">'
     +(ult?'<span class="hero-num num">'+esc(String(ult.kg).replace('.',','))+'</span> <span class="muted">kg em '+fmtData(ult.data)+'</span>':'<span class="muted">Nenhum peso registrado ainda.</span>')
-    +'</div><button class="btn mini" data-action="peso-add">registrar</button></div>'
+    +'</div><button class="btn mini" data-action="peso-add">Registrar</button></div>'
     +graficoPeso()
     +'</section>';
   return html;

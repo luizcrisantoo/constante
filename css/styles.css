@@ -64,8 +64,10 @@ main{ max-width:640px; margin:0 auto; padding:var(--sp-md); display:grid; gap:va
   border-radius:var(--radius); padding:var(--sp-md);
 }
 .card h2{ font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em;
-  color:var(--ink-mute); margin-bottom:var(--sp-sm); font-weight:700; }
-.card h2 .dir{ float:right; }
+  color:var(--ink-mute); margin-bottom:var(--sp-sm); font-weight:700;
+  display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
+/* antes era float:right — o float "vazava" do h2 e desalinhava o 1º item da lista */
+.card h2 .dir{ float:none; margin-left:auto; }
 .muted{ color:var(--ink-mute); font-size:0.85rem; }
 .small{ font-size:0.8rem; }
 .sec{ color:var(--ink-2); }

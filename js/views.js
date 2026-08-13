@@ -146,8 +146,9 @@ function viewHoje(){
     +'<span class="check">✓</span></button>';
   const nTr=treinosNaSemana();
   if(nTr>0) html+='<p class="muted small mt">💪 '+nTr+' treino'+(nTr>1?'s':'')+' nos últimos 7 dias.</p>';
-  if(treinoHoje&&treinoHoje.exercicios.length){
-    html+='<button class="btn sec-btn bloco mt" data-action="abrir-treino" data-id="'+esc(treinoHoje.id)+'">'+esc(treinoHoje.nome)+(treinoHoje.foco?' — '+esc(treinoHoje.foco):'')+' · registrar cargas ›</button>';
+  if(treinoHoje){
+    const temEx=treinoHoje.exercicios.length>0;
+    html+='<button class="btn sec-btn bloco mt" data-action="abrir-treino" data-id="'+esc(treinoHoje.id)+'">'+esc(treinoHoje.nome)+(treinoHoje.foco?' — '+esc(treinoHoje.foco):'')+(temEx?' · registrar cargas ›':' · montar exercícios ›')+'</button>';
   }
   html+='</section>';
 
@@ -271,6 +272,7 @@ function viewRotina(){
       +'<span class="tag" style="background:'+cor+'"></span>'
       +'<span class="hora num">'+esc(b.i)+(b.f?'–'+esc(b.f):'')+'</span>'
       +'<span class="txt">'+esc(b.t)+'</span>'
+      +(b.tipo==='treino'?'<button class="btn mini sec-btn" data-action="abrir-treino-dia" data-d="'+dow+'" style="flex:none;align-self:center">Cargas ›</button>':'')
       +'<button class="edit" data-action="bloco-edit" data-d="'+dow+'" data-ix="'+ix+'" aria-label="Editar bloco">✎</button>'
       +'</div>';
   });

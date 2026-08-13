@@ -527,6 +527,11 @@ const ACOES={
     delete _fotoUrls[f.path];
     saveState(); fecharModal(); render(); toast('Foto removida');
   },
+  'abrir-treino-dia':el=>{
+    const t=treinoDoDia(Number(el.dataset.d));
+    if(t){ UI.tab='rotina'; UI.sub={tipo:'treino',id:t.id}; render(); window.scrollTo({top:0}); }
+    else toast('Nenhuma ficha ligada a esse dia ainda — na seção Treinos, toca no ✎ de uma ficha e define o dia 😉');
+  },
   'abrir-treino':el=>{ UI.tab='rotina'; UI.sub={tipo:'treino',id:el.dataset.id}; render(); window.scrollTo({top:0}); },
   'abrir-caderno':el=>{ UI.tab='rotina'; UI.sub={tipo:'caderno',id:el.dataset.id}; render(); window.scrollTo({top:0}); },
 

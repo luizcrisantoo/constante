@@ -123,6 +123,10 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:34, data:'2026-08-13', titulo:'Caminho das cargas', itens:[
+    '🏋️ Os blocos de treino na Rotina ganharam o botão "Cargas ›" — vai direto pra ficha do dia, sem caçar.',
+    '🧭 O card Treino do Hoje agora sempre mostra o próximo passo: "montar exercícios" quando a ficha está vazia, "registrar cargas" quando já tem.'
+  ]},
   { v:33, data:'2026-08-13', titulo:'Ajustes à mão + treinos A/B', itens:[
     '⚙️ Os Ajustes ganharam aba própria na barra de baixo — chega de caçar a engrenagem no cantinho.',
     '🏋️ Treinos com semana A × semana B: pra quem alterna fichas (padrão × metabólico). Toca no ✎ do treino pra dar nome, foco e dia — e agora dá pra anotar o descanso de cada exercício.',

@@ -593,8 +593,7 @@ function treinosNaSemana(){
 }
 
 function treinoPorId(id){ return S.treinos.split.find(t=>t.id===id)||null; }
-function treinoDeHoje(){
-  const dow=new Date().getDay();
+function treinoDoDia(dow){
   const ativa=(S.treinos.semanaAtiva==='B')?'B':'A';
   const doDia=S.treinos.split.find(t=>t.semana===ativa && t.diaSemana===dow);
   if(doDia) return doDia;
@@ -605,6 +604,7 @@ function treinoDeHoje(){
   }
   return null;
 }
+function treinoDeHoje(){ return treinoDoDia(new Date().getDay()); }
 function addExercicio(idTreino,nome){
   const t=treinoPorId(idTreino); if(!t||!nome) return null;
   const ex={id:uid(),nome:nome,registros:[]};

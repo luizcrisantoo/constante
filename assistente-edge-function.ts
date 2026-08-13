@@ -48,7 +48,11 @@ Regras de formato:
 - Dias da semana: 0=domingo … 6=sábado. Horários "HH:MM" (24h).
 - Em "rotina", "tipo" deve ser um destes: ${TIPOS}.
 - Não invente dados que a pessoa não deu.
-- Sempre preencha "resumo": uma frase curta do que a ferramenta vai mudar.`;
+- Sempre preencha "resumo": uma frase curta do que a ferramenta vai mudar.
+
+BOTÕES DE RESPOSTA RÁPIDA (economiza digitação e tokens): quando você fizer UMA pergunta cuja resposta seja curta e com poucas opções óbvias (ex.: "quantas refeições por dia?", "em quais dias?", "sim ou não?"), termine a mensagem com uma ÚLTIMA linha exatamente neste formato:
+OPCOES: opção 1 | opção 2 | opção 3
+Regras: máximo 5 opções, cada uma com até 22 caracteres, sem emoji. Use SÓ quando a resposta for realmente uma escolha simples — em pergunta aberta ("como é teu dia?"), não use. Nunca mencione essa linha no texto: o app a transforma em botões.`;
 }
 
 const TOOL = {

@@ -95,7 +95,7 @@ function viewHoje(){
       +mostraNv.map(it=>'<li style="margin:0.3rem 0">'+esc(it)+'</li>').join('')+'</ul>'
       +(restoNv>0?'<p class="muted small">+ '+restoNv+' outras melhorias no histórico.</p>':'')
       +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-      +'<button class="btn mini" data-action="novidades-ok">Entendi 👍</button>'
+      +'<button class="btn mini" data-action="novidades-ok">Entendi</button>'
       +'<button class="btn mini sec-btn" data-action="novidades-todas">Ver histórico</button>'
       +'</div></section>';
   }
@@ -158,7 +158,6 @@ function viewHoje(){
     S.diet.refeicoes.forEach(r=>{
       const ok=!!d.refeicoes[r.id];
       html+='<button class="item check-lista-item hab '+(ok?'feito':'')+'" data-action="ref" data-id="'+esc(r.id)+'">'
-        +'<span class="ic">🍽️</span>'
         +'<span class="nome">'+esc(r.nome)+'<span class="sub num">'+esc(r.hora)+' · ~'+r.kcal+' kcal</span></span>'
         +'<span class="check">✓</span></button>';
     });
@@ -280,23 +279,37 @@ function viewRotina(){
     +(assistenteDisponivel()?'<button class="btn sec-btn" data-action="assist-abrir">🤖 Pedir ajuda ao assistente</button>':'')
     +'</div></section>';
 
-  html+='<section class="card"><h2>Treinos — toca pra registrar cargas 🏋️</h2>';
-  S.treinos.split.forEach(t=>{
-    const nEx=t.exercicios.length;
-    html+='<button class="hab esq" data-action="abrir-treino" data-id="'+esc(t.id)+'" style="width:100%">'
-      +'<span class="ic">🏋️</span>'
-      +'<span class="nome">'+esc(t.nome)+' <span class="muted small">'+esc(t.dia)+'</span>'
-      +'<span class="sub">'+esc(t.foco)+(nEx?' · '+nEx+' exercício'+(nEx>1?'s':''):' · toque pra adicionar exercícios')+'</span></span>'
-      +'<span class="streak">›</span></button>';
-  });
-  html+='<div class="aviso mt">⚠️ '+esc(S.treinos.aviso)+'</div></section>';
+  const semAtiva=(S.treinos.semanaAtiva==='B')?'B':'A';
+  const usaB=S.treinos.split.some(x=>x.semana==='B'&&(x.exercicios.length||x.foco||x.diaSemana!=null));
+  const linhaTreino=x=>{
+    const nEx=x.exercicios.length;
+    const diaTx=(x.diaSemana!=null)?DIAS_ABREV[x.diaSemana]:(x.dia||'');
+    return '<div class="linha"><button class="hab esq" data-action="abrir-treino" data-id="'+esc(x.id)+'" style="flex:1">'
+      +'<span class="nome">'+esc(x.nome)+(diaTx?' <span class="muted small">'+esc(diaTx)+'</span>':'')
+      +'<span class="sub">'+(x.foco?esc(x.foco)+' · ':'')+(nEx?nEx+' exercício'+(nEx>1?'s':''):'toque pra adicionar exercícios')+'</span></span>'
+      +'<span class="streak">›</span></button>'
+      +'<button class="edit" data-action="treino-edit" data-id="'+esc(x.id)+'" aria-label="Editar treino">✎</button></div>';
+  };
+  html+='<section class="card"><h2>Treinos <span class="chip">semana ativa: '+semAtiva+'</span>'
+    +'<button class="btn mini sec-btn dir" data-action="semana-toggle">Usar semana '+(semAtiva==='A'?'B':'A')+'</button></h2>'
+    +'<p class="muted small">Toca num treino pra registrar as cargas — e no ✎ pra dar nome, foco e dia da semana.</p>';
+  html+='<div class="grupo-titulo">Semana A'+(semAtiva==='A'?' · ativa':'')+'</div>';
+  S.treinos.split.filter(x=>x.semana!=='B').forEach(x=>{ html+=linhaTreino(x); });
+  if(usaB||semAtiva==='B'){
+    html+='<div class="grupo-titulo">Semana B'+(semAtiva==='B'?' · ativa':'')+'</div>';
+    S.treinos.split.filter(x=>x.semana==='B').forEach(x=>{ html+=linhaTreino(x); });
+  } else {
+    html+='<details class="mt"><summary class="muted small">Semana B — pra quem alterna fichas (ex.: padrão × metabólico)</summary>';
+    S.treinos.split.filter(x=>x.semana==='B').forEach(x=>{ html+=linhaTreino(x); });
+    html+='</details>';
+  }
+  html+=(S.treinos.aviso?'<div class="aviso mt">'+esc(S.treinos.aviso)+'</div>':'')+'</section>';
 
-  html+='<section class="card"><h2>Cadernos de estudo 📓 <button class="btn mini sec-btn dir" data-action="caderno-add">+ Tema</button></h2>';
+  html+='<section class="card"><h2>Cadernos de estudo <button class="btn mini sec-btn dir" data-action="caderno-add">+ Tema</button></h2>';
   if(!S.estudo.cadernos.length) html+='<p class="muted small">Cria um tema pra guardar suas anotações.</p>';
   S.estudo.cadernos.forEach(c=>{
     const n=c.notas.length;
     html+='<button class="hab esq" data-action="abrir-caderno" data-id="'+esc(c.id)+'" style="width:100%">'
-      +'<span class="ic">📓</span>'
       +'<span class="nome">'+esc(c.nome)+'<span class="sub">'+(n?n+' anotação'+(n>1?'ões':''):'sem anotações ainda')+'</span></span>'
       +'<span class="streak">›</span></button>';
   });
@@ -339,7 +352,7 @@ function viewDieta(){
 
   html+='<section class="card"><h2>Regras de energia constante</h2>'
     +(S.diet.constante.length?'<ul style="margin-left:1.1rem" class="sec small">'+S.diet.constante.map(c=>'<li style="margin:0.25rem 0">'+esc(c)+'</li>').join('')+'</ul>':'')
-    +'<p class="muted small mt">💧 '+esc(S.diet.hidratacao)+'</p></section>';
+    +'<p class="muted small mt">'+esc(S.diet.hidratacao)+'</p></section>';
 
   const ult=S.pesos.length?S.pesos[S.pesos.length-1]:null;
   html+='<section class="card"><h2>Peso (sábado, em jejum)</h2>'

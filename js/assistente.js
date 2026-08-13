@@ -18,7 +18,7 @@ function abrirAssistente(){
       +'<div class="acoes"><button class="btn" data-action="fechar-modal">Ok</button></div>');
     return;
   }
-  _assistMsgs = [{de:'ia', texto:'Oi! 👋 Eu organizo e ajusto o teu dia aqui — rotina, hábitos, sono, e a dieta/treino que você já tem. Manda tua dieta ou teu treino em PDF (ou foto) que eu encaixo nos horários e dias. E é só pedir os ajustes: "não fiz o lanche da tarde, dá pra diluir nas outras refeições?". Dieta e treino eu não invento (isso é com teu nutri/personal) — só organizo e ajusto o que você trouxer.', plano:null}];
+  _assistMsgs = [{de:'ia', texto:'Oi! 👋 Eu organizo e ajusto o teu dia aqui — rotina, hábitos, sono, e a dieta/treino que você já tem. Manda tua dieta ou teu treino em PDF (ou foto) que eu encaixo nos horários e dias. Dieta e treino eu não invento (isso é com teu nutri/personal) — só organizo e ajusto o que você trouxer.', plano:null, opcoes:['Organizar minha dieta','Organizar meu treino','Montar minha rotina','Fazer um ajuste no dia']}];
   _assistBusy = false;
   abrirModal(chatHTML());
   const th=document.getElementById('chat-thread'); if(th) th.scrollTop=th.scrollHeight;
@@ -33,6 +33,10 @@ function chatHTML(){
     } else {
       thread+='<div style="display:flex;justify-content:flex-start;margin:6px 0"><div style="max-width:88%">'
         +'<div style="background:var(--surface-2);padding:0.5rem 0.7rem;border-radius:14px 14px 14px 3px">'+esc(m.texto).replace(/\n/g,'<br>')+'</div>';
+      if(m.opcoes&&m.opcoes.length&&ix===_assistMsgs.length-1&&!_assistBusy){
+        thread+='<div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:6px">'
+          +m.opcoes.map(o=>'<button class="btn mini sec-btn" data-action="assist-chip" data-v="'+esc(o)+'">'+esc(o)+'</button>').join('')+'</div>';
+      }
       if(m.plano){
         thread+='<div class="ok-box" style="margin-top:6px">🔧 '+esc(previaPlano(m.plano));
         if(m.aplicado) thread+=' <b>✅ aplicado</b>';
@@ -136,10 +140,18 @@ async function enviarMensagem(){
     });
     if(error) throw new Error(error.message||'falha na chamada');
     if(!data || data.erro) throw new Error((data&&data.erro)||'resposta vazia');
-    const resp=(data.resposta||'').trim();
+    let resp=(data.resposta||'').trim();
     const plano=data.plano||null;
+    // O modelo pode terminar com uma linha "OPCOES: a | b | c" → vira botões de resposta rápida
+    let opcoes=null;
+    const mOp=resp.match(/(?:^|\n)\s*OP(?:Ç|C)(?:Õ|O)ES?:\s*(.+)\s*$/i);
+    if(mOp){
+      opcoes=mOp[1].split('|').map(s=>s.trim()).filter(Boolean).slice(0,5);
+      resp=resp.slice(0,mOp.index).trim();
+      if(!opcoes.length) opcoes=null;
+    }
     const txt=resp || (plano&&plano.resumo) || 'Prontinho.';
-    _assistMsgs.push({de:'ia', texto:txt, plano:plano, aplicado:false});
+    _assistMsgs.push({de:'ia', texto:txt, plano:plano, aplicado:false, opcoes:opcoes});
   }catch(e){
     _assistMsgs.push({de:'ia', texto:'❌ '+e.message, plano:null, erro:true});
   }
@@ -210,7 +222,7 @@ function aplicarPlano(p){
       kcal:0, prot:0, itens:Array.isArray(r.itens)?r.itens.map(x=>String(x).slice(0,120)).slice(0,40):[], subs:[]});
   });
   if(Array.isArray(p.treinos)) p.treinos.forEach((t,i)=>{
-    const alvo=S.treinos.split[i]; if(!alvo||!t) return;
+    const alvo=S.treinos.split.filter(x=>x.semana!=='B')[i]; if(!alvo||!t) return;
     if(t.nome) alvo.nome=String(t.nome).slice(0,40);
     if(t.dia) alvo.dia=String(t.dia).slice(0,20);
     if(t.foco) alvo.foco=String(t.foco).slice(0,140);

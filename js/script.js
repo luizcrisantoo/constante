@@ -76,6 +76,27 @@ const ACOES={
   'humor':el=>{ const d=getDia(); d.humor=Number(el.dataset.v); recalcXP(hojeISO()); saveState(); render(); },
   'energia':el=>{ const d=getDia(); d.energia=Number(el.dataset.v); recalcXP(hojeISO()); saveState(); render(); },
 
+  'semana-toggle':()=>{
+    S.treinos.semanaAtiva=(S.treinos.semanaAtiva==='B')?'A':'B';
+    saveState(); render(); toast('Semana '+S.treinos.semanaAtiva+' ativada 💪');
+  },
+  'treino-edit':el=>{
+    const t=treinoPorId(el.dataset.id); if(!t) return;
+    const dias='<option value="">— sem dia fixo</option>'+[1,2,3,4,5,6,0].map(i=>'<option value="'+i+'" '+(t.diaSemana===i?'selected':'')+'>'+DIAS_NOME[i]+'</option>').join('');
+    abrirModal('<h3>Editar treino <span class="chip">Semana '+esc(t.semana||'A')+'</span></h3>'
+      +campo('tr-nome','Nome (ex.: Treino A — Peito)','text',t.nome)
+      +campo('tr-foco','Foco (ex.: Peito e tríceps · 10-12 reps)','text',t.foco)
+      +'<div class="campo"><label>Dia da semana (opcional)</label><select id="tr-dia">'+dias+'</select></div>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn" data-action="treino-edit-salvar" data-id="'+esc(t.id)+'">Salvar</button></div>');
+  },
+  'treino-edit-salvar':el=>{
+    const t=treinoPorId(el.dataset.id); if(!t) return;
+    const nome=val('tr-nome'); if(nome) t.nome=nome.slice(0,40);
+    t.foco=val('tr-foco').slice(0,140);
+    const dv=val('tr-dia'); t.diaSemana=(dv==='')?null:Number(dv);
+    saveState(); fecharModal(); render();
+  },
   'treino-check':()=>{ const d=getDia(); d.treino=!d.treino; recalcXP(hojeISO()); saveState(); if(d.treino) toast('💪 Treino contou! (+10 XP de bônus)'); render(); },
   'recomeco-ok':()=>{ UI.recomecoLeve=false; render(); toast('Um passo de cada vez 💜'); },
 
@@ -184,7 +205,7 @@ const ACOES={
       +'<p class="sec small">Falta '+fmtBRL(saldoDivida(dv))+'.</p>'
       +campo('pg-valor','Valor pago (R$)','number','')
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
-      +'<button class="btn" data-action="pagar-salvar" data-id="'+esc(dv.id)+'">Registrar 💸</button></div>');
+      +'<button class="btn" data-action="pagar-salvar" data-id="'+esc(dv.id)+'">Registrar</button></div>');
   },
   'pagar-salvar':el=>{
     const dv=S.finance.dividas.find(x=>x.id===el.dataset.id); if(!dv) return;
@@ -532,12 +553,12 @@ const ACOES={
     abrirModal('<h3>Registrar série — '+esc(ex?ex.nome:'')+'</h3>'
       +(ult?'<p class="sec small">Última vez: '+ult.series+'×'+ult.reps+' · '+String(ult.carga).replace('.',',')+' kg</p>':'')
       +'<div class="grid-2">'+campo('cg-series','Séries','number',ult?ult.series:3)+campo('cg-reps','Repetições','number',ult?ult.reps:10)+'</div>'
-      +campo('cg-carga','Carga (kg)','number',ult?ult.carga:'')
+      +'<div class="grid-2">'+campo('cg-carga','Carga (kg)','number',ult?ult.carga:'')+campo('cg-desc','Descanso (ex.: 90s)','text',ult&&ult.descanso?ult.descanso:'')+'</div>'
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
       +'<button class="btn" data-action="carga-salvar" data-t="'+esc(el.dataset.t)+'" data-e="'+esc(el.dataset.e)+'">Salvar</button></div>');
   },
   'carga-salvar':el=>{
-    registrarCarga(el.dataset.t,el.dataset.e,val('cg-series'),val('cg-reps'),val('cg-carga'));
+    registrarCarga(el.dataset.t,el.dataset.e,val('cg-series'),val('cg-reps'),val('cg-carga'),val('cg-desc'));
     fecharModal(); render(); toast('💪 registrado');
   },
   'carga-del':el=>{
@@ -624,6 +645,7 @@ const ACOES={
   'assist-foto':()=>{ const f=document.getElementById('assist-file'); if(f) f.click(); },
   'assist-remimg':el=>{ _assistImgs.splice(Number(el.dataset.ix),1); renderAssist(); },
   'assist-enviar':()=>enviarMensagem(),
+  'assist-chip':el=>{ if(_assistBusy) return; const ta=document.getElementById('assist-texto'); if(ta) ta.value=el.dataset.v; enviarMensagem(); },
   'assist-aplicar':el=>{
     const ix=Number(el.dataset.ix); const m=_assistMsgs[ix];
     if(!m||!m.plano||m.aplicado) return;

@@ -74,7 +74,7 @@ function secaoNotificacoes(){
     corpo='<p class="muted small">As notificações estão bloqueadas para este site nas configurações do navegador. Libere lá e volte aqui.</p>';
   } else {
     corpo='<p class="sec small">Receba lembretes na hora certa, mesmo com o app fechado.</p>'
-      +'<button class="btn mt" data-action="notif-ativar">🔔 Ativar lembretes</button>';
+      +'<button class="btn mt" data-action="notif-ativar">Ativar lembretes</button>';
   }
   return '<section class="card"><h2>Lembretes (notificações)</h2>'+corpo+'</section>';
 }

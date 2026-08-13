@@ -32,7 +32,7 @@ function viewGrana(){
       +'<span class="valores num">'+(quit?'✅ quitada!':fmtBRL(saldo)+' de '+fmtBRL(dv.total))+'</span></div>'
       +'<div class="progress verde fina"><span style="width:'+pctD+'%"></span></div>'
       +'<div class="linha mt">'
-      +(quit?'':'<button class="btn mini esq" data-action="pagar" data-id="'+idSeguro+'">💸 Registrar pagamento</button>')
+      +(quit?'':'<button class="btn mini esq" data-action="pagar" data-id="'+idSeguro+'">Registrar pagamento</button>')
       +'<button class="btn mini sec-btn" data-action="divida-edit" data-id="'+idSeguro+'" aria-label="Editar dívida">✎</button>'
       +'</div>'
       +(dv.pagos.length?'<details><summary>Histórico ('+dv.pagos.length+')</summary><ul style="margin-left:1.1rem" class="small sec">'
@@ -265,7 +265,7 @@ function viewConfig(){
       +(_seTxt?'<p class="sec small mt">'+_seTxt+' · <span class="muted">'+(st.ultimaSync?'última sync '+new Date(st.ultimaSync).toLocaleString('pt-BR'):'ainda não sincronizado')+'</span></p>':'')
       +'<div class="linha mt"><label class="esq small sec"><input type="checkbox" style="width:auto" data-cfg-check="settings.syncAuto" '+(st.syncAuto?'checked':'')+'> sincronizar automático ao salvar</label></div>'
       +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-      +'<button class="btn" data-action="sync-agora">🔄 Sincronizar agora</button>'
+      +'<button class="btn" data-action="sync-agora">Sincronizar agora</button>'
       +'<button class="btn sec-btn" data-action="conta-trocar-senha">Trocar senha</button>'
       +'<button class="btn sec-btn" data-action="auth-sair">Sair</button>'
       +'</div>'
@@ -279,8 +279,8 @@ function viewConfig(){
       +'<div class="campo"><label>Código de sincronização (igual nos 2 aparelhos — trata como senha)</label><input type="text" data-cfg="settings.syncCode" value="'+esc(st.syncCode)+'" placeholder="ex.: luiz-quadril-2026-x7k9"></div>'
       +'<div class="linha"><label class="esq small sec"><input type="checkbox" style="width:auto" data-cfg-check="settings.syncAuto" '+(st.syncAuto?'checked':'')+'> sincronizar automático ao salvar</label></div>'
       +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-      +'<button class="btn" data-action="sync-agora">🔄 Sincronizar agora</button>'
-      +'<button class="btn sec-btn" data-action="sync-baixar">⬇ Baixar da nuvem</button>'
+      +'<button class="btn" data-action="sync-agora">Sincronizar agora</button>'
+      +'<button class="btn sec-btn" data-action="sync-baixar">Baixar da nuvem</button>'
       +'</div>'
       +'<p class="muted small mt">'+(st.ultimaSync?'Última sync: '+new Date(st.ultimaSync).toLocaleString('pt-BR'):'Nunca sincronizado')+' · passo a passo no GUIA-PUBLICACAO.md</p></section>';
   }
@@ -290,12 +290,12 @@ function viewConfig(){
 
   html+='<section class="card"><h2>Novidades</h2>'
     +'<p class="muted small">O que mudou nas últimas atualizações do app.</p>'
-    +'<button class="btn mini sec-btn" data-action="novidades-todas">📜 Ver histórico de novidades</button></section>';
+    +'<button class="btn mini sec-btn" data-action="novidades-todas">Ver histórico de novidades</button></section>';
 
   html+='<section class="card"><h2>Backup & dados</h2>'
     +'<div class="acoes" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-    +'<button class="btn sec-btn" data-action="exportar">⬇ Exportar backup</button>'
-    +'<button class="btn sec-btn" data-action="importar">⬆ Importar backup</button>'
+    +'<button class="btn sec-btn" data-action="exportar">Exportar backup</button>'
+    +'<button class="btn sec-btn" data-action="importar">Importar backup</button>'
     +'<input type="file" id="importar-arquivo" accept="application/json" class="escondido">'
     +'</div>'
     +'<button class="btn perigo bloco mt-lg" data-action="zerar">Apagar tudo e recomeçar</button></section>';

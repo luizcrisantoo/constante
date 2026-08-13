@@ -111,7 +111,7 @@ function viewProgresso(){
   let html='<section class="card">'
     +'<h2>Progresso em fotos</h2>'
     +'<p class="sec small">Suas fotos ficam privadas — só você vê. Registre de vez em quando e compare a evolução.</p>'
-    +'<button class="btn mt" data-action="foto-add">📷 Adicionar foto</button>'
+    +'<button class="btn mt" data-action="foto-add">Adicionar foto</button>'
     +'<input type="file" id="foto-file" accept="image/*" class="escondido"></section>';
 
   if(!fotos.length){

@@ -75,6 +75,16 @@ function sanearEstado(){
   if(!Array.isArray(S.meds.grupos)) S.meds.grupos=defaultState().meds.grupos;
   if(!S.treinos||!Array.isArray(S.treinos.split)) S.treinos=defaultState().treinos;
   S.treinos.split.forEach(t=>{ if(!Array.isArray(t.exercicios)) t.exercicios=[]; });
+  // Semanas A/B: 4 fichas extras (e-h) pra quem alterna treinos (padrão × metabólico)
+  if(S.treinos.semanaAtiva!=='B') S.treinos.semanaAtiva='A';
+  ['e','f','g','h'].forEach((id,ix)=>{
+    if(!S.treinos.split.find(t=>t&&t.id===id))
+      S.treinos.split.push({id:id, dia:'', nome:'Treino '+'ABCD'[ix], foco:'', exercicios:[], semana:'B', diaSemana:null});
+  });
+  S.treinos.split.forEach(t=>{
+    if(t.semana!=='B') t.semana=(['e','f','g','h'].includes(t.id)?'B':'A');
+    if(!(Number.isInteger(t.diaSemana)&&t.diaSemana>=0&&t.diaSemana<=6)) t.diaSemana=null;
+  });
   if(!S.gastos||typeof S.gastos!=='object') S.gastos=defaultState().gastos;
   if(!Array.isArray(S.gastos.categorias)) S.gastos.categorias=defaultState().gastos.categorias;
   if(!Array.isArray(S.gastos.lancamentos)) S.gastos.lancamentos=[];
@@ -585,8 +595,15 @@ function treinosNaSemana(){
 function treinoPorId(id){ return S.treinos.split.find(t=>t.id===id)||null; }
 function treinoDeHoje(){
   const dow=new Date().getDay();
-  const mapa={1:'a',3:'b',4:'c',6:'d'};
-  return mapa[dow]?treinoPorId(mapa[dow]):null;
+  const ativa=(S.treinos.semanaAtiva==='B')?'B':'A';
+  const doDia=S.treinos.split.find(t=>t.semana===ativa && t.diaSemana===dow);
+  if(doDia) return doDia;
+  // compatibilidade: ninguém definiu dias ainda → usa o mapa antigo (Seg A, Qua B, Qui C, Sáb D)
+  if(ativa==='A' && !S.treinos.split.some(t=>t.semana===ativa && t.diaSemana!=null)){
+    const mapa={1:'a',3:'b',4:'c',6:'d'};
+    return mapa[dow]?treinoPorId(mapa[dow]):null;
+  }
+  return null;
 }
 function addExercicio(idTreino,nome){
   const t=treinoPorId(idTreino); if(!t||!nome) return null;
@@ -597,10 +614,12 @@ function removerExercicio(idTreino,idEx){
   const t=treinoPorId(idTreino); if(!t) return;
   t.exercicios=t.exercicios.filter(e=>e.id!==idEx); saveState();
 }
-function registrarCarga(idTreino,idEx,series,reps,carga){
+function registrarCarga(idTreino,idEx,series,reps,carga,descanso){
   const t=treinoPorId(idTreino); if(!t) return;
   const ex=t.exercicios.find(e=>e.id===idEx); if(!ex) return;
-  ex.registros.push({id:uid(),data:hojeISO(),series:Number(series)||0,reps:Number(reps)||0,carga:round2(Number(String(carga).replace(',','.'))||0)});
+  const reg={id:uid(),data:hojeISO(),series:Number(series)||0,reps:Number(reps)||0,carga:round2(Number(String(carga).replace(',','.'))||0)};
+  const dsc=String(descanso||'').trim(); if(dsc) reg.descanso=dsc.slice(0,20);
+  ex.registros.push(reg);
   saveState();
 }
 function ultimoRegistro(ex){

@@ -123,6 +123,12 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:33, data:'2026-08-13', titulo:'Ajustes à mão + treinos A/B', itens:[
+    '⚙️ Os Ajustes ganharam aba própria na barra de baixo — chega de caçar a engrenagem no cantinho.',
+    '🏋️ Treinos com semana A × semana B: pra quem alterna fichas (padrão × metabólico). Toca no ✎ do treino pra dar nome, foco e dia — e agora dá pra anotar o descanso de cada exercício.',
+    '🤖 O assistente oferece botões de resposta rápida nas perguntas simples — menos digitação.',
+    '🧹 Visual mais limpo: menos emoji repetido em títulos e listas, e ajustes finos pra iPhone (recortes de tela) e celulares menores.'
+  ]},
   { v:32, data:'2026-08-13', titulo:'Check de treino + recomeço leve', itens:[
     '🏋️ Novo check "Treinei hoje" na aba Hoje: um toque e valeu — academia, corrida, futevôlei, vôlei, cardio, qualquer treino. Dá +10 XP de bônus (e descansar não desconta nada).',
     '🏆 Nova conquista "Treinos feitos": cada treino do seu histórico soma.',

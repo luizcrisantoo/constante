@@ -5,7 +5,7 @@ function viewTreinoDetalhe(idTreino){
   if(!t){ UI.sub=null; return viewRotina(); }
   let html='<section class="card">'
     +'<button class="btn mini sec-btn" data-action="voltar-sub">← Voltar</button>'
-    +'<h2 class="mt">'+esc(t.nome)+' <span class="muted small">'+esc(t.dia)+'</span></h2>'
+    +'<h2 class="mt">'+esc(t.nome)+' <span class="muted small">'+((t.diaSemana!=null)?DIAS_NOME[t.diaSemana]:esc(t.dia||''))+'</span><span class="chip">Semana '+esc(t.semana||'A')+'</span></h2>'
     +'<p class="sec small">'+esc(t.foco)+'</p></section>';
 
   if(!t.exercicios.length){
@@ -19,12 +19,12 @@ function viewTreinoDetalhe(idTreino){
       +'<button class="btn mini sec-btn" data-action="carga-add" data-t="'+esc(t.id)+'" data-e="'+esc(ex.id)+'">+ Série</button>'
       +'<button class="edit" data-action="ex-remover" data-t="'+esc(t.id)+'" data-e="'+esc(ex.id)+'" aria-label="Remover exercício">✕</button></div>';
     if(ult){
-      html+='<div class="muted small mt">Última vez ('+fmtData(ult.data)+'): <b class="sec">'+ult.series+'×'+ult.reps+' · '+String(ult.carga).replace('.',',')+' kg</b></div>';
+      html+='<div class="muted small mt">Última vez ('+fmtData(ult.data)+'): <b class="sec">'+ult.series+'×'+ult.reps+' · '+String(ult.carga).replace('.',',')+' kg</b>'+(ult.descanso?' <span class="muted">· descanso '+esc(ult.descanso)+'</span>':'')+'</div>';
       html+=graficoEvolucao(ex);
 
       const recentes=ex.registros.slice().sort((a,b)=>a.data<b.data?1:-1).slice(0,6);
       html+='<details class="mt"><summary class="muted small">Histórico ('+ex.registros.length+')</summary><table class="tabela mt"><thead><tr><th>Data</th><th class="num">Séries×Reps</th><th class="num">Carga</th><th></th></tr></thead><tbody>';
-      recentes.forEach(r=>{ html+='<tr><td class="num">'+fmtData(r.data)+'</td><td class="num">'+r.series+'×'+r.reps+'</td><td class="num">'+String(r.carga).replace('.',',')+' kg</td>'
+      recentes.forEach(r=>{ html+='<tr><td class="num">'+fmtData(r.data)+'</td><td class="num">'+r.series+'×'+r.reps+'</td><td class="num">'+String(r.carga).replace('.',',')+' kg'+(r.descanso?'<br><span class="muted small">'+esc(r.descanso)+'</span>':'')+'</td>'
         +'<td><button class="edit" data-action="carga-del" data-t="'+esc(t.id)+'" data-e="'+esc(ex.id)+'" data-r="'+esc(r.id||'')+'" aria-label="Apagar este registro">✕</button></td></tr>'; });
       html+='</tbody></table></details>';
     } else {

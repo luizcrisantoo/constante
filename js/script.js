@@ -839,6 +839,8 @@ const ACOES={
   'nome-pular':()=>{ S.settings.nomeAdiado=true; saveState({skipSync:true}); fecharModal(); },
 
   'assist-abrir':()=>abrirAssistente(),
+  'caderno-ia':el=>abrirCadernoIA(el.dataset.id,el.dataset.m),
+  'assist-salvar-caderno':el=>salvarRespostaNoCaderno(Number(el.dataset.ix)),
   'foto-plano':el=>{
     const t=el&&el.dataset&&el.dataset.t;
     if(t&&PLANOS_FOTO[t]) escolherArquivoPlano(t); else abrirFotoPlano();

@@ -22,6 +22,53 @@ const PLANOS_FOTO={
   estudo:{icone:'📚',nome:'Meu plano de estudos',dica:'o cronograma que você segue',
     msg:'Esse é o meu plano de estudos. Distribui ele na minha rotina da semana, em blocos de estudo e revisão, nos dias e horários que combinem com o que já está lá.'}
 };
+// ---- Cadernos de estudo: resumir, mapa mental, me perguntar ----
+let _assistCaderno = null;   // id do caderno que abriu a conversa (pra poder salvar a resposta lá)
+const MODOS_CADERNO = {
+  resumo:{
+    titulo:'Resumo',
+    instrucao:'Resume as minhas anotações abaixo em tópicos curtos, na ordem que fizer sentido pra estudar. Usa só o que está escrito, não inventa conteúdo nem acrescenta matéria que eu não anotei. Se algo estiver confuso ou incompleto, diz o que ficou faltando em vez de preencher por conta própria.'
+  },
+  mapa:{
+    titulo:'Mapa mental',
+    instrucao:'Monta um mapa mental em texto das minhas anotações abaixo: um tema central, os ramos principais e, dentro de cada um, os pontos. Usa recuo com hífens (nada de desenho nem tabela). Só com o que está escrito — não inventa ramo que eu não anotei.'
+  },
+  perguntas:{
+    titulo:'Perguntas',
+    instrucao:'Faz 8 perguntas curtas pra eu testar se aprendi o que está nas minhas anotações abaixo. Só perguntas, numeradas, sem as respostas — eu respondo e depois te peço a correção. Cada pergunta tem que ser respondível com o que está anotado.'
+  }
+};
+function abrirCadernoIA(idCaderno,modo){
+  const c=(typeof cadernoPorId==='function')?cadernoPorId(idCaderno):null;
+  const m=MODOS_CADERNO[modo];
+  if(!c||!m) return;
+  if(!assistenteDisponivel()){ abrirAssistente(); return; }
+  if(!c.notas.length){ toast('Esse caderno ainda não tem anotação'); return; }
+  const notas=c.notas.slice().sort((a,b)=>(a.ts||a.data)<(b.ts||b.data)?-1:1);
+  let texto='', cortou=false;
+  for(const n of notas){
+    const bloco='['+fmtData(n.data)+'] '+n.texto+'\n';
+    if(texto.length+bloco.length>6000){ cortou=true; break; }
+    texto+=bloco;
+  }
+  abrirAssistente();
+  _assistCaderno=c.id;
+  const ta=document.getElementById('assist-texto');
+  if(ta) ta.value=m.instrucao+'\n\nCaderno "'+c.nome+'"'+(cortou?' (só as anotações mais antigas couberam)':'')+':\n'+texto;
+  if(typeof metrica==='function') metrica('caderno-ia',{modo:modo});
+  enviarMensagem();
+}
+function salvarRespostaNoCaderno(ix){
+  const m=_assistMsgs[ix];
+  if(!m||m.de!=='ia'||m.erro||!_assistCaderno) return;
+  if(!(m.texto||'').trim()){ toast('Resposta vazia — nada pra salvar'); return; }
+  if(typeof addNota!=='function'){ toast('Não consegui salvar'); return; }
+  addNota(_assistCaderno,m.texto);
+  m.salvo=true;
+  render(); renderAssist();
+  toast('📓 Salvo no caderno como anotação');
+}
+
 function abrirFotoPlano(){
   if(!assistenteDisponivel()){ abrirAssistente(); return; }
   abrirModal('<h3>📸 Fotografe seu plano</h3>'
@@ -70,6 +117,7 @@ function abrirAssistenteComPlano(anexo,tipo){
 
 function abrirAssistente(){
   _assistImgs = [];
+  _assistCaderno = null;
   if(!assistenteDisponivel()){
     abrirModal('<h3>🤖 Assistente</h3>'
       +'<p class="sec small">O assistente funciona quando você está na sua conta — é assim que ele enxerga tua rotina e te acompanha em qualquer aparelho. Entra (ou cria a conta) e volta aqui 🙂</p>'
@@ -94,6 +142,13 @@ function chatHTML(){
       if(m.opcoes&&m.opcoes.length&&ix===_assistMsgs.length-1&&!_assistBusy){
         thread+='<div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:6px">'
           +m.opcoes.map(o=>'<button class="btn mini sec-btn" data-action="assist-chip" data-v="'+esc(o)+'">'+esc(o)+'</button>').join('')+'</div>';
+      }
+      if(_assistCaderno&&ix>0&&!m.plano&&!m.erro){
+        thread+='<div class="mt">'
+          +(m.salvo
+            ? '<span class="chip">📓 salvo no caderno</span>'
+            : '<button class="btn mini sec-btn" data-action="assist-salvar-caderno" data-ix="'+ix+'">📓 Salvar no caderno</button>')
+          +'</div>';
       }
       if(m.plano){
         thread+='<div class="ok-box" style="margin-top:6px">🔧 '+esc(previaPlano(m.plano));

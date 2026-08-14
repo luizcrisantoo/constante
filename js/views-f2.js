@@ -177,7 +177,14 @@ function viewCadernoDetalhe(idCaderno){
     +'<button class="edit" data-action="caderno-remover" data-id="'+esc(c.id)+'" aria-label="Excluir caderno">✕</button></div>'
     +'<div class="campo mt"><textarea id="nota-nova" rows="3" placeholder="O que você estudou/aprendeu? (uma anotação)"></textarea></div>'
     +'<button class="btn bloco" data-action="nota-salvar" data-id="'+esc(c.id)+'">Adicionar anotação</button>'
-    +'<p class="muted small mt">Depois dá pra pedir um resumo ou mapa mental disso (chega na próxima fase 🤖).</p>'
+    +((c.notas.length&&typeof assistenteDisponivel==='function'&&assistenteDisponivel())
+      ? '<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+        +'<button class="btn sec-btn" data-action="caderno-ia" data-id="'+esc(c.id)+'" data-m="resumo">🤖 Resumir</button>'
+        +'<button class="btn sec-btn" data-action="caderno-ia" data-id="'+esc(c.id)+'" data-m="mapa">🧠 Mapa mental</button>'
+        +'<button class="btn sec-btn" data-action="caderno-ia" data-id="'+esc(c.id)+'" data-m="perguntas">❓ Me pergunta</button>'
+        +'</div>'
+        +'<p class="muted small mt">O assistente lê as anotações desse caderno e devolve na conversa — e você pode salvar a resposta aqui como uma anotação.</p>'
+      : '<p class="muted small mt">Escreve as anotações aqui; depois o assistente 🤖 resume, monta mapa mental e te faz perguntas em cima delas.</p>')
     +'</section>';
 
   if(!c.notas.length){

@@ -147,6 +147,11 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:46, data:'2026-08-14', titulo:'Os cadernos ganharam cérebro', itens:[
+    '📓 Nos cadernos de estudo agora tem três botões: RESUMIR as anotações em tópicos, montar um MAPA MENTAL delas, ou te fazer PERGUNTAS pra você testar se aprendeu.',
+    '💾 A resposta pode ser salva ali mesmo como uma anotação nova — o resumo fica junto do material, não perdido numa conversa.',
+    '🤖 Ele usa só o que você escreveu: não inventa matéria nem completa o que faltou. Se ficou confuso, ele avisa o que faltou em vez de chutar.'
+  ]},
   { v:45, data:'2026-08-14', titulo:'Fotografe seu plano', itens:[
     '📸 Novo caminho curto: fotografa o que você já segue — a dieta do nutri, a ficha do personal, o horário da facul, o cronograma de estudos — e o assistente monta tudo aqui dentro. Aparece na tela de boas-vindas e também vazio dentro de cada aba (Dieta, Rotina, Treino).',
     '🤖 Ele continua não inventando dieta nem treino: só transcreve e organiza o que você trouxer, e você revê antes de aplicar.',

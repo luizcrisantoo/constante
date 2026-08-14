@@ -149,9 +149,10 @@ function viewProgresso(){
 }
 
 function viewProgressoTab(){
-  let html=viewProgresso();
+  let html='';
   if(typeof secaoAmigos==='function') html+=secaoAmigos();
   if(typeof secaoGrupos==='function') html+=secaoGrupos();
+  html+=viewProgresso();
   if(typeof secaoConquistas==='function') html+=secaoConquistas();
   return html;
 }

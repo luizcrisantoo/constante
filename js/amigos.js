@@ -16,6 +16,16 @@ function social(){
     S.social = { codigo:'', compartilhados:[], amigos:[], visto:null };
   if(!Array.isArray(S.social.compartilhados)) S.social.compartilhados=[];
   if(!Array.isArray(S.social.amigos)) S.social.amigos=[];
+  // Faxina: se um hábito virou "evitar" depois de compartilhado (ou já estava lá
+  // de uma versão antiga), ele sai da lista sozinho.
+  if(Array.isArray(S.habits)){
+    const antes=S.social.compartilhados.length;
+    S.social.compartilhados=S.social.compartilhados.filter(id=>{
+      const h=S.habits.find(x=>x.id===id);
+      return h?habitoPodeCompartilhar(h):false;
+    });
+    if(S.social.compartilhados.length!==antes&&typeof publicarCartao==='function') publicarCartao(true);
+  }
   return S.social;
 }
 function socialDisponivel(){
@@ -32,6 +42,14 @@ function meuCodigo(){
   }
   return s.codigo;
 }
+// Hábito de "evitar" nunca sai daqui. Eles são os confessionais — "sem apostas",
+// "sem bebida", "sem cigarro" — e o nome deles conta uma coisa íntima demais pra
+// virar chip na tela de outra pessoa. Não é aviso: o app não deixa.
+function habitoPodeCompartilhar(h){
+  if(!h) return false;
+  if(h.id==='apostas') return false;          // o hábito do plano de redução, nunca
+  return h.tipo!=='evitar';
+}
 function habitoCompartilhado(id){ return social().compartilhados.indexOf(id)>=0; }
 function alternarCompartilhado(id){
   const s=social(), i=s.compartilhados.indexOf(id);
@@ -44,7 +62,8 @@ function alternarCompartilhado(id){
 function montarCartao(){
   const hoje=hojeISO(), d=S.days[hoje]||{};
   const habs=social().compartilhados.map(id=>{
-    const h=S.habits.find(x=>x.id===id); if(!h) return null;
+    const h=S.habits.find(x=>x.id===id);
+    if(!h||!habitoPodeCompartilhar(h)) return null;   // trava dupla: nada de "evitar" sai daqui
     return { id:h.id, nome:String(h.nome||'').slice(0,40), icone:h.icone||'⭐',
              hoje: (d.habitos&&d.habitos[h.id])===true,
              streak: (typeof streakHabito==='function')?streakHabito(h.id):0 };
@@ -148,7 +167,8 @@ function secaoAmigos(){
     +'<button class="btn mini sec-btn dir" data-action="amigo-add">+ Adicionar</button></h2>';
 
   if(!amigos.length){
-    html+='<p class="sec small">Ninguém por aqui ainda. Manda teu código pra alguém, ou entra com o código que te mandaram.</p>';
+    html+='<p class="sec small">Ninguém por aqui ainda. Toca em <b>+ Adicionar</b>: o app te dá um código pra mandar pra pessoa (ou você digita o dela).</p>'
+      +'<button class="btn bloco mt" data-action="amigo-add">+ Adicionar alguém</button>';
   } else {
     amigos.forEach(a=>{
       const anel=(typeof molduraTier==='function')?a.moldura:'semente';
@@ -168,16 +188,35 @@ function secaoAmigos(){
     });
   }
 
-  const meus=S.habits.filter(h=>habitoCompartilhado(h.id));
+  const podem=S.habits.filter(habitoPodeCompartilhar);
+  const evitar=S.habits.filter(h=>!habitoPodeCompartilhar(h));
+  const meus=podem.filter(h=>habitoCompartilhado(h.id));
+  // A lista do que NÃO sai cita só o que essa pessoa de fato usa — quem nunca abriu
+  // a parte de apostas não tem por que ler "apostas" aqui.
+  const nunca=['peso'];
+  if((S.gastos&&S.gastos.lancamentos||[]).length||(S.finance&&S.finance.rendas||[]).length) nunca.push('dinheiro');
+  nunca.push('humor');
+  if((S.meds&&S.meds.grupos||[]).length) nunca.push('remédios');
+  if(S.bets&&S.bets.ativo) nunca.push('apostas');
+  if((S.estudo&&S.estudo.cadernos||[]).length) nunca.push('cadernos');
+  nunca.push('o que você escreve');
+  const listaNunca=nunca.length>1
+    ? nunca.slice(0,-1).join(', ')+' e '+nunca[nunca.length-1]
+    : nunca[0];
   html+='<div class="grupo-titulo mt">O que eles veem de você</div>'
-    +'<p class="muted small">Teu nome, tua constância e tua moldura — sempre. Hábito, só o que você marcar aqui embaixo. Peso, dinheiro, humor, remédios, apostas e anotações <b>nunca</b> saem daqui.</p>';
-  if(!S.habits.length){
-    html+='<p class="muted small mt">Você ainda não tem hábito pra compartilhar.</p>';
+    +'<p class="muted small">Teu nome, tua constância e tua moldura — sempre. Hábito, só o que você marcar aqui embaixo.</p>'
+    +'<p class="muted small">Nada mais sai daqui: '+esc(listaNunca)+' ficam só com você.</p>'
+    +'<p class="muted small">⚠️ O <b>nome</b> do hábito que você marcar aparece pra pessoa. Se ele tem cliente, apelido ou algo que você não quer que leiam, renomeia antes ou deixa fora.</p>';
+  if(!podem.length){
+    html+='<p class="muted small mt">Você ainda não tem hábito que possa ser compartilhado.</p>';
   } else {
     html+='<div style="display:flex;gap:0.35rem;flex-wrap:wrap;margin-top:0.4rem">'
-      +S.habits.map(h=>'<button type="button" class="chip-onb'+(habitoCompartilhado(h.id)?' sel':'')+'" data-action="amigo-hab" data-id="'+esc(h.id)+'" aria-pressed="'+(habitoCompartilhado(h.id)?'true':'false')+'">'+esc(h.icone||'⭐')+' '+esc(h.nome)+'</button>').join('')
+      +podem.map(h=>'<button type="button" class="chip-onb'+(habitoCompartilhado(h.id)?' sel':'')+'" data-action="amigo-hab" data-id="'+esc(h.id)+'" aria-pressed="'+(habitoCompartilhado(h.id)?'true':'false')+'">'+esc(h.icone||'⭐')+' '+esc(h.nome)+'</button>').join('')
       +'</div>'
       +'<p class="muted small mt">'+(meus.length?meus.length+' hábito'+(meus.length>1?'s':'')+' compartilhado'+(meus.length>1?'s':''):'Nenhum hábito compartilhado')+'.</p>';
+  }
+  if(evitar.length){
+    html+='<p class="muted small mt">🔒 Os teus '+evitar.length+' hábito'+(evitar.length>1?'s':'')+' de <b>evitar</b> não entram nessa lista de propósito — o nome deles costuma dizer algo íntimo demais pra aparecer na tela de outra pessoa. Ficam só com você, sempre.</p>';
   }
   return html+'</section>';
 }

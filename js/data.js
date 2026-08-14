@@ -148,6 +148,8 @@ const FRASES = [
 // ============================================================
 const NOVIDADES = [
   { v:49, data:'2026-08-14', titulo:'Esconder os valores da Grana', itens:[
+    '🔒 Hábito de EVITAR (tipo "sem apostas", "sem cigarro") nunca pode ser compartilhado com ninguém — nem se você quiser. O nome desses hábitos diz coisa íntima demais, então o app simplesmente não oferece. Se algum já estava compartilhado, ele saiu sozinho.',
+    '👥 Pessoas e Juntos subiram pro topo da aba Progresso — antes estavam embaixo dos gráficos e ninguém achava.',
     '🙈 A aba Grana ganhou um botão de esconder: os valores ficam borrados e voltam com um toque. Serve pra abrir o app no ônibus, no trampo ou com gente do lado sem mostrar quanto você tem.',
     '💾 A escolha fica salva: se você escondeu, continua escondido na próxima vez que abrir.'
   ]},

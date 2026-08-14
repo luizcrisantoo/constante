@@ -860,13 +860,14 @@ const ACOES={
   'amigo-add':()=>{
     const cod=meuCodigo(); saveState();
     abrirModal('<h3>Adicionar alguém</h3>'
-      +'<p class="sec small">Ninguém te encontra por busca aqui. Só entra quem você convidar — e você desfaz quando quiser.</p>'
-      +'<div class="grupo-titulo">Teu código</div>'
-      +'<p class="centro" style="font-size:1.6rem;font-weight:800;letter-spacing:3px">'+esc(cod)+'</p>'
+      +'<p class="sec small">Ninguém te encontra por busca nem por e-mail. Só entra quem receber teu código — e você desfaz quando quiser.</p>'
+      +'<div class="grupo-titulo">1. Manda teu código pra pessoa</div>'
+      +'<p class="centro" style="font-size:1.7rem;font-weight:800;letter-spacing:4px;margin:0.3rem 0">'+esc(cod)+'</p>'
       +'<div class="acoes" style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center">'
-      +'<button class="btn mini sec-btn" data-action="amigo-copiar" data-c="'+esc(cod)+'">Copiar código</button></div>'
-      +'<div class="grupo-titulo mt">Ou entra com o código de alguém</div>'
-      +campo('amigo-cod','Código que te mandaram','text','')
+      +'<button class="btn" data-action="amigo-copiar" data-c="'+esc(cod)+'">📤 Enviar meu código</button></div>'
+      +'<p class="muted small centro mt">Basta UM de vocês digitar o código do outro — depois disso os dois se veem.</p>'
+      +'<div class="grupo-titulo mt">2. Ou digita o código que te mandaram</div>'
+      +campo('amigo-cod','Código de 8 letras','text','')
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Fechar</button>'
       +'<button class="btn" data-action="amigo-entrar">Adicionar</button></div>');
   },

@@ -398,12 +398,10 @@ const ACOES={
   'zerar-confirma':()=>{ S=defaultState(); saveState({skipSync:true}); fecharModal(); render(); toast('Recomeço. Bora 🌱'); },
 
   'auth-tela':el=>{
-    if(el.dataset.t==='entrar') marcarQuerMigrar(false);
     UI.auth={tela:el.dataset.t,email:val('au-email')||(UI.auth&&UI.auth.email)||''};
     renderLogin();
   },
   'auth-entrar':async el=>{
-    marcarQuerMigrar(false);  // entrar numa conta existente nunca empurra rascunho local por cima
     const email=val('au-email');
     const senha=(document.getElementById('au-senha')||{}).value||'';
     if(!email||!senha){ UI.auth.erro='Preenche e-mail e senha.'; UI.auth.msg=''; renderLogin(); return; }
@@ -465,7 +463,6 @@ const ACOES={
     try{
       await authTrocarSenha(s1);
       _emRecuperacao=false;
-      marcarVisitante(false); marcarQuerMigrar(false);
       const u=usuarioAtual(); if(u) carregarEstadoDaConta(u);
       toast('🔒 Senha nova salva'); sairModoLogin(); renderSeguro(); sincronizarPosLogin();
     }
@@ -650,23 +647,6 @@ const ACOES={
     saveState({skipSync:true}); fecharModal(); render();
     if(typeof metrica==='function') metrica('onboarding-pulado');
   },
-  'visitante-entrar':()=>{
-    marcarVisitante(true);
-    loadState();          // recarrega o que já existe na chave local (ex.: depois de um logout)
-    sairModoLogin(); renderSeguro();
-    if(typeof metrica==='function') metrica('visitante-entrou');
-    if(precisaOnboarding()) setTimeout(abrirOnboarding,350); else boasVindas();
-  },
-  'visitante-criar-conta':()=>{
-    marcarQuerMigrar(true);   // criar conta = "leva junto o que eu já anotei"
-    marcarVisitante(false);
-    UI.auth={tela:'criar',email:''}; renderLogin();
-  },
-  'visitante-ja-tenho':()=>{
-    marcarQuerMigrar(false);  // conta que já existe: não sobe o rascunho por cima dela
-    marcarVisitante(false);
-    UI.auth={tela:'entrar',email:''}; renderLogin();
-  },
   'treino-adiar':el=>{
     const t=treinoPorId(el.dataset.id); if(!t){ toast('Treino não encontrado'); return; }
     const novo=adiarTreino(el.dataset.id);
@@ -796,24 +776,6 @@ const ACOES={
     toast('✨ Aplicado! Dá uma olhada.');
   }
 };
-
-// ---- Modo visitante: usar o app antes de criar conta ----
-const VISITANTE_FLAG='constante_visitante';
-const MIGRAR_FLAG='constante_migrar_visitante';
-let _visitante=false;
-// "leva o que anotei pra conta nova" precisa sobreviver ao reload do link de confirmação
-function querMigrar(){ try{ return localStorage.getItem(MIGRAR_FLAG)==='1'; }catch(e){ return false; } }
-function marcarQuerMigrar(v){ try{ v?localStorage.setItem(MIGRAR_FLAG,'1'):localStorage.removeItem(MIGRAR_FLAG); }catch(e){} }
-function ehVisitante(){ return _visitante; }
-function marcarVisitante(v){
-  _visitante=!!v;
-  try{ v?localStorage.setItem(VISITANTE_FLAG,'1'):localStorage.removeItem(VISITANTE_FLAG); }catch(e){}
-  // Trava a migração automática: dado de visitante só entra numa conta quando a pessoa
-  // pede ("criar conta e salvar"). Entrando numa conta que já existe, ele NÃO sobe —
-  // senão um teste de 5 minutos sobrescreveria os hábitos/rotina de quem já usa.
-  if(v&&typeof marcarMigrado==='function') marcarMigrado();
-}
-function visitanteSalvo(){ try{ return localStorage.getItem(VISITANTE_FLAG)==='1'; }catch(e){ return false; } }
 
 // ---- Onboarding por intenção ----
 let _onb={nome:'',intencoes:[]};
@@ -1079,27 +1041,22 @@ function carregarEstadoDaConta(u){
   if(typeof metricaIdentificar==='function') metricaIdentificar(u.id);
   setSyncEstado(navigator.onLine===false?'offline':'pendente');
   let raw=lsGet();
-  // quem usou como visitante leva o que anotou pra dentro da conta nova
-  const pediuMigrar=querMigrar();
-  let veioDeVisitante=false;
-  if(!raw){ raw=migrarLocalUmaVez(pediuMigrar); veioDeVisitante=pediuMigrar&&!!raw; }
-  marcarQuerMigrar(false);
+  let migrou=false;
+  if(!raw){ raw=migrarLocalUmaVez(); migrou=!!raw; }
   if(raw){ try{ S=deepFill(JSON.parse(raw),defaultState()); }catch(e){ S=defaultState(); } }
   else S=defaultState();
   sanearEstado();
   // (ver core.js) não carimba estado recém-carregado sem dados com a hora atual —
   // deixa a nuvem vencer a 1ª mesclagem em vez de sobrescrevê-la com o vazio.
-  // rascunho de visitante entra SEM carimbo de hora: numa conta que já tem dados,
-  // a nuvem continua sendo a base da mesclagem e nada é sobrescrito.
-  if(veioDeVisitante) delete S._ts;
+  // dado migrado de uso local antigo entra SEM carimbo de hora: se a conta já tiver
+  // dados na nuvem, ela continua sendo a base da mesclagem e nada é sobrescrito.
+  if(migrou) delete S._ts;
   lsSet(JSON.stringify(S));
-  if(veioDeVisitante) setTimeout(()=>toast('✅ O que você já tinha anotado veio junto pra tua conta'),900);
 }
 function aoMudarAuth(evento,sessao,antes){
-  if(evento==='PASSWORD_RECOVERY'){ _emRecuperacao=true; marcarVisitante(false); UI.auth={tela:'nova-senha'}; renderLogin(); return; }
+  if(evento==='PASSWORD_RECOVERY'){ _emRecuperacao=true; UI.auth={tela:'nova-senha'}; renderLogin(); return; }
   if(evento==='SIGNED_IN'&&!antes){
     if(_emRecuperacao) return;
-    marcarVisitante(false);
     carregarEstadoDaConta(sessao.user);
     sairModoLogin(); renderSeguro();
     sincronizarPosLogin();
@@ -1107,7 +1064,6 @@ function aoMudarAuth(evento,sessao,antes){
     return;
   }
   if(evento==='SIGNED_OUT'){
-    marcarVisitante(false);
     lsLimparConta();
     setUserKey(null);
     setSyncEstado('local');
@@ -1125,8 +1081,7 @@ function boot(){
     let _telaInicial=false;
     const semSessao=()=>{
       if(_telaInicial) return; _telaInicial=true;
-      if(visitanteSalvo()){ _visitante=true; setSyncEstado('local'); renderSeguro(); boasVindas(); }
-      else renderLogin();
+      renderLogin();
     };
     // Se a autenticação demorar demais (rede pendurada, portal de wi-fi), mostra algo:
     // ficar em tela branca é o pior desfecho possível num app que funciona offline.
@@ -1137,7 +1092,7 @@ function boot(){
       if(sessao){
         if(_telaInicial&&_usuarioLogado===sessao.user.id) return;   // já entrou por SIGNED_IN
         _telaInicial=true;
-        marcarVisitante(false); carregarEstadoDaConta(sessao.user); renderSeguro(); sincronizarPosLogin();
+        carregarEstadoDaConta(sessao.user); renderSeguro(); sincronizarPosLogin();
       }
       else semSessao();
     }).catch(()=>{ clearTimeout(socorro); semSessao(); });
@@ -1160,7 +1115,7 @@ function boot(){
   };
   const pullAoVoltar=()=>{
     if(document.visibilityState!=='visible') return;
-    if(produtoAtivo()&&!_usuarioLogado) return;   // visitante e tela de senha nova não sincronizam
+    if(produtoAtivo()&&!_usuarioLogado) return;   // tela de senha nova / sem conta carregada não sincroniza
     if(!(S.settings.syncAuto&&syncConfigurado()&&S.settings.ultimaSync)) return;
     const agora=Date.now();
     if(agora-ultimoPullFoco<20000) return;

@@ -151,9 +151,8 @@ const NOVIDADES = [
     '📅 A Grana agora tem calendário do mês: cada dia mostra quanto saiu, e tocando num dia você abre ele — vê os gastos daquele dia e lança direto ali. Esqueceu terça? Toca na terça e anota.',
     '💰 O botão de registrar já vem com o dia que você abriu, e depois de salvar o app te mostra o dia onde o gasto caiu.'
   ]},
-  { v:41, data:'2026-08-14', titulo:'Dá pra experimentar sem criar conta', itens:[
-    '🔓 Quem chega agora pode usar o app inteiro antes de criar conta — e quando criar, o que já foi anotado vai junto pra conta.',
-    '👋 Tem uma abertura nova: o app pergunta teu nome e o que te trouxe aqui, e já deixa pronto o que importa pra você (sem receita de bolo — dá pra tirar o que não faz sentido na hora).',
+  { v:41, data:'2026-08-14', titulo:'Começar ficou mais fácil', itens:[
+    '👋 Quem entra pela primeira vez tem uma abertura nova: o app pergunta teu nome e o que te trouxe aqui, e já deixa pronto o que importa pra você (sem receita de bolo — dá pra tirar o que não faz sentido na hora).',
     '🎯 E te empurra pra primeira vitória: marcar uma coisa só, hoje. É assim que a linha começa.'
   ]},
   { v:40, data:'2026-08-14', titulo:'Empurrar treino, repetir ontem e meses na Grana', itens:[

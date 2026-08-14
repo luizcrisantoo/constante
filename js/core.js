@@ -39,10 +39,9 @@ function lsLimparConta(){
   try{ localStorage.removeItem(k); }catch(e){}
 }
 
-function marcarMigrado(){ try{ localStorage.setItem(MIGRADO_FLAG,'1'); }catch(e){} }
-function migrarLocalUmaVez(forcar){
+function migrarLocalUmaVez(){
   try{
-    if(!forcar && localStorage.getItem(MIGRADO_FLAG)) return null;
+    if(localStorage.getItem(MIGRADO_FLAG)) return null;
     const base=localStorage.getItem(STORE_KEY)||_mem[STORE_KEY]||null;
     localStorage.setItem(MIGRADO_FLAG,'1');
     return base||null;

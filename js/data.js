@@ -1,6 +1,7 @@
 'use strict';
 const DIAS_NOME = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const DIAS_ABREV = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const MESES_NOME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const UNIDADES = {
   min: { nome:'minutos', abrev:'min' },
   vez: { nome:'vezes',   abrev:'x'   },
@@ -123,6 +124,15 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:40, data:'2026-08-14', titulo:'Empurrar treino, repetir ontem e meses na Grana', itens:[
+    '⏭ Não deu pra treinar hoje? Agora dá pra empurrar a ficha pra amanhã — ela aparece no dia seguinte e você não perde o músculo da semana. Some sozinho depois.',
+    '↩️ De manhã, se o dia for igual ao de ontem, o botão “Repetir ontem” marca os mesmos hábitos, refeições e remédios de uma vez (água, sono e humor ficam de fora — esses são de hoje).',
+    '📅 Na Grana dá pra navegar pelos meses anteriores: totais, categorias e extrato de julho, junho, o que for.'
+  ]},
+  { v:39, data:'2026-08-13', titulo:'Gastos de qualquer dia', itens:[
+    '💰 Esqueceu de anotar um gasto? Agora o registro tem campo de DIA — dá pra lançar o de ontem, o de sábado, a semana inteira de uma vez.',
+    '📅 E a Grana ganhou extrato: a lista mostra os últimos 7 dias e dá pra abrir o mês inteiro, dia a dia, com o total de cada dia — e remover qualquer lançamento.'
+  ]},
   { v:38, data:'2026-08-13', titulo:'Moldura de recorde + app mais vivo', itens:[
     '🖼 Tua foto de perfil ganhou MOLDURA de recorde: 🌱 Semente → 🥉 Bronze (7 dias) → 🥈 Prata (30) → 🥇 Ouro (100) → 🟣 Ametista (365). Ela mostra a tua MELHOR sequência de todos os tempos e nunca rebaixa — chegou no ouro, é teu até você se superar. Toca na foto pra ver tua escada.',
     '✨ O app ganhou vida: check com animação e vibração no celular, transição suave entre as abas e aviso quando você bate um novo recorde pessoal.',

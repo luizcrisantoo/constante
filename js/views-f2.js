@@ -59,14 +59,30 @@ function graficoEvolucao(ex){
 
 function secaoGastos(){
   const hoje=hojeISO();
+  const mesAtual=hoje.slice(0,7);
+  const mesSel=(UI.granaMes&&/^\d{4}-\d{2}$/.test(UI.granaMes))?UI.granaMes:mesAtual;
+  const ehMesAtual=(mesSel===mesAtual);
   const doDia=gastosDoDia(hoje);
-  const doMes=gastosDoMes(hoje.slice(0,7));
+  const doMes=gastosDoMes(mesSel);
   const totDia=totalLista(doDia), totMes=totalLista(doMes);
   const porCat=gastosPorCategoria(doMes);
 
   let html='<section class="card"><h2>Gastos</h2>'
-    +'<div class="linha"><div class="esq"><span class="hero-num num">'+fmtBRL(totDia)+'</span><div class="hero-sub">gasto hoje</div></div>'
-    +'<div style="text-align:right"><b class="num">'+fmtBRL(totMes)+'</b><div class="hero-sub">no mês</div></div></div>'
+    +'<div class="linha">'
+    +(ehMesAtual
+      ? '<div class="esq"><span class="hero-num num">'+fmtBRL(totDia)+'</span><div class="hero-sub">gasto hoje</div></div>'
+        +'<div style="text-align:right"><b class="num">'+fmtBRL(totMes)+'</b><div class="hero-sub">no mês</div></div>'
+      : '<div class="esq"><span class="hero-num num">'+fmtBRL(totMes)+'</span><div class="hero-sub">em '+esc(fmtMes(mesSel))+'</div></div>'
+        +'<div style="text-align:right"><b class="num">'+doMes.length+'</b><div class="hero-sub">lançamentos</div></div>')
+    +'</div>'
+    +'<div class="linha mt" style="gap:0.4rem">'
+    +'<button class="btn mini sec-btn" data-action="grana-mes" data-m="'+mesDeslocado(mesSel,-1)+'" aria-label="Mês anterior">‹</button>'
+    +'<span class="esq small" style="text-align:center">'+esc(fmtMes(mesSel))+'</span>'
+    +(ehMesAtual
+      ? '<button class="btn mini sec-btn" disabled style="opacity:0.35" aria-label="Mês seguinte">›</button>'
+      : '<button class="btn mini sec-btn" data-action="grana-mes" data-m="'+mesDeslocado(mesSel,1)+'" aria-label="Mês seguinte">›</button>')
+    +'</div>'
+    +(ehMesAtual?'':'<p class="muted small mt">Vendo um mês passado — o registro entra no dia que você escolher.</p>')
     +'<button class="btn bloco mt" data-action="gasto-add">+ Registrar gasto</button>';
 
   if(porCat.length){
@@ -83,9 +99,29 @@ function secaoGastos(){
     html+='</div>';
   }
 
-  if(doDia.length){
-    html+='<div class="grupo-titulo">Hoje</div>';
-    doDia.slice().sort((a,b)=>a.id<b.id?1:-1).forEach(g=>{
+  const recentes=!ehMesAtual?[]:S.gastos.lancamentos.filter(g=>g.data && g.data>=addDias(hoje,-6) && g.data<=hoje)
+    .sort((a,b)=>a.data<b.data?1:(a.data>b.data?-1:(a.id<b.id?1:-1))).slice(0,30);
+  if(recentes.length){
+    html+='<div class="grupo-titulo">Últimos 7 dias</div>';
+    recentes.forEach(g=>{
+      const c=catGasto(g.cat);
+      html+='<div class="linha" style="padding:0.35rem 0;border-bottom:1px solid var(--grid)">'
+        +'<span style="width:1.4rem;text-align:center">'+esc(c.icone)+'</span>'
+        +'<span class="esq small">'+esc(g.desc||c.nome)+' <span class="muted num">· '+(g.data===hoje?'hoje':fmtData(g.data))+'</span></span>'
+        +'<span class="num small">'+fmtBRL(g.valor)+'</span>'
+        +'<button class="edit" data-action="gasto-remover" data-id="'+esc(g.id)+'" aria-label="Remover">✕</button></div>';
+    });
+  }
+  const doMesLista=doMes.slice().sort((a,b)=>a.data<b.data?1:(a.data>b.data?-1:(a.id<b.id?1:-1)));
+  if(doMesLista.length){
+    html+='<details class="mt"'+(ehMesAtual?'':' open')+'><summary class="muted small">📅 Extrato de '+esc(fmtMes(mesSel))+' ('+doMesLista.length+(doMesLista.length===1?' lançamento':' lançamentos')+')</summary>';
+    let diaG=null;
+    doMesLista.forEach(g=>{
+      if(g.data!==diaG){
+        diaG=g.data;
+        const totD=totalLista(doMesLista.filter(x=>x.data===diaG));
+        html+='<div class="grupo-titulo">'+(diaG===hoje?'Hoje':fmtData(diaG))+' · '+fmtBRL(totD)+'</div>';
+      }
       const c=catGasto(g.cat);
       html+='<div class="linha" style="padding:0.35rem 0;border-bottom:1px solid var(--grid)">'
         +'<span style="width:1.4rem;text-align:center">'+esc(c.icone)+'</span>'
@@ -93,7 +129,9 @@ function secaoGastos(){
         +'<span class="num small">'+fmtBRL(g.valor)+'</span>'
         +'<button class="edit" data-action="gasto-remover" data-id="'+esc(g.id)+'" aria-label="Remover">✕</button></div>';
     });
+    html+='</details>';
   }
+  if(!doMesLista.length) html+='<p class="muted small mt">Nenhum gasto em '+esc(fmtMes(mesSel))+'.</p>';
   html+='<p class="muted small mt">Anota na hora — no fim do mês você enxerga pra onde o dinheiro foi.</p>';
   return html+'</section>';
 }

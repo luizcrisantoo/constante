@@ -612,12 +612,43 @@ const ACOES={
     fecharModal(); render(); toast('Registro apagado');
   },
 
+  'treino-adiar':el=>{
+    const t=treinoPorId(el.dataset.id); if(!t){ toast('Treino não encontrado'); return; }
+    const novo=adiarTreino(el.dataset.id);
+    vibrar(12); render();
+    const rotulo=(novo===addDias(hojeISO(),1))?'amanhã':(DIAS_NOME[isoToDate(novo).getDay()]+' ('+fmtData(novo)+')');
+    toast('⏭ '+t.nome+' foi pra '+rotulo+' — sem falha na conta 💪');
+  },
+  'treino-adiar-desfazer':el=>{
+    desfazerAdiamento(el.dataset.id); render(); toast('Voltou pro dia normal');
+  },
+  'repetir-ontem':()=>{
+    const n=repetirOntem(true);
+    if(!n){ toast('Ontem não tem nada marcado pra copiar'); return; }
+    abrirModal('<h3>Repetir ontem</h3>'
+      +'<p class="sec small">Vou marcar de uma vez '+n+' coisa'+(n>1?'s':'')+' que você bateu ontem e que valem pra hoje: hábitos, refeições e remédios.</p>'
+      +'<p class="muted small">Água, sono, humor e treino ficam de fora — esses são de hoje, você marca conforme acontece.</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn" data-action="repetir-ontem-ok">Copiar '+n+'</button></div>');
+  },
+  'repetir-ontem-ok':()=>{
+    const n=repetirOntem(false);
+    fecharModal(); vibrar(15); render();
+    toast(n?('↩️ Copiei '+n+' marcaç'+(n>1?'ões':'ão')+' de ontem — ajusta o que não bateu'):'Nada pra copiar');
+  },
+  'grana-mes':el=>{
+    const m=el.dataset.m;
+    if(!/^\d{4}-\d{2}$/.test(m)) return;
+    UI.granaMes=(m===hojeISO().slice(0,7))?null:m;
+    render();
+  },
   'gasto-add':()=>{
     const cats=S.gastos.categorias.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.icone+' '+c.nome)+'</option>').join('');
     abrirModal('<h3>Registrar gasto</h3>'
       +campo('ga-valor','Valor (R$)','number','')
       +'<div class="campo"><label>Categoria</label><select id="ga-cat">'+cats+'</select></div>'
-      +campo('ga-desc','Descrição (ex.: uber, cantina)','text','')
+      +'<div class="grid-2">'+campo('ga-desc','Descrição (ex.: uber, cantina)','text','')
+      +'<div class="campo"><label>Dia (esqueceu ontem? sem crise)</label><input type="date" id="ga-data" value="'+dataPadraoGasto()+'" max="'+hojeISO()+'"></div></div>'
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
       +'<button class="btn" data-action="gasto-salvar">Registrar</button></div>'
       +'<p class="muted small mt"><button class="deslize-btn" data-action="gasto-nova-cat">+ Criar categoria</button></p>');
@@ -625,7 +656,8 @@ const ACOES={
   'gasto-salvar':()=>{
     const v=Number(String(val('ga-valor')).replace(',','.'));
     if(!v||v<=0){ toast('Valor inválido'); return; }
-    addGasto(v,val('ga-cat'),val('ga-desc'),hojeISO());
+    const dtG=val('ga-data');
+    addGasto(v,val('ga-cat'),val('ga-desc'),(/^\d{4}-\d{2}-\d{2}$/.test(dtG)&&dtG<=hojeISO())?dtG:hojeISO());
     fecharModal(); render(); toast('Gasto registrado');
   },
   'gasto-nova-cat':()=>{
@@ -788,6 +820,12 @@ function animaCheck(seletor){
   });
 }
 
+// No mês atual sugere hoje; navegando um mês passado, sugere o último dia daquele mês.
+function dataPadraoGasto(){
+  const m=(typeof UI==='object'&&UI.granaMes&&/^\d{4}-\d{2}$/.test(UI.granaMes))?UI.granaMes:null;
+  if(!m||m>=hojeISO().slice(0,7)) return hojeISO();
+  return addDias(mesDeslocado(m,1)+'-01',-1);
+}
 let _sonoToastT=null;
 let _cfgSalvoTs=0;
 

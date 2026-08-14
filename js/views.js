@@ -1,6 +1,6 @@
 'use strict';
 
-const UI={ tab:'hoje', rotinaDia:new Date().getDay(), sub:null };
+const UI={ tab:'hoje', rotinaDia:new Date().getDay(), sub:null, granaMes:null };
 
 const TIPO_LABEL={aula:'Aula',estagio:'Estágio',treino:'Treino',refeicao:'Refeição',estudo:'Estudo',
   sites:'Sites',idioma:'Idiomas',leitura:'Leitura',sono:'Sono',livre:'Livre',pausa:'Pausa',
@@ -113,7 +113,10 @@ function viewHoje(){
   }
 
 
-  html+='<section class="card"><h2>Seu dia</h2>'
+  const podeRepetir=(xpHoje===0)&&(typeof repetirOntem==='function')&&repetirOntem(true)>0;
+  html+='<section class="card"><h2>Seu dia'
+    +(podeRepetir?'<button class="btn mini sec-btn dir" data-action="repetir-ontem">↩️ Repetir ontem</button>':'')
+    +'</h2>'
     +'<div class="linha"><div class="esq"><span class="hero-num num">'+xpHoje+'</span> <span class="muted">/ '+xpPoss+' XP</span></div>'
     +'<div>'+nv.icone+' <b>'+esc(nv.nome)+'</b>'+(nv.prox?' <span class="muted small">→ '+nv.prox.icone+' aos '+nv.prox.xp+'</span>':'')+'</div></div>'
     +'<div class="progress mt"><span style="width:'+Math.min(100,Math.round(100*xpHoje/Math.max(1,xpPoss)))+'%"></span></div>'
@@ -161,6 +164,18 @@ function viewHoje(){
   if(treinoHoje){
     const temEx=treinoHoje.exercicios.length>0;
     html+='<button class="btn sec-btn bloco mt" data-action="abrir-treino" data-id="'+esc(treinoHoje.id)+'">'+esc(treinoHoje.nome)+(treinoHoje.foco?' — '+esc(treinoHoje.foco):'')+(temEx?' · registrar cargas ›':' · montar exercícios ›')+'</button>';
+    if(treinoHoje.adiadoPara===iso){
+      html+='<p class="muted small mt">⏭ Veio de '+(treinoHoje.diaSemana!=null?DIAS_NOME[treinoHoje.diaSemana]:'outro dia')
+        +' — <button class="deslize-btn" data-action="treino-adiar-desfazer" data-id="'+esc(treinoHoje.id)+'">desfazer</button></p>';
+    } else if(!d.treino){
+      html+='<p class="muted small mt"><button class="deslize-btn" data-action="treino-adiar" data-id="'+esc(treinoHoje.id)+'">⏭ Não vai rolar hoje — empurrar pra amanhã</button></p>';
+    }
+  } else {
+    const fugiu=(typeof treinoAdiadoDeHoje==='function')?treinoAdiadoDeHoje():null;
+    if(fugiu){
+      html+='<p class="muted small mt">⏭ '+esc(fugiu.nome)+' foi empurrado pra '+(fugiu.adiadoPara===addDias(iso,1)?'amanhã':fmtData(fugiu.adiadoPara))
+        +' — <button class="deslize-btn" data-action="treino-adiar-desfazer" data-id="'+esc(fugiu.id)+'">trazer de volta</button></p>';
+    }
   }
   html+='</section>';
 

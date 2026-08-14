@@ -97,6 +97,8 @@ function sanearEstado(){
   S.treinos.split.forEach(t=>{
     if(t.semana!=='B') t.semana=(['e','f','g','h'].includes(t.id)?'B':'A');
     if(!(Number.isInteger(t.diaSemana)&&t.diaSemana>=0&&t.diaSemana<=6)) t.diaSemana=null;
+    // adiamento é temporário: some sozinho quando o dia chega/passa
+    if(!(typeof t.adiadoPara==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(t.adiadoPara)&&t.adiadoPara>hojeISO())) t.adiadoPara=null;
   });
   if(!S.gastos||typeof S.gastos!=='object') S.gastos=defaultState().gastos;
   if(!Array.isArray(S.gastos.categorias)) S.gastos.categorias=defaultState().gastos.categorias;
@@ -167,6 +169,24 @@ function recalcXP(iso){
   if(d.treino) xp+=10; // treino é bônus: soma quando acontece; descansar não desconta
   d.xp=xp;
   return xp;
+}
+// Copia as marcações de ontem que ainda fazem sentido hoje (checklists, não medições).
+// soContar=true faz só a contagem, sem escrever nada.
+function repetirOntem(soContar){
+  const iso=hojeISO(), ant=addDias(iso,-1);
+  const o=S.days[ant]; if(!o) return 0;
+  const d=getDia(iso); let n=0;
+  habitosDoDia(iso).forEach(h=>{
+    if(o.habitos&&o.habitos[h.id]===true&&d.habitos[h.id]!==true){ if(!soContar) d.habitos[h.id]=true; n++; }
+  });
+  S.diet.refeicoes.forEach(r=>{
+    if(o.refeicoes&&o.refeicoes[r.id]&&!d.refeicoes[r.id]){ if(!soContar) d.refeicoes[r.id]=true; n++; }
+  });
+  S.meds.grupos.forEach(g=>{
+    if(o.meds&&o.meds[g.id]&&!d.meds[g.id]){ if(!soContar) d.meds[g.id]=true; n++; }
+  });
+  if(!soContar&&n){ recalcXP(iso); saveState(); }
+  return n;
 }
 function diaConta(iso){
   const d=S.days[iso]; if(!d) return false;
@@ -627,7 +647,44 @@ function treinoDoDia(dow){
   }
   return null;
 }
-function treinoDeHoje(){ return treinoDoDia(new Date().getDay()); }
+function treinoDoDiaISO(iso){
+  iso=iso||hojeISO();
+  // 1) alguém empurrou uma ficha PRA hoje? ela manda.
+  const vindo=S.treinos.split.find(t=>t&&t.adiadoPara===iso);
+  if(vindo) return vindo;
+  const t=treinoDoDia(isoToDate(iso).getDay());
+  // 2) a ficha natural de hoje foi empurrada pra frente → hoje fica livre.
+  if(t&&t.adiadoPara&&t.adiadoPara>iso) return null;
+  return t;
+}
+function treinoDeHoje(){ return treinoDoDiaISO(hojeISO()); }
+// Ficha que era de hoje mas foi empurrada pra frente (pra avisar na tela).
+function treinoAdiadoDeHoje(){
+  const iso=hojeISO();
+  const t=treinoDoDia(isoToDate(iso).getDay());
+  return (t&&t.adiadoPara&&t.adiadoPara>iso)?t:null;
+}
+// Primeiro dia dos próximos 6 que não tem treino marcado — evita empilhar dois no mesmo dia.
+function proximoDiaLivreTreino(id){
+  const hoje=hojeISO();
+  for(let i=1;i<=6;i++){
+    const iso=addDias(hoje,i);
+    const vindo=S.treinos.split.find(t=>t&&t.id!==id&&t.adiadoPara===iso);
+    const nat=treinoDoDia(isoToDate(iso).getDay());
+    const natVale=nat&&nat.id!==id&&!(nat.adiadoPara&&nat.adiadoPara>iso);
+    if(!vindo&&!natVale) return iso;
+  }
+  return addDias(hoje,1);
+}
+function adiarTreino(id){
+  const t=treinoPorId(id); if(!t) return null;
+  t.adiadoPara=proximoDiaLivreTreino(id);
+  saveState(); return t.adiadoPara;
+}
+function desfazerAdiamento(id){
+  const t=treinoPorId(id); if(!t) return;
+  t.adiadoPara=null; saveState();
+}
 function addExercicio(idTreino,nome){
   const t=treinoPorId(idTreino); if(!t||!nome) return null;
   const ex={id:uid(),nome:nome,registros:[]};
@@ -670,6 +727,15 @@ function gastosDoMes(anoMes){
   return S.gastos.lancamentos.filter(g=>g.data&&g.data.slice(0,7)===anoMes);
 }
 function totalLista(lista){ return lista.reduce((a,g)=>a+(g.valor||0),0); }
+function mesDeslocado(anoMes,n){
+  const y=Number(anoMes.slice(0,4)), m=Number(anoMes.slice(5,7))-1+(n||0);
+  const d=new Date(y,m,1);
+  return d.getFullYear()+'-'+pad2(d.getMonth()+1);
+}
+function fmtMes(anoMes){
+  const m=Number(anoMes.slice(5,7))-1;
+  return (MESES_NOME[m]||'?')+'/'+anoMes.slice(0,4);
+}
 function gastosPorCategoria(lista){
   const m={};
   lista.forEach(g=>{ m[g.cat]=(m[g.cat]||0)+g.valor; });

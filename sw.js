@@ -1,10 +1,10 @@
 'use strict';
-const CACHE = 'constante-v46';
+const CACHE = 'constante-v47';
 const ARQUIVOS = [
   './', 'index.html', 'privacidade.html', 'css/variables.css', 'css/styles.css',
   'js/config.js', 'js/vendor-supabase.js', 'js/data.js', 'js/core.js', 'js/ui.js',
   'js/auth.js', 'js/views.js', 'js/views2.js', 'js/views-f2.js', 'js/views-auth.js',
-  'js/assistente.js', 'js/progresso.js', 'js/notificacoes.js', 'js/metrica.js', 'js/script.js',
+  'js/assistente.js', 'js/progresso.js', 'js/amigos.js', 'js/notificacoes.js', 'js/metrica.js', 'js/script.js',
   'manifest.webmanifest', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png'
 ];
 

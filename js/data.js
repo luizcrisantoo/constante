@@ -147,6 +147,11 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:47, data:'2026-08-14', titulo:'Dá pra puxar alguém junto', itens:[
+    '🤝 Agora dá pra adicionar uma pessoa: você manda teu código, ela entra com ele (ou o contrário) e vocês passam a ver a constância um do outro na aba Progresso.',
+    '👀 Ela vê teu nome, teus dias de constância e tua moldura. Hábito, só o que VOCÊ marcar pra compartilhar — um por um. Peso, dinheiro, humor, remédios, apostas e anotações nunca saem daqui.',
+    '🔒 Ninguém te acha por busca nem por e-mail: só entra quem você convidou, e qualquer um dos dois desfaz quando quiser.'
+  ]},
   { v:46, data:'2026-08-14', titulo:'Os cadernos ganharam cérebro', itens:[
     '📓 Nos cadernos de estudo agora tem três botões: RESUMIR as anotações em tópicos, montar um MAPA MENTAL delas, ou te fazer PERGUNTAS pra você testar se aprendeu.',
     '💾 A resposta pode ser salva ali mesmo como uma anotação nova — o resumo fica junto do material, não perdido numa conversa.',

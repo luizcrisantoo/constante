@@ -853,6 +853,53 @@ const ACOES={
       },1200))
       .catch(()=>toast('Não consegui verificar agora'));
   },
+  'amigo-add':()=>{
+    const cod=meuCodigo(); saveState();
+    abrirModal('<h3>Adicionar alguém</h3>'
+      +'<p class="sec small">Ninguém te encontra por busca aqui. Só entra quem você convidar — e você desfaz quando quiser.</p>'
+      +'<div class="grupo-titulo">Teu código</div>'
+      +'<p class="centro" style="font-size:1.6rem;font-weight:800;letter-spacing:3px">'+esc(cod)+'</p>'
+      +'<div class="acoes" style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center">'
+      +'<button class="btn mini sec-btn" data-action="amigo-copiar" data-c="'+esc(cod)+'">Copiar código</button></div>'
+      +'<div class="grupo-titulo mt">Ou entra com o código de alguém</div>'
+      +campo('amigo-cod','Código que te mandaram','text','')
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Fechar</button>'
+      +'<button class="btn" data-action="amigo-entrar">Adicionar</button></div>');
+  },
+  'amigo-copiar':el=>{
+    const c=el.dataset.c||'';
+    const msg='Bora manter a constância junto? Meu código no Constante é '+c;
+    if(navigator.share){ navigator.share({text:msg}).catch(()=>{}); return; }
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(msg).then(()=>toast('📋 Copiado — manda pra pessoa')).catch(()=>toast('Teu código: '+c));
+      return;
+    }
+    toast('Teu código: '+c);
+  },
+  'amigo-entrar':async()=>{
+    const c=val('amigo-cod');
+    if(!c){ toast('Cola o código aí'); return; }
+    toast('Procurando…');
+    try{
+      const nome=await aceitarConvite(c);
+      fecharModal(); render();
+      toast('🤝 Agora vocês estão juntos'+(nome?' — '+nome:''));
+      if(typeof metrica==='function') metrica('amigo-adicionado');
+    }catch(e){ toast('❌ '+e.message); }
+  },
+  'amigo-hab':el=>{ alternarCompartilhado(el.dataset.id); render(); },
+  'amigo-del':el=>{
+    const a=(social().amigos||[]).find(x=>x.id===el.dataset.id);
+    abrirModal('<h3>Remover '+esc(a?a.nome:'essa pessoa')+'?</h3>'
+      +'<p class="sec small">Vocês dois param de ver a constância um do outro. Dá pra adicionar de novo depois, com o código.</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn perigo" data-action="amigo-del-ok" data-id="'+esc(el.dataset.id)+'">Remover</button></div>');
+  },
+  'amigo-del-ok':async el=>{
+    const ok=await removerAmigo(el.dataset.id);
+    fecharModal(); render();
+    toast(ok?'Removido':'Não consegui agora — tenta de novo');
+  },
   'caderno-ia':el=>abrirCadernoIA(el.dataset.id,el.dataset.m),
   'assist-salvar-caderno':el=>salvarRespostaNoCaderno(Number(el.dataset.ix)),
   'foto-plano':el=>{
@@ -1049,6 +1096,9 @@ function ligarEventos(){
     if(nav){
       if(document.body.classList.contains('modo-login')) return;
       UI.tab=nav.dataset.nav; setDiaFoco(null); render(); window.scrollTo({top:0});
+      if(nav.dataset.nav==='progresso'&&typeof carregarAmigos==='function'){
+        carregarAmigos().then(()=>{ if(UI.tab==='progresso') render(); });
+      }
       if(typeof metrica==='function') metrica('tab:'+nav.dataset.nav);
       return;
     }
@@ -1152,6 +1202,8 @@ function sincronizarPosLogin(){
       // Se a nuvem não respondeu, NÃO abre a abertura/boas-vindas: o aparelho ainda não
       // sabe se essa conta já tem dados, e escrever aqui venceria a mesclagem depois.
       if(!deuCerto) return;
+      if(typeof publicarCartao==='function') publicarCartao(true);
+      if(typeof carregarAmigos==='function') carregarAmigos().then(()=>{ try{ if(UI.tab==='progresso') render(); }catch(e){} });
       if(typeof boasVindas==='function' && !document.body.classList.contains('modo-login')) boasVindas();
     });
 }

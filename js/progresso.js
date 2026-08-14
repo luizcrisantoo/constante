@@ -150,6 +150,7 @@ function viewProgresso(){
 
 function viewProgressoTab(){
   let html=viewProgresso();
+  if(typeof secaoAmigos==='function') html+=secaoAmigos();
   if(typeof secaoConquistas==='function') html+=secaoConquistas();
   return html;
 }

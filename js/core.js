@@ -113,6 +113,7 @@ function sanearEstado(){
   if(!S.estudo||!Array.isArray(S.estudo.cadernos)) S.estudo=defaultState().estudo;
   if(!Array.isArray(S.categorias)) S.categorias=defaultState().categorias;
   lixeira(); limparLixeiraVelha();
+  if(typeof social==='function') social();
   onbEstado();
 }
 function loadState(){
@@ -138,6 +139,7 @@ function saveState(opts){
   lsSet(JSON.stringify(S));
 
   if(!(opts&&opts.skipSync) && syncConfigurado()) setSyncEstado('pendente');
+  if(!(opts&&opts.skipSync) && typeof publicarCartao==='function') publicarCartao();
   if(!(opts&&opts.skipSync) && S.settings.syncAuto && syncConfigurado() && S.settings.ultimaSync){
     clearTimeout(_saveTimer);
     _saveTimer=setTimeout(()=>syncAgora().catch(falhaSync),1500);

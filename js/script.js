@@ -839,6 +839,20 @@ const ACOES={
   'nome-pular':()=>{ S.settings.nomeAdiado=true; saveState({skipSync:true}); fecharModal(); },
 
   'assist-abrir':()=>abrirAssistente(),
+  'atualizar-app':()=>{
+    toast('Atualizando…');
+    setTimeout(()=>location.reload(),300);
+  },
+  'procurar-atualizacao':()=>{
+    if(!_swReg){ toast('Atualização automática indisponível neste navegador'); return; }
+    toast('Procurando…');
+    _swReg.update()
+      .then(()=>setTimeout(()=>{
+        if(_temAtualizacao) toast('✨ Tem versão nova — toca em Atualizar agora');
+        else toast('Você já está na versão mais nova ✓');
+      },1200))
+      .catch(()=>toast('Não consegui verificar agora'));
+  },
   'caderno-ia':el=>abrirCadernoIA(el.dataset.id,el.dataset.m),
   'assist-salvar-caderno':el=>salvarRespostaNoCaderno(Number(el.dataset.ix)),
   'foto-plano':el=>{
@@ -1123,6 +1137,8 @@ function renderSeguro(){
   }
 }
 let _emRecuperacao=false;
+let _swReg=null;
+let _temAtualizacao=false;   // versão nova já baixada, esperando o recarregar
 // 'auto' = apaga só se não tiver nada pendente · true = apagar mesmo assim · false = guardar
 let _limparAoSair='auto';
 let _usuarioLogado=null;
@@ -1213,7 +1229,24 @@ function boot(){
     }
   }
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      _swReg=reg;
+      // versão nova baixada enquanto o app já estava aberto → avisa em vez de trocar no susto
+      reg.addEventListener('updatefound',()=>{
+        const novo=reg.installing; if(!novo) return;
+        novo.addEventListener('statechange',()=>{
+          if(novo.state==='installed'&&navigator.serviceWorker.controller){
+            _temAtualizacao=true;
+            try{ render(); }catch(e){}
+          }
+        });
+      });
+      // procura sozinho de hora em hora e sempre que o app volta pro primeiro plano
+      setInterval(()=>{ reg.update().catch(()=>{}); },60*60*1000);
+      document.addEventListener('visibilitychange',()=>{
+        if(document.visibilityState==='visible') reg.update().catch(()=>{});
+      });
+    }).catch(()=>{});
   }
 
   let ultimoPullFoco=0;

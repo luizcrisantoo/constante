@@ -143,6 +143,13 @@ function viewHoje(){
       +'<p class="sec small">Marca <b>uma</b> coisa que você já fez hoje — pode ser um copo de água. Não precisa ser um dia perfeito: precisa começar.</p></section>';
   }
 
+  if(typeof _temAtualizacao!=='undefined'&&_temAtualizacao&&ehHoje){
+    html+='<section class="card" style="border-left:3px solid var(--brand)">'
+      +'<div class="linha"><div class="esq"><b>✨ Tem uma versão nova pronta</b>'
+      +'<div class="muted small">Já baixei aqui no aparelho — só falta recarregar pra ela valer.</div></div>'
+      +'<button class="btn mini" data-action="atualizar-app">Atualizar agora</button></div></section>';
+  }
+
   // Card de novidades: curto de propósito — no máx. 3 itens, o resto fica no histórico.
   const nvs=(ehHoje&&typeof novidadesNaoVistas==='function')?novidadesNaoVistas():[];
   if(nvs.length){

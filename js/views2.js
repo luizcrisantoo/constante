@@ -308,6 +308,16 @@ function viewConfig(){
     })()
     +'<button class="btn perigo bloco mt-lg" data-action="zerar">Apagar tudo e recomeçar</button></section>';
 
+  html+='<section class="card"><h2>Versão</h2>'
+    +'<p class="sec">Você está na <b>v'+versaoApp()+'</b>'+((typeof _temAtualizacao!=='undefined'&&_temAtualizacao)?' — e tem uma <b>versão nova</b> baixada esperando.':'.')+'</p>'
+    +'<p class="muted small">O app guarda os arquivos no aparelho pra funcionar sem internet, então uma versão nova só passa a valer depois de recarregar.</p>'
+    +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+    +((typeof _temAtualizacao!=='undefined'&&_temAtualizacao)
+      ? '<button class="btn" data-action="atualizar-app">Atualizar agora</button>'
+      : '<button class="btn sec-btn" data-action="procurar-atualizacao">Procurar atualização</button>')
+    +'<button class="btn sec-btn" data-action="novidades-todas">Ver o que mudou</button>'
+    +'</div></section>';
+
   html+='<p class="centro muted small">Constante v'+versaoApp()+' 🟣<br>Remédios e dieta: valide com seu médico e nutricionista.</p>';
   return html;
 }

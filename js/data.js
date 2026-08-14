@@ -147,13 +147,13 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
-  { v:49, data:'2026-08-14', titulo:'Esconder os valores da Grana', itens:[
-    '👋 Criar grupo ficou como no WhatsApp: você dá um nome e marca quem quer chamar entre as pessoas que já adicionou. Elas recebem um convite e, ao aceitar, escolhem o próprio hábito — ninguém entra sem querer. Pra quem não está na tua lista, o código continua funcionando.',
-    '👥 No grupo, cada pessoa escolhe o PRÓPRIO hábito (pode ser "Academia" pra um e "Correr" pra outro) — e agora dá pra trocar o teu depois, sem sair do grupo. O nome do teu hábito não aparece pra ninguém: o grupo vê só o teu nome e se você bateu.',
-    '🔒 Hábito de EVITAR (tipo "sem apostas", "sem cigarro") nunca pode ser compartilhado com ninguém — nem se você quiser. O nome desses hábitos diz coisa íntima demais, então o app simplesmente não oferece. Se algum já estava compartilhado, ele saiu sozinho.',
-    '👥 Pessoas e Juntos subiram pro topo da aba Progresso — antes estavam embaixo dos gráficos e ninguém achava.',
-    '🙈 A aba Grana ganhou um botão de esconder: os valores ficam borrados e voltam com um toque. Serve pra abrir o app no ônibus, no trampo ou com gente do lado sem mostrar quanto você tem.',
-    '💾 A escolha fica salva: se você escondeu, continua escondido na próxima vez que abrir.'
+  { v:49, data:'2026-08-14', destaque:true, titulo:'Agora dá pra fazer junto com alguém', itens:[
+    '👥 COMO ADICIONAR ALGUÉM: aba Progresso → Pessoas → "+ Adicionar". O app te dá um código de 8 letras — manda pra pessoa pelo zap (tem botão de enviar). Basta UM de vocês digitar o código do outro; depois disso os dois se veem. Ninguém te encontra por busca nem por e-mail: só entra quem você convidar, e você desfaz quando quiser.',
+    '👀 O QUE A PESSOA VÊ: teu nome, teus dias de constância e tua moldura. Hábito, só o que VOCÊ marcar, um por um — e o nome dele aparece, então renomeia antes se for algo pessoal. Hábito de EVITAR (tipo "sem apostas") nunca pode ser compartilhado, nem se você quiser. Peso, dinheiro, humor, remédios, apostas e anotações não saem daqui de jeito nenhum.',
+    '🔥 GRUPOS (2 a 8 pessoas): em "Juntos" você cria um grupo, dá um nome e marca quem chamar entre as pessoas que já adicionou — igual grupo de zap. Quem não está na tua lista entra pelo código. Cada pessoa que aceita escolhe qual hábito DELA conta ali: pode ser "Academia" pra você e "Correr" pra outra. Ninguém entra sem aceitar.',
+    '🎯 COMO O CONTADOR DO GRUPO FUNCIONA: ele só anda no dia em que o grupo bate a meta — que começa em "todo mundo" e pode ser afrouxada pra "4 de 6" se vocês quiserem. Se um dia passar sem bater, ele recomeça do zero. Você não marca nada de diferente: é só bater o teu hábito na tela Hoje, como sempre.',
+    '🧍 IMPORTANTE: esse contador é do grupo. A TUA constância individual não é afetada por nada disso — se o grupo perder o foguinho, a tua linha continua intacta.',
+    '🙈 E a aba Grana ganhou um botão de esconder os valores, pra abrir o app no ônibus ou no trampo sem mostrar quanto você tem.'
   ]},
   { v:48, data:'2026-08-14', titulo:'O foguinho em grupo', itens:[
     '🔥 Nova seção Juntos: um grupo de 2 a 8 pessoas com um hábito em comum. Cada um escolhe qual hábito SEU conta ali, e o contador do grupo só anda no dia em que a meta for batida. Se um dia passar sem bater, ele recomeça do zero.',

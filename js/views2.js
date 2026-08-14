@@ -213,7 +213,7 @@ function viewConfig(){
     +(fotoP?'<img src="'+esc(fotoP)+'" alt="foto de perfil">':'<span class="avatar-inicial" style="font-size:1.6rem">'+((S.profile.nome||'').trim()?esc((S.profile.nome||'').trim().charAt(0).toUpperCase()):'🙂')+'</span>')
     +'</button>'
     +'<div class="acoes" style="display:flex;gap:0.4rem;flex-wrap:wrap">'
-    +'<button class="btn mini sec-btn" data-action="perfil-foto">'+(fotoP?'trocar foto':'adicionar foto')+'</button>'
+    +'<button class="btn mini sec-btn" data-action="perfil-foto">'+(fotoP?'Trocar foto':'Adicionar foto')+'</button>'
     +(fotoP?'<button class="btn mini perigo" data-action="perfil-foto-remover">Remover</button>':'')
     +'<input type="file" id="perfil-foto-file" accept="image/*" class="escondido"></div>'
     +'</div>'

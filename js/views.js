@@ -154,11 +154,18 @@ function viewHoje(){
   // Card de novidades: curto de propósito — no máx. 3 itens, o resto fica no histórico.
   const nvs=(ehHoje&&typeof novidadesNaoVistas==='function')?novidadesNaoVistas():[];
   if(nvs.length){
-    const itensNv=[]; nvs.forEach(n=>n.itens.forEach(it=>itensNv.push(it)));
-    const mostraNv=itensNv.slice(0,3), restoNv=itensNv.length-mostraNv.length;
+    // Novidade marcada como destaque aparece INTEIRA — é o caso de coisa nova que
+    // precisa ser entendida, não só anunciada. O resto continua curto de propósito.
+    const dest=nvs.filter(n=>n.destaque);
+    const itensNv=[]; nvs.filter(n=>!n.destaque).forEach(n=>n.itens.forEach(it=>itensNv.push(it)));
+    const mostraNv=dest.length?itensNv.slice(0,1):itensNv.slice(0,3);
+    const restoNv=itensNv.length-mostraNv.length;
     html+='<section class="card" style="border-left:3px solid var(--brand)"><h2>✨ Novidades no Constante</h2>'
-      +'<ul class="sec small" style="margin:0.3rem 0 0.5rem 1.1rem;padding:0">'
-      +mostraNv.map(it=>'<li style="margin:0.3rem 0">'+esc(it)+'</li>').join('')+'</ul>'
+      +dest.map(n=>'<div class="grupo-titulo" style="margin-top:0.2rem">'+esc(n.titulo)+'</div>'
+        +'<ul class="sec small" style="margin:0.2rem 0 0.6rem 1.1rem;padding:0">'
+        +n.itens.map(it=>'<li style="margin:0.45rem 0">'+esc(it)+'</li>').join('')+'</ul>').join('')
+      +(mostraNv.length?'<ul class="sec small" style="margin:0.3rem 0 0.5rem 1.1rem;padding:0">'
+        +mostraNv.map(it=>'<li style="margin:0.3rem 0">'+esc(it)+'</li>').join('')+'</ul>':'')
       +(restoNv>0?'<p class="muted small">+ '+restoNv+' outras melhorias no histórico.</p>':'')
       +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
       +'<button class="btn mini" data-action="novidades-ok">Entendi</button>'

@@ -147,6 +147,13 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:44, data:'2026-08-14', titulo:'Nada se perde (correções importantes)', itens:[
+    '🗑️ O que você apaga fica apagado. Tinha um problema sério aqui: gasto, hábito ou renda que você excluía podia VOLTAR sozinho na próxima sincronização. Corrigido — e a exclusão agora vale nos teus dois aparelhos.',
+    '📵 Teu dia não some mais. Se você marcou o dia no celular e depois só abriu o app no computador, o dia podia voltar vazio. Agora os dois lados se juntam, marcação por marcação.',
+    '☁️ Se a nuvem não responder, o app insiste sozinho até conseguir — e nunca apaga do aparelho o que ainda não subiu, nem quando você sai da conta.',
+    '🛟 Ele também guarda cópias de segurança automáticas antes de a nuvem mexer nos teus dados: dá pra restaurar em Ajustes › Backup & dados.',
+    '🎯 E a tela Hoje vem na TUA ordem: o que você marcou lá na abertura (treino, comida, água, sono, cabeça) aparece primeiro.'
+  ]},
   { v:43, data:'2026-08-14', titulo:'A linha que não quebra', itens:[
     '🌙 Dia difícil, viagem ou doença? Agora dá pra marcar o dia como neutro: ele não conta como falha e a tua constância PAUSA em vez de zerar. (Também não vira vitória — ninguém sobe a linha dizendo que o dia foi ruim.)',
     '📅 Esqueceu de marcar ontem? Na tela Hoje tem um "‹ esqueci de marcar ontem": dá pra voltar até 2 dias e arrumar o registro, do jeito que já dava com os gastos.',

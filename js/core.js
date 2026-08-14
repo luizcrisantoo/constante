@@ -26,10 +26,12 @@ function setUserKey(id){ _userKey=id||null; }
 function lsGet(){ const k=storeKey(); try{ return localStorage.getItem(k); }catch(e){ return _mem[k]; } }
 function lsSet(v){
   const k=storeKey(); _mem[k]=v;
-  try{ localStorage.setItem(k,v); }
-  catch(e){
+  try{ localStorage.setItem(k,v); return; }catch(e){}
+  // sem espaço: joga fora as cópias de segurança antes de desistir do dado principal
+  try{ apagarCopias(); localStorage.setItem(k,v); return; }catch(e){}
+  {
     if(!_lsAvisou){ _lsAvisou=true;
-      if(typeof toast==='function') toast('⚠️ Este navegador não está salvando os dados (aba privada?). Exporta um backup!');
+      if(typeof toast==='function') toast('⚠️ Este navegador não está salvando os dados (aba privada ou memória cheia?). Exporta um backup!');
     }
   }
 }
@@ -37,6 +39,7 @@ function lsLimparConta(){
   if(!_userKey) return;   // sem conta ativa a chave é a base (dados de quem usa sem conta) — não apaga
   const k=storeKey(); delete _mem[k];
   try{ localStorage.removeItem(k); }catch(e){}
+  apagarCopias();         // a cópia de segurança sai junto: senão fica dado pessoal no navegador
 }
 
 function migrarLocalUmaVez(){
@@ -109,6 +112,7 @@ function sanearEstado(){
   if(!Array.isArray(S.gastos.lancamentos)) S.gastos.lancamentos=[];
   if(!S.estudo||!Array.isArray(S.estudo.cadernos)) S.estudo=defaultState().estudo;
   if(!Array.isArray(S.categorias)) S.categorias=defaultState().categorias;
+  lixeira(); limparLixeiraVelha();
   onbEstado();
 }
 function loadState(){
@@ -153,7 +157,11 @@ let _diaFoco=null;
 function diaFoco(){
   if(!_diaFoco) return hojeISO();
   const dif=diffDias(_diaFoco,hojeISO());
-  return (dif>=0&&dif<=DIAS_PRA_TRAS)?_diaFoco:hojeISO();
+  if(dif>=0&&dif<=DIAS_PRA_TRAS) return _diaFoco;
+  // virou a meia-noite com a tela num dia antigo: solta o foco e redesenha
+  _diaFoco=null;
+  if(typeof render==='function') setTimeout(()=>{ try{ render(); }catch(e){} },0);
+  return hojeISO();
 }
 function setDiaFoco(iso){ _diaFoco=(iso&&iso!==hojeISO())?iso:null; }
 function ehHojeFoco(){ return diaFoco()===hojeISO(); }
@@ -291,7 +299,7 @@ function streakHabito(id){
   d=addDias(d,-1);
   let guard=0;
   while(guard++<3650){
-    if(aplicavel(d)){ if(feito(d)) s++; else break; }
+    if(aplicavel(d)&&!diaNeutro(d)){ if(feito(d)) s++; else break; }
     d=addDias(d,-1);
   }
   return s;
@@ -441,7 +449,7 @@ function registrarAposta(valor){
   const d=getDia();
   d.apostas.push({id:uid(), valor:valor, hora:agoraHM()});
   d.habitos.apostas=false;
-  recalcXP(hojeISO());
+  recalcXP(diaFoco());
   saveState();
 }
 function economiaDisponivel(){
@@ -526,7 +534,9 @@ async function syncAgora(){
 
 async function flushSyncPendente(){
   clearTimeout(_saveTimer);
-  if(syncConfigurado()){ try{ await syncPush(); }catch(e){ falhaSync(e); } }
+  if(!syncConfigurado()) return true;
+  try{ await syncPush(); return true; }
+  catch(e){ falhaSync(e); return false; }
 }
 
 // ---------- Estado VISÍVEL da sincronização (P0 da auditoria) ----------
@@ -550,10 +560,30 @@ function traduzErroSync(e){
   if(/\(5\d\d\)|\(4\d\d\)/.test(m)) return 'O servidor teve um soluço — teus dados continuam no aparelho, vou tentar de novo sozinho.';
   return 'A sincronização falhou ('+m+') — teus dados continuam salvos no aparelho.';
 }
+// Reenvio teimoso: enquanto tiver mudança sem subir, tenta de novo sozinho —
+// 20s, 40s, 1min20, … até 10min. Some quando dá certo.
+let _reenvioT=null, _reenvioN=0;
+function cancelarReenvio(){ if(_reenvioT){ clearTimeout(_reenvioT); _reenvioT=null; } _reenvioN=0; }
+function agendarReenvio(){
+  if(_reenvioT||!syncConfigurado()) return;
+  const espera=Math.min(600000,20000*Math.pow(2,Math.min(_reenvioN,5)));
+  _reenvioT=setTimeout(()=>{
+    _reenvioT=null; _reenvioN++;
+    if(!syncConfigurado()) return;
+    if(typeof navigator!=='undefined'&&navigator.onLine===false){ agendarReenvio(); return; }
+    syncAgora().catch(err=>falhaSync(err));
+  },espera);
+}
+function temPendencia(){
+  if(_syncEstado!=='ok') return true;                       // inclui 'sincronizando' travado
+  return (S._ts||'')>(S.settings&&S.settings.ultimaSync||'');
+}
+
 function falhaSync(e){
   const semRede=(typeof navigator!=='undefined' && navigator.onLine===false);
   setSyncEstado(semRede?'offline':'erro');
   _syncTinhaErro=true;
+  agendarReenvio();
   if(!_syncAvisou){
     _syncAvisou=true;
     const msg=traduzErroSync(e);
@@ -562,6 +592,7 @@ function falhaSync(e){
 }
 function sucessoSync(){
   setSyncEstado('ok');
+  cancelarReenvio();
   _syncAvisou=false;
   if(_syncTinhaErro){
     _syncTinhaErro=false;
@@ -578,8 +609,56 @@ function sessaoExpirou(){
   setTimeout(()=>{ _tratandoSessao=false; },3000);
 }
 
+// Rede de segurança: antes de deixar a nuvem mexer no estado, guarda o que tinha
+// no aparelho. Se a mesclagem fizer algo estranho, dá pra voltar em Ajustes.
+const COPIA_SLOTS=2;
+const COPIA_MAX=700000;          // por cópia; acima disso não guarda (espaço do navegador)
+const COPIA_INTERVALO=15*60000;  // no máximo uma cópia a cada 15 min
+function chaveCopia(i){ return storeKey()+'_bkp'+(i||0); }
+function lerCopia(i){
+  try{ const b=localStorage.getItem(chaveCopia(i)); return b?JSON.parse(b):null; }catch(e){ return null; }
+}
+function copiasSeguranca(){
+  const out=[];
+  for(let i=0;i<COPIA_SLOTS;i++){ const c=lerCopia(i); if(c&&c.dados) out.push({slot:i,em:c.em,tam:c.dados.length}); }
+  return out;
+}
+function copiaSeguranca(){ return copiasSeguranca()[0]||null; }
+function apagarCopias(){
+  try{ for(let i=0;i<COPIA_SLOTS;i++) localStorage.removeItem(chaveCopia(i)); }catch(e){}
+}
+function guardarCopiaSeguranca(){
+  try{
+    const raw=lsGet();
+    if(!raw) return;
+    if(raw.length>COPIA_MAX){ apagarCopias(); return; }   // não deixa cópia velha ocupando espaço
+    const atual=lerCopia(0);
+    if(atual){
+      // uma cópia a cada 15 min: senão os pulls de 1 em 1 minuto apagam o histórico útil
+      if(Date.now()-Date.parse(atual.em)<COPIA_INTERVALO) return;
+      // nunca troca uma cópia rica por uma pobre (estado encolheu = provável perda)
+      if(raw.length<0.6*atual.dados.length) return;
+      try{ localStorage.setItem(chaveCopia(1),JSON.stringify(atual)); }catch(e){}
+    }
+    localStorage.setItem(chaveCopia(0),JSON.stringify({em:new Date().toISOString(),dados:raw}));
+  }catch(e){ apagarCopias(); }
+}
+function restaurarCopiaSeguranca(slot){
+  const b=lerCopia(slot||0); if(!b||!b.dados) return false;
+  try{
+    S=deepFill(JSON.parse(b.dados),defaultState());
+    sanearEstado();
+    // restaurar é decisão da pessoa: vence a próxima mesclagem, inclusive dia a dia
+    S._ts=new Date().toISOString();
+    Object.keys(S.days).forEach(k=>{ if(S.days[k]) S.days[k]._m=S._ts; });
+    saveState();
+    return true;
+  }catch(e){ return false; }
+}
+
 function mesclarEstado(remoto){
   if(!remoto||typeof remoto!=='object'||Array.isArray(remoto)) return;
+  guardarCopiaSeguranca();
   const localMaisNovo = (S._ts||'') >= (remoto._ts||'');
   const diasLocal=S.days||{}, diasRemoto=(remoto.days&&typeof remoto.days==='object')?remoto.days:{};
   const dias={};
@@ -593,6 +672,12 @@ function mesclarEstado(remoto){
   const financeOutro=(outro.finance&&typeof outro.finance==='object')?outro.finance:{};
   S=deepFill(JSON.parse(JSON.stringify(base)),defaultState());
   sanearEstado();
+  // junta as lápides dos dois aparelhos ANTES das uniões: sem isso, o que um apagou
+  // volta pela lista do outro
+  const lixoOutro=(outro&&outro.lixeira&&typeof outro.lixeira==='object')?outro.lixeira:{};
+  const L=lixeira();
+  Object.keys(lixoOutro).forEach(k=>{ if(!L[k]||L[k]<lixoOutro[k]) L[k]=lixoOutro[k]; });
+  limparLixeiraVelha();
   S.days=dias;
 
   (Array.isArray(financeOutro.dividas)?financeOutro.dividas:[]).forEach(od=>{
@@ -636,6 +721,10 @@ function mesclarEstado(remoto){
   });
   if(outro.diet&&Array.isArray(outro.diet.refeicoes)) S.diet.refeicoes=uniaoLanc(S.diet.refeicoes,outro.diet.refeicoes);
   if(outro.meds&&Array.isArray(outro.meds.grupos)) S.meds.grupos=uniaoLanc(S.meds.grupos,outro.meds.grupos);
+  // faltavam estas: quem criasse uma renda no celular e outra no note perdia uma delas
+  if(outro.finance&&Array.isArray(outro.finance.rendas)) S.finance.rendas=uniaoLanc(S.finance.rendas,outro.finance.rendas);
+  if(outro.gastos&&Array.isArray(outro.gastos.categorias)) S.gastos.categorias=uniaoLanc(S.gastos.categorias,outro.gastos.categorias);
+  if(Array.isArray(outro.categorias)) S.categorias=uniaoLanc(S.categorias,outro.categorias);
   S.settings=settingsLocais;
   Object.keys(S.days).forEach(recalcXPQuiet);
 }
@@ -646,24 +735,40 @@ function canonico(x){
   if(x&&typeof x==='object') return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonico(x[k])).join(',')+'}';
   return JSON.stringify(x);
 }
+// ---------- Lixeira (lápides) ----------
+// Sem isso, a união por id RESSUSCITA tudo que a pessoa apaga: o pull traz o item
+// de volta da nuvem e o push seguinte torna a volta permanente. A lápide diz
+// "isso foi apagado em tal hora" e a união respeita.
+function chaveItem(x){ return (x&&x.id)?('id:'+x.id):('c:'+canonico(x)); }
+function lixeira(){ if(!S.lixeira||typeof S.lixeira!=='object'||Array.isArray(S.lixeira)) S.lixeira={}; return S.lixeira; }
+function apagarItem(x){
+  const k=(typeof x==='string')?('id:'+x):chaveItem(x);
+  lixeira()[k]=new Date().toISOString();
+}
+function estaNaLixeira(k){ return !!lixeira()[k]; }
+function limparLixeiraVelha(){
+  const lim=addDias(hojeISO(),-120);
+  const L=lixeira();
+  Object.keys(L).forEach(k=>{ if(String(L[k]).slice(0,10)<lim) delete L[k]; });
+}
 function uniaoLanc(a,b){
   a=Array.isArray(a)?a:[]; b=Array.isArray(b)?b:[];
-  const chave=x=>x&&x.id?('id:'+x.id):('c:'+canonico(x));
-  const set=new Set(a.map(chave));
-  const out=[...a];
-  b.forEach(x=>{ const k=chave(x); if(!set.has(k)){ set.add(k); out.push(x);} });
+  const L=lixeira();
+  const chave=chaveItem;
+  const vivo=x=>!L[chave(x)];
+  const set=new Set(a.filter(vivo).map(chave));
+  const out=a.filter(vivo);
+  b.forEach(x=>{ const k=chave(x); if(!set.has(k)&&!L[k]){ set.add(k); out.push(x);} });
   return out;
 }
 function mesclarDia(a,b){
   if(!a) return b; if(!b) return a;
 
-  if(a._m&&b._m){
-    const novo=a._m>=b._m?a:b, velho=a._m>=b._m?b:a;
-    const out=JSON.parse(JSON.stringify(novo));
-    out.apostas=uniaoLanc(novo.apostas,velho.apostas);
-    if(!out.burnout&&velho.burnout) out.burnout=velho.burnout;
-    return out;
-  }
+  // Mesmo com os dois carimbados, o dia é mesclado CAMPO A CAMPO. Antes, o carimbo
+  // mais novo descartava o dia inteiro do outro aparelho — e só abrir o app já
+  // carimbava o dia de hoje, então bastava abrir no note pra apagar o dia do celular.
+  const aNovo=(a._m||'')>=(b._m||'');
+  const novo=aNovo?a:b, velho=aNovo?b:a;
 
   const out=diaVazio();
   const ids=new Set([...Object.keys(a.habitos||{}),...Object.keys(b.habitos||{})]);
@@ -672,19 +777,20 @@ function mesclarDia(a,b){
     if(va===false||vb===false) out.habitos[id]=false;
     else if(va===true||vb===true) out.habitos[id]=true;
   });
-  out.refeicoes=Object.assign({},a.refeicoes,b.refeicoes);
-  out.meds=Object.assign({},a.meds,b.meds);
+  out.refeicoes=Object.assign({},velho.refeicoes,novo.refeicoes);
+  out.meds=Object.assign({},velho.meds,novo.meds);
   out.agua=Math.max(a.agua||0,b.agua||0);
-  out.sono=(b.sono&&(b.sono.h||b.sono.deitou))?b.sono:(a.sono||out.sono);
-  out.humor=b.humor||a.humor; out.energia=b.energia||a.energia;
-  out.nota=(b.nota&&b.nota.length>=(a.nota||'').length)?b.nota:(a.nota||'');
+  const temSono=x=>x&&x.sono&&(x.sono.h||x.sono.deitou||x.sono.acordou||x.sono.score);
+  out.sono=temSono(novo)?novo.sono:(temSono(velho)?velho.sono:out.sono);
+  out.humor=novo.humor||velho.humor; out.energia=novo.energia||velho.energia;
+  out.nota=(novo.nota&&novo.nota.trim())?novo.nota:(velho.nota||'');
   out.apostas=uniaoLanc(a.apostas,b.apostas);
-  out.deslizes=Object.assign({},a.deslizes,b.deslizes);
+  out.deslizes=Object.assign({},velho.deslizes,novo.deslizes);
   out.treino=!!(a.treino||b.treino);
-  out.treinoNota=b.treinoNota||a.treinoNota||'';
-  out.neutro=b.neutro||a.neutro||'';
-  out.burnout=b.burnout||a.burnout;
-  out._m=(a._m||b._m)||undefined;
+  out.treinoNota=novo.treinoNota||velho.treinoNota||'';
+  out.neutro=novo.neutro||velho.neutro||'';
+  out.burnout=novo.burnout||velho.burnout;
+  out._m=(a._m&&b._m)?(a._m>=b._m?a._m:b._m):((a._m||b._m)||undefined);
   return out;
 }
 
@@ -766,6 +872,7 @@ function addExercicio(idTreino,nome){
 }
 function removerExercicio(idTreino,idEx){
   const t=treinoPorId(idTreino); if(!t) return;
+  apagarItem(idEx);
   t.exercicios=t.exercicios.filter(e=>e.id!==idEx); saveState();
 }
 function registrarCarga(idTreino,idEx,series,reps,carga,descanso){
@@ -794,7 +901,7 @@ function addGasto(valor,catId,descricao,dataISO){
   S.gastos.lancamentos.push({id:uid(),valor:v,cat:catId,desc:descricao||'',data:dataISO||hojeISO()});
   saveState();
 }
-function removerGasto(id){ S.gastos.lancamentos=S.gastos.lancamentos.filter(g=>g.id!==id); saveState(); }
+function removerGasto(id){ apagarItem(id); S.gastos.lancamentos=S.gastos.lancamentos.filter(g=>g.id!==id); saveState(); }
 function gastosDoDia(iso){ iso=iso||hojeISO(); return S.gastos.lancamentos.filter(g=>g.data===iso); }
 function gastosDoMes(anoMes){
   anoMes=anoMes||hojeISO().slice(0,7);
@@ -852,7 +959,7 @@ function addCaderno(nome){
   const c={id:uid(),nome:nome,notas:[]};
   S.estudo.cadernos.push(c); saveState(); return c;
 }
-function removerCaderno(id){ S.estudo.cadernos=S.estudo.cadernos.filter(c=>c.id!==id); saveState(); }
+function removerCaderno(id){ apagarItem(id); S.estudo.cadernos=S.estudo.cadernos.filter(c=>c.id!==id); saveState(); }
 function addNota(idCaderno,texto){
   const c=cadernoPorId(idCaderno); if(!c||!texto||!texto.trim()) return;
   c.notas.push({id:uid(),data:hojeISO(),ts:new Date().toISOString(),texto:texto.trim()});
@@ -860,5 +967,6 @@ function addNota(idCaderno,texto){
 }
 function removerNota(idCaderno,idNota){
   const c=cadernoPorId(idCaderno); if(!c) return;
+  apagarItem(idNota);
   c.notas=c.notas.filter(n=>n.id!==idNota); saveState();
 }

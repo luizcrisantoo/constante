@@ -300,6 +300,12 @@ function viewConfig(){
     +'<button class="btn sec-btn" data-action="importar">Importar backup</button>'
     +'<input type="file" id="importar-arquivo" accept="application/json" class="escondido">'
     +'</div>'
+    +(function(){
+      const cps=(typeof copiasSeguranca==='function')?copiasSeguranca():[];
+      if(!cps.length) return '<p class="muted small mt">O app guarda sozinho cópias do teu estado antes de a nuvem mexer nele — elas aparecem aqui assim que existirem.</p>';
+      return '<p class="muted small mt">🛟 '+cps.length+' cópia'+(cps.length>1?'s':'')+' de segurança guardada'+(cps.length>1?'s':'')+' neste aparelho — a mais nova é de <b>'+esc(new Date(cps[0].em).toLocaleString('pt-BR'))+'</b>.</p>'
+        +'<button class="btn mini sec-btn" data-action="copia-restaurar">Restaurar uma cópia</button>';
+    })()
     +'<button class="btn perigo bloco mt-lg" data-action="zerar">Apagar tudo e recomeçar</button></section>';
 
   html+='<p class="centro muted small">Constante v'+versaoApp()+' 🟣<br>Remédios e dieta: valide com seu médico e nutricionista.</p>';

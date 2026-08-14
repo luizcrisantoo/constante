@@ -140,7 +140,7 @@ const ACOES={
   'bloco-remover':el=>{
     const d=Number(el.dataset.d), ix=Number(el.dataset.ix);
     const alvo=blocosDoDia(d)[ix]; const pos=S.routine.indexOf(alvo);
-    if(pos>=0) S.routine.splice(pos,1);
+    if(pos>=0){ apagarItem(S.routine[pos]); S.routine.splice(pos,1); }
     saveState(); fecharModal(); render();
   },
 
@@ -173,7 +173,7 @@ const ACOES={
     S.diet.refeicoes.push({id:'ref'+uid(),nome,hora:val('ra-hora'),kcal:Number(val('ra-kcal'))||0,prot:Number(val('ra-prot'))||0,itens:linhas('ra-itens'),subs:[]});
     saveState(); fecharModal(); render();
   },
-  'ref-remover':el=>{ S.diet.refeicoes=S.diet.refeicoes.filter(r=>r.id!==el.dataset.id); saveState(); fecharModal(); render(); },
+  'ref-remover':el=>{ apagarItem(el.dataset.id); S.diet.refeicoes=S.diet.refeicoes.filter(r=>r.id!==el.dataset.id); saveState(); fecharModal(); render(); },
   'med-add':()=>abrirModal('<h3>Novo grupo de remédios/suplementos</h3>'
     +'<p class="sec small">Agrupe por horário (ex.: “Manhã”, “Antes de dormir”).</p>'
     +campo('ma-nome','Nome do grupo (ex.: Manhã)','text','')
@@ -217,6 +217,7 @@ const ACOES={
     saveState(); fecharModal(); render();
   },
   'divida-remover':el=>{
+    apagarItem(el.dataset.id);
     S.finance.dividas=S.finance.dividas.filter(x=>x.id!==el.dataset.id);
     saveState(); fecharModal(); render();
   },
@@ -329,6 +330,7 @@ const ACOES={
       +'<button class="btn perigo" data-action="cat-del-ok" data-id="'+esc(el.dataset.id)+'">Excluir</button></div>');
   },
   'cat-del-ok':el=>{
+    apagarItem(el.dataset.id);
     S.categorias=categorias().filter(c=>c.id!==el.dataset.id);
     saveState(); fecharModal(); render();
   },
@@ -351,6 +353,7 @@ const ACOES={
       +'<button class="btn perigo" data-action="habito-del-confirma" data-id="'+esc(el.dataset.id)+'">Excluir</button></div>');
   },
   'habito-del-confirma':el=>{
+    apagarItem(el.dataset.id);
     S.habits=S.habits.filter(x=>x.id!==el.dataset.id);
     saveState(); fecharModal(); render();
   },
@@ -365,6 +368,7 @@ const ACOES={
   },
   'renda-remover':el=>{
     const ix=Number(el.dataset.ix);
+    apagarItem(S.finance.rendas[ix]);
     S.finance.rendas.splice(ix,1);
     saveState(); fecharModal(); render();
   },
@@ -395,7 +399,7 @@ const ACOES={
   'zerar':()=>abrirModal('<h3>Apagar tudo?</h3><p class="sec small">Todo o histórico some deste aparelho. Faz um backup antes, vai por mim.</p>'
     +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
     +'<button class="btn perigo" data-action="zerar-confirma">Apagar tudo</button></div>'),
-  'zerar-confirma':()=>{ S=defaultState(); saveState({skipSync:true}); fecharModal(); render(); toast('Recomeço. Bora 🌱'); },
+  'zerar-confirma':()=>{ apagarCopias(); S=defaultState(); saveState({skipSync:true}); fecharModal(); render(); toast('Recomeço. Bora 🌱'); },
 
   'auth-tela':el=>{
     UI.auth={tela:el.dataset.t,email:val('au-email')||(UI.auth&&UI.auth.email)||''};
@@ -469,11 +473,29 @@ const ACOES={
     catch(e){ UI.auth.erro=e.message; renderLogin(); }
   },
   'auth-sair':()=>{
-    abrirModal('<h3>Sair da conta?</h3><p class="sec small">Teus dados continuam na nuvem e também neste aparelho.</p>'
+    abrirModal('<h3>Sair da conta?</h3><p class="sec small">Teus dados continuam na nuvem. Do aparelho eles saem — é o normal pra quem divide o computador.</p>'
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Ficar</button>'
       +'<button class="btn" data-action="auth-sair-confirma">Sair</button></div>');
   },
-  'auth-sair-confirma':async()=>{ fecharModal(); await flushSyncPendente(); await authSair();  },
+  'auth-sair-confirma':async()=>{
+    fecharModal();
+    const subiu=await flushSyncPendente();
+    if(!subiu){
+      // nunca apaga do aparelho o que ainda não chegou na nuvem sem perguntar
+      abrirModal('<h3>⚠️ Tem coisa que ainda não subiu</h3>'
+        +'<p class="sec small">A última sincronização não passou (sem internet ou o servidor não respondeu). Se sair apagando agora, o que você marcou desde então se perde.</p>'
+        +'<div class="acoes" style="flex-direction:column;gap:0.5rem">'
+        +'<button class="btn bloco" data-action="fechar-modal">Ficar e tentar de novo</button>'
+        +'<button class="btn sec-btn bloco" data-action="auth-sair-guardando">Sair, mas guardar neste aparelho</button>'
+        +'<button class="btn perigo bloco" data-action="auth-sair-apagando">Sair e apagar mesmo assim</button>'
+        +'</div>');
+      return;
+    }
+    _limparAoSair='auto';
+    await authSair();
+  },
+  'auth-sair-guardando':async()=>{ fecharModal(); _limparAoSair=false; await authSair(); },
+  'auth-sair-apagando':async()=>{ fecharModal(); _limparAoSair=true; await authSair(); },
   'conta-trocar-senha':()=>{
     abrirModal('<h3>Trocar senha</h3>'
       +campo('cs-s1','Nova senha','password','')
@@ -520,7 +542,7 @@ const ACOES={
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
       +'<button class="btn perigo" data-action="lembrete-del-ok" data-id="'+esc(el.dataset.id)+'">Excluir</button></div>');
   },
-  'lembrete-del-ok':el=>{ S.lembretes=(S.lembretes||[]).filter(x=>x.id!==el.dataset.id); saveState(); fecharModal(); render(); },
+  'lembrete-del-ok':el=>{ apagarItem(el.dataset.id); S.lembretes=(S.lembretes||[]).filter(x=>x.id!==el.dataset.id); saveState(); fecharModal(); render(); },
   'lembrete-toggle':el=>{ const l=(S.lembretes||[]).find(x=>x.id===el.dataset.id); if(l){ l.ativo=l.ativo===false; saveState(); render(); } },
   'lembrete-preset':el=>addPresetLembrete(el.dataset.p),
   'foto-add':()=>{ const f=document.getElementById('foto-file'); if(f) f.click(); },
@@ -543,6 +565,7 @@ const ACOES={
   'foto-del-ok':async el=>{
     const id=el.dataset.id; const f=(S.progresso||[]).find(x=>x.id===id); if(!f) return;
     try{ if(progressoDisponivel()) await clienteSB().storage.from('progresso').remove([f.path]); }catch(e){}
+    apagarItem(id);
     S.progresso=(S.progresso||[]).filter(x=>x.id!==id);
     _fotoCompare=_fotoCompare.filter(x=>x!==id);
     delete _fotoUrls[f.path];
@@ -608,7 +631,7 @@ const ACOES={
   },
   'carga-del-ok':el=>{
     const t=treinoPorId(el.dataset.t); const ex=t&&t.exercicios.find(x=>x.id===el.dataset.e);
-    if(ex){ ex.registros=(ex.registros||[]).filter(r=>r.id!==el.dataset.r); saveState(); }
+    if(ex){ apagarItem(el.dataset.r); ex.registros=(ex.registros||[]).filter(r=>r.id!==el.dataset.r); saveState(); }
     fecharModal(); render(); toast('Registro apagado');
   },
 
@@ -641,6 +664,23 @@ const ACOES={
   'dia-neutro-desfazer':()=>{
     const d=getDia(); d.neutro='';
     saveState(); render(); toast('Voltou ao normal');
+  },
+  'copia-restaurar':()=>{
+    const cps=copiasSeguranca();
+    if(!cps.length){ toast('Ainda não existe cópia de segurança'); return; }
+    abrirModal('<h3>🛟 Restaurar uma cópia</h3>'
+      +'<p class="sec small">Cada cópia é uma foto do teu app <b>antes</b> de a nuvem mexer nele. Restaurar volta tudo pra aquele momento — o que você registrou depois se perde.</p>'
+      +'<div class="acoes mt" style="flex-direction:column;gap:0.5rem">'
+      +cps.map(c=>'<button class="btn sec-btn bloco" data-action="copia-restaurar-ok" data-s="'+c.slot+'">'+esc(new Date(c.em).toLocaleString('pt-BR'))+'</button>').join('')
+      +'<button class="btn sec-btn bloco" data-action="fechar-modal">Cancelar</button>'
+      +'</div>');
+  },
+  'copia-restaurar-ok':el=>{
+    const slot=Number(el&&el.dataset&&el.dataset.s)||0;
+    if(restaurarCopiaSeguranca(slot)){
+      fecharModal(); render();
+      toast('🛟 Cópia restaurada — confere se tá certo, ela já subiu como a versão boa');
+    } else { fecharModal(); toast('Não consegui restaurar essa cópia'); }
   },
   'peso-ver':el=>{
     const card=el.closest('.peso-card'); if(!card) return;
@@ -1055,6 +1095,8 @@ function renderSeguro(){
   }
 }
 let _emRecuperacao=false;
+// 'auto' = apaga só se não tiver nada pendente · true = apagar mesmo assim · false = guardar
+let _limparAoSair='auto';
 let _usuarioLogado=null;
 
 function sincronizarPosLogin(){
@@ -1099,7 +1141,11 @@ function aoMudarAuth(evento,sessao,antes){
     return;
   }
   if(evento==='SIGNED_OUT'){
-    lsLimparConta();
+    // sessão que caiu sozinha (expirou/erro) não apaga se tiver coisa sem subir
+    const limpar=(_limparAoSair==='auto')?!temPendencia():!!_limparAoSair;
+    if(limpar) lsLimparConta();
+    else toast('💾 Guardei neste aparelho o que ainda não tinha subido — entra de novo pra sincronizar',{fixo:true});
+    _limparAoSair='auto';
     setUserKey(null);
     setSyncEstado('local');
     S=defaultState(); _usuarioLogado=null; _emRecuperacao=false;

@@ -75,6 +75,19 @@ function renderTopbar(){
   if(ba) ba.style.display=assistenteDisponivel()?'':'none';
 }
 
+// A ordem dos blocos da tela Hoje segue o que a pessoa disse que veio buscar.
+// Hábitos ficam sempre em cima; o resto entra na ordem que ela escolheu na abertura.
+function ordemBlocosHoje(){
+  const padrao=['habitos','treino','refeicoes','remedios','agua','sono','mental'];
+  const ints=(typeof onbEstado==='function')?(onbEstado().intencoes||[]):[];
+  if(!ints.length) return padrao;
+  const mapa={treino:'treino',comer:'refeicoes',agua:'agua',sono:'sono',cabeca:'mental',aposta:'mental'};
+  const topo=[];
+  ints.forEach(i=>{ const b=mapa[i]; if(b&&b!=='habitos'&&topo.indexOf(b)<0) topo.push(b); });
+  const resto=padrao.filter(b=>b!=='habitos'&&topo.indexOf(b)<0);
+  return ['habitos'].concat(topo,resto);
+}
+
 function viewHoje(){
   const iso=diaFoco();
   const ehHoje=(iso===hojeISO());
@@ -176,6 +189,11 @@ function viewHoje(){
       +'</section>';
   }
 
+  // Daqui pra baixo cada bloco é recortado pra poder ser reordenado no fim.
+  const blocos={};
+  let _corte=html.length;
+  const fecha=nome=>{ blocos[nome]=html.slice(_corte); html=html.slice(0,_corte); };
+
   const habs=habitosDoDia(iso);
   const fazer=habs.filter(x=>x.tipo==='fazer');
   const evitar=habs.filter(x=>x.tipo==='evitar');
@@ -191,7 +209,9 @@ function viewHoje(){
   }
   html+='</section>';
 
-  const treinoHoje=treinoDeHoje();
+  fecha('habitos');
+
+  const treinoHoje=(typeof treinoDoDiaISO==='function')?treinoDoDiaISO(iso):treinoDeHoje();
   html+='<section class="card"><h2>Treino</h2>'
     +'<button class="hab '+(d.treino?'feito':'')+'" data-action="treino-check" style="width:100%">'
     +'<span class="ic">🏋️</span>'
@@ -216,6 +236,7 @@ function viewHoje(){
     }
   }
   html+='</section>';
+  fecha('treino');
 
   html+='<section class="card"><h2>Refeições <button class="btn mini sec-btn dir" data-action="ref-add">+ Refeição</button></h2>';
   if(!S.diet.refeicoes.length){
@@ -229,6 +250,7 @@ function viewHoje(){
     });
   }
   html+='</section>';
+  fecha('refeicoes');
 
   html+='<section class="card"><h2>Remédios & suplementos <button class="btn mini sec-btn dir" data-action="med-add">+ Remédio</button></h2><div class="check-lista">';
   if(!S.meds.grupos.length){
@@ -242,15 +264,19 @@ function viewHoje(){
   }
   html+='</div>'+(S.meds.aviso?'<p class="muted small mt">'+esc(S.meds.aviso)+'</p>':'')+'</section>';
 
+  fecha('remedios');
+
   const metaAgua=Number(S.profile.aguaAlvoMl)||0;
   const pctAgua=metaAgua>0?Math.min(100,Math.round(100*(d.agua||0)/metaAgua)):0;
   html+='<section class="card"><h2>Água</h2>'
-    +'<div class="linha"><div class="esq"><span class="hero-num num">'+fmtQtd((d.agua||0)/1000)+'</span> <span class="muted">'+(metaAgua>0?'/ '+fmtQtd(metaAgua/1000)+' L':'L registrados hoje')+'</span></div>'
+    +'<div class="linha"><div class="esq"><span class="hero-num num">'+fmtQtd((d.agua||0)/1000)+'</span> <span class="muted">'+(metaAgua>0?'/ '+fmtQtd(metaAgua/1000)+' L':'L registrados'+(ehHoje?' hoje':' nesse dia'))+'</span></div>'
     +(metaAgua>0&&pctAgua>=100?'<span class="chip">💧 meta batida</span>':'')+'</div>'
     +(metaAgua>0?'<div class="progress azul mt"><span style="width:'+pctAgua+'%"></span></div>':'<p class="muted small mt"><button class="deslize-btn" data-action="meta-agua">Definir minha meta de água</button></p>')
     +'<div class="agua-controles mt"><button class="btn mini sec-btn" data-action="agua" data-ml="250">+250ml</button>'
     +'<button class="btn mini sec-btn" data-action="agua" data-ml="500">+500ml</button>'
     +'<button class="btn mini sec-btn" data-action="agua" data-ml="-250">−250ml</button></div></section>';
+
+  fecha('agua');
 
   const so=d.sono||{};
   html+='<section class="card"><h2>Sono '+(ehHoje?'(noite passada)':'(noite desse dia)')+'</h2>'
@@ -264,6 +290,8 @@ function viewHoje(){
     +'<div class="muted small mt">Meta: deitar '+esc(S.settings.sono.deitar)+' · acordar '+esc(S.settings.sono.acordar)+(S.settings.sono.melatonina?' · melatonina '+esc(S.settings.sono.melatonina):'')+'.</div>'
     +'</section>';
 
+  fecha('sono');
+
   const EMO=['😞','😕','😐','🙂','😄'];
   html+='<section class="card"><h2>Check-in mental</h2>'
     +'<label class="muted small">Humor</label><div class="escala">'
@@ -273,7 +301,11 @@ function viewHoje(){
     +'</div>'
     +'<div class="campo mt"><label>Nota do dia (opcional)</label><textarea rows="2" data-campo="nota" placeholder="Como foi o dia?">'+esc(d.nota||'')+'</textarea></div>'
     +'</section>';
+  fecha('mental');
 
+  const ordem=ordemBlocosHoje();
+  ordem.forEach(n=>{ if(blocos[n]) html+=blocos[n]; });
+  Object.keys(blocos).forEach(n=>{ if(ordem.indexOf(n)<0) html+=blocos[n]; });   // nenhum bloco some por descuido
   return html;
 }
 

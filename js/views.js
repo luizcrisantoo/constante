@@ -179,13 +179,20 @@ function viewHoje(){
     html+='<section class="card" style="border-left:3px solid var(--brand)">'
       +'<h2>👋 Bem-vindo ao Constante</h2>'
       +'<p class="sec">Esse é seu espaço pra construir constância — hábitos, rotina, dieta, treino, finanças e cabeça, tudo num lugar só.</p>'
-      +'<p class="sec small mt">Comece adicionando o que fizer sentido pra você:</p>'
-      +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
-      +(assistenteDisponivel()?'<button class="btn" data-action="assist-abrir">🤖 Montar com o assistente</button>':'')
-      +'<button class="btn '+(assistenteDisponivel()?'sec-btn':'')+'" data-action="habito-add">+ Hábito</button>'
-      +'<button class="btn sec-btn" data-nav="rotina">Montar minha rotina</button>'
-      +'</div>'
-      +(assistenteDisponivel()?'<p class="muted small mt">🤖 Manda uma foto do teu horário ou conta como é teu dia — eu monto pra você.</p>':'<p class="muted small mt">🤖 Em breve: um assistente que monta tudo a partir de uma foto do seu horário e do que você contar.</p>')
+      +(assistenteDisponivel()
+        ? '<p class="sec small mt">O jeito mais rápido: <b>fotografa o que você já segue</b> — a dieta do nutri, a ficha do personal, o horário da facul — e o app monta tudo aqui dentro.</p>'
+          +'<button class="btn bloco mt" data-action="foto-plano">📸 Fotografe seu plano</button>'
+          +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+          +'<button class="btn sec-btn" data-action="assist-abrir">🤖 Prefiro conversar</button>'
+          +'<button class="btn sec-btn" data-action="habito-add">+ Hábito</button>'
+          +'<button class="btn sec-btn" data-nav="rotina">Montar na mão</button>'
+          +'</div>'
+          +'<p class="muted small mt">Dieta e treino ele não inventa — só organiza o que você trouxer. Você revê antes de aplicar.</p>'
+        : '<p class="sec small mt">Comece adicionando o que fizer sentido pra você:</p>'
+          +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+          +'<button class="btn" data-action="habito-add">+ Hábito</button>'
+          +'<button class="btn sec-btn" data-nav="rotina">Montar minha rotina</button>'
+          +'</div>')
       +'</section>';
   }
 
@@ -361,7 +368,11 @@ function viewRotina(){
   html+='</div>';
   const blocos=blocosDoDia(dow);
   const agoraMin=hmParaMin(agoraHM());
-  if(!blocos.length) html+='<p class="muted mt">Dia sem blocos ainda — toca em “+ Bloco” aqui embaixo pra montar.</p>';
+  if(!blocos.length){
+    html+='<p class="muted mt">Dia sem blocos ainda — toca em “+ Bloco” aqui embaixo pra montar.</p>';
+    if(!S.routine.length&&assistenteDisponivel())
+      html+='<button class="btn bloco mt" data-action="foto-plano" data-t="horario">📸 Fotografar meu horário e montar de uma vez</button>';
+  }
   blocos.forEach((b,ix)=>{
     const cor=corCat(b.tipo);
     const ehAgora=dow===hojeDow&&b.f&&agoraMin>=hmParaMin(b.i)&&agoraMin<hmParaMin(b.f);
@@ -432,7 +443,8 @@ function viewDieta(){
 
   html+='<section class="card"><h2>Refeições <button class="btn mini sec-btn dir" data-action="ref-add">+ Refeição</button></h2>';
   if(!S.diet.refeicoes.length){
-    html+='<p class="muted small">Monte seu plano: adicione suas refeições com os itens de cada uma — ou peça pro assistente 🤖 montar pra você.</p>';
+    html+='<p class="muted small">Monte seu plano: adicione suas refeições com os itens de cada uma.</p>'
+      +(assistenteDisponivel()?'<button class="btn bloco mt" data-action="foto-plano" data-t="dieta">📸 Fotografar a dieta do meu nutri</button>':'');
   } else {
     S.diet.refeicoes.forEach(r=>{
       html+='<div class="refeicao-card">'

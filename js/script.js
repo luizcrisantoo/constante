@@ -839,6 +839,26 @@ const ACOES={
   'nome-pular':()=>{ S.settings.nomeAdiado=true; saveState({skipSync:true}); fecharModal(); },
 
   'assist-abrir':()=>abrirAssistente(),
+  'foto-plano':el=>{
+    const t=el&&el.dataset&&el.dataset.t;
+    if(t&&PLANOS_FOTO[t]) escolherArquivoPlano(t); else abrirFotoPlano();
+  },
+  'foto-plano-tipo':el=>{ fecharModal(); escolherArquivoPlano(el.dataset.t); },
+  'treino-exportar':el=>{
+    const t=treinoPorId(el.dataset.id); if(!t){ toast('Treino não encontrado'); return; }
+    const txt=textoTreino(t);
+    if(navigator.share){
+      navigator.share({title:t.nome,text:txt}).catch(()=>{});
+      return;
+    }
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt)
+        .then(()=>toast('📋 Treino copiado — é só colar onde quiser'))
+        .catch(()=>mostrarTextoTreino(txt));
+      return;
+    }
+    mostrarTextoTreino(txt);
+  },
   'assist-foto':()=>{ const f=document.getElementById('assist-file'); if(f) f.click(); },
   'assist-remimg':el=>{ _assistImgs.splice(Number(el.dataset.ix),1); renderAssist(); },
   'assist-enviar':()=>enviarMensagem(),
@@ -888,6 +908,12 @@ function telaOnbPasso2(){
   html+='<div class="acoes"><button class="btn sec-btn" data-action="onb-voltar1">← Voltar</button>'
     +'<button class="btn" data-action="onb-concluir">Começar</button></div>';
   return html;
+}
+function mostrarTextoTreino(txt){
+  abrirModal('<h3>📤 Teu treino</h3>'
+    +'<p class="sec small">Seleciona e copia — ou tira um print. Serve pra mandar pro personal, pra um amigo, ou pro próprio assistente.</p>'
+    +'<div class="campo"><textarea rows="10" readonly onclick="this.select()">'+esc(txt)+'</textarea></div>'
+    +'<div class="acoes"><button class="btn" data-action="fechar-modal">Fechar</button></div>');
 }
 function pedirNome(){
   abrirModal('<h3>👋 Como você quer ser chamado(a)?</h3>'

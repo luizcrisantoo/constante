@@ -6,10 +6,14 @@ function viewTreinoDetalhe(idTreino){
   let html='<section class="card">'
     +'<button class="btn mini sec-btn" data-action="voltar-sub">← Voltar</button>'
     +'<h2 class="mt">'+esc(t.nome)+' <span class="muted small">'+((t.diaSemana!=null)?DIAS_NOME[t.diaSemana]:esc(t.dia||''))+'</span><span class="chip">Semana '+esc(t.semana||'A')+'</span></h2>'
-    +'<p class="sec small">'+esc(t.foco)+'</p></section>';
+    +'<p class="sec small">'+esc(t.foco)+'</p>'
+    +(t.exercicios.length?'<button class="btn mini sec-btn mt" data-action="treino-exportar" data-id="'+esc(t.id)+'">📤 Compartilhar este treino</button>':'')
+    +'</section>';
 
   if(!t.exercicios.length){
-    html+='<section class="card"><p class="muted">Nenhum exercício ainda. Adiciona os que você faz nesse treino — na próxima vez o app te lembra da última carga.</p></section>';
+    html+='<section class="card"><p class="muted">Nenhum exercício ainda. Adiciona os que você faz nesse treino — na próxima vez o app te lembra da última carga.</p>'
+      +((typeof assistenteDisponivel==='function'&&assistenteDisponivel())?'<button class="btn bloco mt" data-action="foto-plano" data-t="treino">📸 Fotografar minha ficha do personal</button>':'')
+      +'</section>';
   }
 
   t.exercicios.forEach(ex=>{

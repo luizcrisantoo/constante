@@ -816,6 +816,23 @@ function treinosNaSemana(){
 }
 
 function treinoPorId(id){ return S.treinos.split.find(t=>t.id===id)||null; }
+// Resumo do treino em texto — pra mandar pro personal, pro amigo ou imprimir.
+function textoTreino(t){
+  if(!t) return '';
+  const quando=(t.diaSemana!=null)?DIAS_NOME[t.diaSemana]:(t.dia||'');
+  let s='🏋️ '+t.nome+(t.foco?' — '+t.foco:'')+'\n';
+  s+=(quando?quando+' · ':'')+'Semana '+(t.semana||'A')+'\n\n';
+  if(!t.exercicios.length) s+='(sem exercícios cadastrados)\n';
+  t.exercicios.forEach((e,i)=>{
+    const regs=(e.registros||[]).slice().sort((a,b)=>a.data<b.data?-1:1);
+    const u=regs[regs.length-1];
+    s+=(i+1)+'. '+e.nome;
+    if(u) s+='  — última: '+u.series+'×'+u.reps+' · '+String(u.carga).replace('.',',')+' kg ('+fmtData(u.data)+')';
+    s+='\n';
+  });
+  s+='\nfeito no Constante 🟣';
+  return s;
+}
 function treinoDoDia(dow){
   const ativa=(S.treinos.semanaAtiva==='B')?'B':'A';
   const doDia=S.treinos.split.find(t=>t.semana===ativa && t.diaSemana===dow);

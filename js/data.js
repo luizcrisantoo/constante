@@ -147,6 +147,11 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:45, data:'2026-08-14', titulo:'Fotografe seu plano', itens:[
+    '📸 Novo caminho curto: fotografa o que você já segue — a dieta do nutri, a ficha do personal, o horário da facul, o cronograma de estudos — e o assistente monta tudo aqui dentro. Aparece na tela de boas-vindas e também vazio dentro de cada aba (Dieta, Rotina, Treino).',
+    '🤖 Ele continua não inventando dieta nem treino: só transcreve e organiza o que você trouxer, e você revê antes de aplicar.',
+    '📤 E dá pra compartilhar um treino: gera um resumo com os exercícios e as últimas cargas pra mandar pro personal, pra um amigo ou pra você mesmo.'
+  ]},
   { v:44, data:'2026-08-14', titulo:'Nada se perde (correções importantes)', itens:[
     '🗑️ O que você apaga fica apagado. Tinha um problema sério aqui: gasto, hábito ou renda que você excluía podia VOLTAR sozinho na próxima sincronização. Corrigido — e a exclusão agora vale nos teus dois aparelhos.',
     '📵 Teu dia não some mais. Se você marcou o dia no celular e depois só abriu o app no computador, o dia podia voltar vazio. Agora os dois lados se juntam, marcação por marcação.',

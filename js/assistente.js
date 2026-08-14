@@ -11,6 +11,63 @@ function assistenteDisponivel(){
     && typeof tokenAcesso==='function' && !!tokenAcesso();   // sem conta não há assistente (a chamada iria falhar com 401)
 }
 
+// ---- Fotografe seu plano: o caminho curto pra sair com tudo montado ----
+const PLANOS_FOTO={
+  dieta:{icone:'🍽️',nome:'Minha dieta',dica:'aquela que teu nutri passou',
+    msg:'Essa é a dieta que eu sigo. Organiza ela aqui no app: cria as refeições nos horários certos e coloca os itens de cada uma. Não inventa nada — só transcreve e organiza o que está aí.'},
+  treino:{icone:'🏋️',nome:'Minha ficha de treino',dica:'a ficha do personal',
+    msg:'Essa é a minha ficha de treino. Organiza aqui: dá nome a cada treino, põe o foco e o dia da semana, e transcreve a lista de exercícios. Não inventa exercício nem carga — as cargas eu registro treinando.'},
+  horario:{icone:'📅',nome:'Meu horário',dica:'da faculdade, da escola ou do trabalho',
+    msg:'Esse é o meu horário fixo da semana. Monta a minha rotina a partir dele, com os blocos nos dias e horários certos.'},
+  estudo:{icone:'📚',nome:'Meu plano de estudos',dica:'o cronograma que você segue',
+    msg:'Esse é o meu plano de estudos. Distribui ele na minha rotina da semana, em blocos de estudo e revisão, nos dias e horários que combinem com o que já está lá.'}
+};
+function abrirFotoPlano(){
+  if(!assistenteDisponivel()){ abrirAssistente(); return; }
+  abrirModal('<h3>📸 Fotografe seu plano</h3>'
+    +'<p class="sec small">Manda a foto (ou o PDF) do que você já segue e o assistente monta tudo aqui dentro. Você revê antes de aplicar.</p>'
+    +'<div class="acoes mt" style="flex-direction:column;gap:0.5rem">'
+    +Object.keys(PLANOS_FOTO).map(k=>{
+      const p=PLANOS_FOTO[k];
+      return '<button class="btn sec-btn bloco" data-action="foto-plano-tipo" data-t="'+k+'" style="text-align:left">'
+        +p.icone+' <b>'+esc(p.nome)+'</b> <span class="muted small">— '+esc(p.dica)+'</span></button>';
+    }).join('')
+    +'<button class="btn sec-btn bloco" data-action="fechar-modal">Cancelar</button>'
+    +'</div>'
+    +'<p class="muted small mt">Dieta e treino ele não inventa — só organiza o que você trouxer.</p>');
+}
+function escolherArquivoPlano(tipo){
+  if(!PLANOS_FOTO[tipo]) return;
+  if(!assistenteDisponivel()){ abrirAssistente(); return; }
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='image/*,application/pdf';
+  inp.style.display='none';
+  document.body.appendChild(inp);
+  inp.onchange=()=>{
+    const arq=inp.files&&inp.files[0];
+    document.body.removeChild(inp);
+    if(!arq) return;
+    const erro=e=>toast('❌ '+(e&&e.message||e));
+    if(arq.type==='application/pdf'){
+      if(arq.size>4*1024*1024){ toast('PDF muito grande (máx. ~4MB).'); return; }
+      lerPdfBase64(arq).then(an=>abrirAssistenteComPlano(an,tipo)).catch(erro);
+    } else {
+      lerImagemReduzida(arq).then(im=>abrirAssistenteComPlano(im,tipo)).catch(erro);
+    }
+  };
+  inp.click();
+}
+function abrirAssistenteComPlano(anexo,tipo){
+  abrirAssistente();
+  if(!assistenteDisponivel()) return;
+  _assistImgs=[anexo];
+  renderAssist();
+  const ta=document.getElementById('assist-texto');
+  if(ta) ta.value=(PLANOS_FOTO[tipo]||{}).msg||'';
+  if(typeof metrica==='function') metrica('foto-plano',{tipo:tipo});
+  enviarMensagem();
+}
+
 function abrirAssistente(){
   _assistImgs = [];
   if(!assistenteDisponivel()){

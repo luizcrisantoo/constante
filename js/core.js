@@ -219,6 +219,16 @@ function melhorStreak(){
   return Math.max(best,streakGeral());
 }
 
+// Moldura do avatar = RECORDE pessoal (melhorStreak) — nunca rebaixa.
+function molduraTier(){
+  const r=melhorStreak();
+  if(r>=365) return {id:'ametista', nome:'Ametista', icone:'🟣', min:365, prox:null};
+  if(r>=100) return {id:'ouro', nome:'Ouro', icone:'🥇', min:100, prox:365};
+  if(r>=30)  return {id:'prata', nome:'Prata', icone:'🥈', min:30, prox:100};
+  if(r>=7)   return {id:'bronze', nome:'Bronze', icone:'🥉', min:7, prox:30};
+  return {id:'semente', nome:'Semente', icone:'🌱', min:0, prox:7};
+}
+
 function saudacaoHora(){
   const h=new Date().getHours();
   return h<5?'Boa madrugada':h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';

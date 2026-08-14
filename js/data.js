@@ -123,6 +123,11 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:38, data:'2026-08-13', titulo:'Moldura de recorde + app mais vivo', itens:[
+    '🖼 Tua foto de perfil ganhou MOLDURA de recorde: 🌱 Semente → 🥉 Bronze (7 dias) → 🥈 Prata (30) → 🥇 Ouro (100) → 🟣 Ametista (365). Ela mostra a tua MELHOR sequência de todos os tempos e nunca rebaixa — chegou no ouro, é teu até você se superar. Toca na foto pra ver tua escada.',
+    '✨ O app ganhou vida: check com animação e vibração no celular, transição suave entre as abas e aviso quando você bate um novo recorde pessoal.',
+    '😴 Sono mais esperto: ajustou o horário de deitar/acordar? As horas dormidas recalculam na hora (e se você digitar as horas na mão, o app respeita e não mexe).'
+  ]},
   { v:37, data:'2026-08-13', titulo:'Fichas destravadas + assistente organiza exercícios', itens:[
     '🧩 Conserto importante: fichas de treino antigas (sem identidade interna) voltaram a abrir e editar — o toque nelas funciona de novo.',
     '📋 O assistente agora ORGANIZA os exercícios nas tuas fichas: cola o texto da ficha do teu personal (ou manda foto/PDF) e pede pra organizar nos treinos — ele preenche nome, foco, dia da semana e exercícios (semana A e B). Séries e cargas você registra treinando.'

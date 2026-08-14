@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'constante-v37';
+const CACHE = 'constante-v38';
 const ARQUIVOS = [
   './', 'index.html', 'privacidade.html', 'css/variables.css', 'css/styles.css',
   'js/config.js', 'js/vendor-supabase.js', 'js/data.js', 'js/core.js', 'js/ui.js',

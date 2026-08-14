@@ -27,6 +27,25 @@ const ACOES={
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Fechar</button>'
       +'<button class="btn" data-action="sync-agora">Sincronizar agora</button></div>');
   },
+  'moldura-info':()=>{
+    const t=molduraTier(); const r=melhorStreak(); const atual=streakGeral();
+    const escada=[
+      ['semente','🌱','Semente','começo'],['bronze','🥉','Bronze','7 dias'],
+      ['prata','🥈','Prata','30 dias'],['ouro','🥇','Ouro','100 dias'],['ametista','🟣','Ametista','365 dias']
+    ];
+    let corpo='<p class="sec small">A moldura da tua foto mostra o teu <b>recorde de constância</b> — a melhor sequência que você já alcançou. Ela nunca rebaixa: chegou, é tua. Só evolui quando você se supera.</p>';
+    escada.forEach(e=>{
+      const aqui=(e[0]===t.id);
+      corpo+='<div class="linha" style="padding:0.3rem 0'+(aqui?';font-weight:800':'')+'">'
+        +'<span>'+e[1]+'</span><span class="esq">'+e[2]+(aqui?' — você está aqui':'')+'</span>'
+        +'<span class="muted small">'+e[3]+'</span></div>';
+    });
+    corpo+='<p class="sec small mt">Teu recorde: <b>'+r+' dia'+(r===1?'':'s')+'</b>.'
+      +(t.prox?' Faltam <b>'+(t.prox-r)+'</b> de recorde pra moldura '+(t.id==='semente'?'Bronze':t.id==='bronze'?'Prata':t.id==='prata'?'Ouro':'Ametista')+'.':' Topo alcançado — constante de verdade 🟣')+'</p>';
+    if(atual>0 && r>atual && (r-atual)<=5) corpo+='<p class="muted small">Tá a '+(r-atual)+' dia'+((r-atual)===1?'':'s')+' de igualar teu recorde 👀</p>';
+    abrirModal('<h3>'+t.icone+' Tua moldura: '+esc(t.nome)+'</h3>'+corpo
+      +'<div class="acoes"><button class="btn" data-action="fechar-modal">Fechar</button></div>');
+  },
   'novidades-ok':()=>{ marcarNovidadesVistas(); render(); },
   'novidades-todas':()=>{
     marcarNovidadesVistas();
@@ -50,9 +69,11 @@ const ACOES={
         +'<button class="btn" data-action="deslize-limpar" data-id="'+esc(id)+'">Desfazer deslize</button></div>');
       return;
     }
+    const marcou=!(d.habitos[id]===true);
     if(d.habitos[id]===true) delete d.habitos[id];
     else d.habitos[id]=true;
     recalcXP(hojeISO()); saveState(); render();
+    if(marcou){ vibrar(); animaCheck('[data-action="habit"][data-id="'+id+'"]'); }
   },
   'deslize-limpar':el=>{ const d=getDia(); delete d.habitos[el.dataset.id]; recalcXP(hojeISO()); saveState(); fecharModal(); render(); },
   'deslize':el=>{
@@ -70,9 +91,9 @@ const ACOES={
     toast('Registrado. Amanhã conta de novo 💪');
   },
 
-  'ref':el=>{ const d=getDia(); const id=el.dataset.id; if(d.refeicoes[id]) delete d.refeicoes[id]; else d.refeicoes[id]=true; recalcXP(hojeISO()); saveState(); render(); },
-  'med':el=>{ const d=getDia(); const id=el.dataset.id; if(d.meds[id]) delete d.meds[id]; else d.meds[id]=true; recalcXP(hojeISO()); saveState(); render(); },
-  'agua':el=>{ const d=getDia(); d.agua=Math.max(0,(d.agua||0)+Number(el.dataset.ml)); recalcXP(hojeISO()); saveState(); render(); },
+  'ref':el=>{ const d=getDia(); const id=el.dataset.id; const marcou=!d.refeicoes[id]; if(d.refeicoes[id]) delete d.refeicoes[id]; else d.refeicoes[id]=true; recalcXP(hojeISO()); saveState(); render(); if(marcou){ vibrar(); animaCheck('[data-action="ref"][data-id="'+id+'"]'); } },
+  'med':el=>{ const d=getDia(); const id=el.dataset.id; const marcou=!d.meds[id]; if(d.meds[id]) delete d.meds[id]; else d.meds[id]=true; recalcXP(hojeISO()); saveState(); render(); if(marcou){ vibrar(); animaCheck('[data-action="med"][data-id="'+id+'"]'); } },
+  'agua':el=>{ const d=getDia(); d.agua=Math.max(0,(d.agua||0)+Number(el.dataset.ml)); recalcXP(hojeISO()); saveState(); render(); if(Number(el.dataset.ml)>0) vibrar(8); },
   'humor':el=>{ const d=getDia(); d.humor=Number(el.dataset.v); recalcXP(hojeISO()); saveState(); render(); },
   'energia':el=>{ const d=getDia(); d.energia=Number(el.dataset.v); recalcXP(hojeISO()); saveState(); render(); },
 
@@ -97,7 +118,7 @@ const ACOES={
     const dv=val('tr-dia'); t.diaSemana=(dv==='')?null:Number(dv);
     saveState(); fecharModal(); render();
   },
-  'treino-check':()=>{ const d=getDia(); d.treino=!d.treino; recalcXP(hojeISO()); saveState(); if(d.treino) toast('💪 Treino contou! (+10 XP de bônus)'); render(); },
+  'treino-check':()=>{ const d=getDia(); d.treino=!d.treino; recalcXP(hojeISO()); saveState(); if(d.treino) toast('💪 Treino contou! (+10 XP de bônus)'); render(); if(d.treino){ vibrar(); animaCheck('[data-action="treino-check"]'); } },
   'recomeco-ok':()=>{ UI.recomecoLeve=false; render(); toast('Um passo de cada vez 💜'); },
 
   'rotina-dia':el=>{ UI.rotinaDia=Number(el.dataset.d); render(); },
@@ -758,6 +779,15 @@ function abrirModalRenda(ix){
     +'<button class="btn" data-action="renda-salvar" data-ix="'+(ix!=null?ix:'')+'">Salvar</button></div>');
 }
 
+function vibrar(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms||12); }catch(e){} }
+function animaCheck(seletor){
+  requestAnimationFrame(()=>{
+    const el=document.querySelector(seletor); if(!el) return;
+    const c=el.querySelector('.check')||el.querySelector('.box')||el;
+    c.classList.add('pop'); setTimeout(()=>c.classList.remove('pop'),480);
+  });
+}
+
 let _sonoToastT=null;
 let _cfgSalvoTs=0;
 
@@ -792,12 +822,18 @@ function ligarEventos(){
     const t=ev.target;
     if(t.dataset.sono!==undefined&&t.dataset.sono!==''){
       const d=getDia();
-      d.sono[t.dataset.sono]=t.type==='number'?(t.value===''?null:Number(String(t.value).replace(',','.'))):t.value;
-      if(d.sono.deitou&&d.sono.acordou&&(d.sono.h==null||d.sono.h==='')){
-        d.sono.h=horasEntre(d.sono.deitou,d.sono.acordou);
-        // mostra na hora as horas calculadas, sem esperar re-render
-        const elH=document.querySelector('input[data-sono="h"]');
-        if(elH && !elH.value) elH.value=d.sono.h;
+      const campoSono=t.dataset.sono;
+      d.sono[campoSono]=t.type==='number'?(t.value===''?null:Number(String(t.value).replace(',','.'))):t.value;
+      if(campoSono==='h') d.sono.hAuto=false; // digitou na mão → o app respeita e não sobrescreve
+      if(campoSono==='deitou'||campoSono==='acordou'){
+        // recalcula sempre que mexer nos horários — a menos que as horas tenham sido digitadas manualmente
+        const podeAuto=(d.sono.h==null||d.sono.h===''||d.sono.hAuto===true);
+        if(d.sono.deitou&&d.sono.acordou&&podeAuto){
+          d.sono.h=horasEntre(d.sono.deitou,d.sono.acordou);
+          d.sono.hAuto=true;
+          const elH=document.querySelector('input[data-sono="h"]');
+          if(elH) elH.value=d.sono.h;
+        }
       }
       recalcXP(hojeISO()); saveState(); renderTopbar();
       clearTimeout(_sonoToastT);

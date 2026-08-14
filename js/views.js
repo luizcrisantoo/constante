@@ -6,6 +6,7 @@ const TIPO_LABEL={aula:'Aula',estagio:'Estágio',treino:'Treino',refeicao:'Refei
   sites:'Sites',idioma:'Idiomas',leitura:'Leitura',sono:'Sono',livre:'Livre',pausa:'Pausa',
   desloc:'Deslocamento',remedios:'Remédios',revisao:'Revisão'};
 
+let _tabAnterior=null;
 function render(){
   recalcXP(hojeISO());
   const novas=checarConquistas();
@@ -21,11 +22,19 @@ function render(){
     html=fn();
   }
   view.innerHTML=html;
+  if(UI.tab!==_tabAnterior){ _tabAnterior=UI.tab; view.classList.remove('anim'); void view.offsetWidth; view.classList.add('anim'); }
   renderTopbar();
   if(UI.sub&&UI.sub.tipo==='progresso') hidratarFotos();
   document.querySelectorAll('.bottom-nav button').forEach(b=>{
     b.classList.toggle('ativo',b.dataset.nav===UI.tab);
   });
+  const recAtual=melhorStreak();
+  if(S.gamif && recAtual>(S.gamif.recordeVisto||0)){
+    const recAntes=S.gamif.recordeVisto||0;
+    S.gamif.recordeVisto=recAtual;
+    saveState({skipSync:true});
+    if(recAntes>0) toast('🏆 Novo recorde pessoal: '+recAtual+' dia'+(recAtual===1?'':'s')+' de constância!');
+  }
   if(novas.length===1){
     toast('🏆 '+novas[0].icone+' '+esc(novas[0].nome));
   } else if(novas.length>1){
@@ -69,9 +78,12 @@ function viewHoje(){
 
   const nome=(S.profile.nome||'').trim();
   const foto=S.profile&&S.profile.foto;
+  const tierAv=molduraTier();
   let html='<section class="card saudacao">'
     +'<div style="display:flex;align-items:center;gap:0.7rem">'
-    +(foto?'<img src="'+esc(foto)+'" alt="foto de perfil" style="width:52px;height:52px;border-radius:50%;object-fit:cover;flex:none;border:2px solid var(--brand-strong)">':'')
+    +'<button class="avatar-anel anel-'+tierAv.id+' av-52" data-action="moldura-info" aria-label="Tua moldura: '+esc(tierAv.nome)+' — toca pra ver" title="Moldura '+esc(tierAv.nome)+'">'
+    +(foto?'<img src="'+esc(foto)+'" alt="foto de perfil">':'<span class="avatar-inicial">'+(nome?esc(nome.charAt(0).toUpperCase()):'🙂')+'</span>')
+    +'</button>'
     +'<div><h1 style="margin:0">'+sauda+(nome?', '+esc(nome):'')+' 👋</h1>'
     +'<div class="muted">'+fmtDataLonga(iso)+'</div></div></div>'
     +'<div class="frase">“'+esc(frase)+'”</div>';

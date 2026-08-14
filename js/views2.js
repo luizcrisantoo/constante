@@ -205,7 +205,9 @@ function viewConfig(){
   const fotoP=S.profile&&S.profile.foto;
   let html='<section class="card"><h2>Perfil & metas</h2>'
     +'<div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.9rem">'
-    +(fotoP?'<img src="'+esc(fotoP)+'" alt="foto de perfil" style="width:64px;height:64px;border-radius:50%;object-fit:cover;flex:none;border:2px solid var(--brand-strong)">':'<div style="width:64px;height:64px;border-radius:50%;flex:none;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:1.7rem">🙂</div>')
+    +'<button class="avatar-anel anel-'+molduraTier().id+' av-64" data-action="moldura-info" aria-label="Tua moldura — toca pra ver">'
+    +(fotoP?'<img src="'+esc(fotoP)+'" alt="foto de perfil">':'<span class="avatar-inicial" style="font-size:1.6rem">'+((S.profile.nome||'').trim()?esc((S.profile.nome||'').trim().charAt(0).toUpperCase()):'🙂')+'</span>')
+    +'</button>'
     +'<div class="acoes" style="display:flex;gap:0.4rem;flex-wrap:wrap">'
     +'<button class="btn mini sec-btn" data-action="perfil-foto">'+(fotoP?'trocar foto':'adicionar foto')+'</button>'
     +(fotoP?'<button class="btn mini perigo" data-action="perfil-foto-remover">Remover</button>':'')

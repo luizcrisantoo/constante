@@ -181,3 +181,199 @@ function secaoAmigos(){
   }
   return html+'</section>';
 }
+
+// ---------- Grupos: o contador que só anda quando o grupo bate ----------
+// De 2 a 8 pessoas. Cada um escolhe qual hábito SEU conta ali. O contador anda
+// no dia em que a meta for atingida (por padrão: todo mundo). Se um dia passar
+// sem a meta, ele recomeça. É um contador do grupo — a constância individual de
+// cada um não é afetada por nada disso.
+
+const GRUPO_MAX = 8;
+
+function grupos(){
+  const s=social();
+  if(!Array.isArray(s.grupos)) s.grupos=[];
+  return s.grupos;
+}
+function metaGrupo(g){
+  const n=(g.membros||[]).length||1;
+  const m=Number(g.meta);
+  return (m&&m>0)?Math.min(m,n):n;   // sem meta definida = todo mundo
+}
+function streakGrupo(g){
+  if(!g||!Array.isArray(g.dias)) return 0;
+  const meta=metaGrupo(g), porDia={};
+  g.dias.forEach(r=>{
+    if(!porDia[r.data]) porDia[r.data]=new Set();
+    porDia[r.data].add(r.user_id);
+  });
+  const bateu=iso=>((porDia[iso]&&porDia[iso].size)||0)>=meta;
+  let n=0, dia=hojeISO();
+  if(bateu(dia)) n++;
+  dia=addDias(dia,-1);
+  while(bateu(dia)){ n++; dia=addDias(dia,-1); }
+  return n;
+}
+function grupoHoje(g){
+  const hoje=hojeISO();
+  const quem=new Set((g.dias||[]).filter(x=>x.data===hoje).map(x=>x.user_id));
+  return (g.membros||[]).map(m=>({...m, ok:quem.has(m.user_id)}));
+}
+function meuHabitoNoGrupo(g){
+  const eu=(usuarioAtual()||{}).id;
+  const m=(g.membros||[]).find(x=>x.user_id===eu);
+  return m?m.habito:'';
+}
+function gruposDoHabito(idHabito){
+  return grupos().filter(g=>meuHabitoNoGrupo(g)===idHabito);
+}
+function codigoNovo(){
+  const abc='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c=''; for(let i=0;i<6;i++) c+=abc[Math.floor(Math.random()*abc.length)];
+  return c;
+}
+function meuPrimeiroNome(){ return String(S.profile.nome||'').trim().split(/\s+/)[0].slice(0,20); }
+
+async function carregarGrupos(){
+  if(!socialDisponivel()) return grupos();
+  try{
+    const rm=await fetch(_syncBase()+'/rest/v1/constante_grupo_membros?select=grupo_id,user_id,habito,nome',{headers:_syncHeaders()});
+    if(!rm.ok) throw new Error('falha');
+    const membros=await rm.json();
+    const ids=[...new Set(membros.map(m=>m.grupo_id))];
+    if(!ids.length){ social().grupos=[]; saveState({skipSync:true}); return []; }
+    const lista='('+ids.map(encodeURIComponent).join(',')+')';
+    const [rg,rd]=await Promise.all([
+      fetch(_syncBase()+'/rest/v1/constante_grupos?select=id,nome,codigo,meta,criado_por&id=in.'+lista,{headers:_syncHeaders()}),
+      fetch(_syncBase()+'/rest/v1/constante_grupo_dias?select=grupo_id,user_id,data&grupo_id=in.'+lista+'&data=gte.'+addDias(hojeISO(),-60),{headers:_syncHeaders()})
+    ]);
+    const gs=rg.ok?await rg.json():[];
+    const dias=rd.ok?await rd.json():[];
+    social().grupos=gs.map(g=>({
+      ...g,
+      membros:membros.filter(m=>m.grupo_id===g.id),
+      dias:dias.filter(d=>d.grupo_id===g.id)
+    }));
+    saveState({skipSync:true});
+    return social().grupos;
+  }catch(e){ return grupos(); }
+}
+
+async function criarGrupo(nome, meuHabito){
+  if(!socialDisponivel()) throw new Error('Entra na tua conta primeiro');
+  const eu=usuarioAtual().id, codigo=codigoNovo();
+  const rg=await fetch(_syncBase()+'/rest/v1/constante_grupos',{
+    method:'POST', headers:{..._syncHeaders(),'Prefer':'return=representation'},
+    body:JSON.stringify([{nome:String(nome||'Grupo').slice(0,40), codigo:codigo, meta:null, criado_por:eu}])
+  });
+  if(!rg.ok) throw new Error('Não consegui criar agora ('+rg.status+')');
+  const g=(await rg.json())[0];
+  const rm=await fetch(_syncBase()+'/rest/v1/constante_grupo_membros',{
+    method:'POST', headers:{..._syncHeaders(),'Prefer':'resolution=merge-duplicates'},
+    body:JSON.stringify([{grupo_id:g.id,user_id:eu,habito:meuHabito,nome:meuPrimeiroNome()}])
+  });
+  if(!rm.ok) throw new Error('Grupo criado, mas não consegui te colocar dentro');
+  await carregarGrupos();
+  await sincronizarGrupos();
+  return g;
+}
+
+async function entrarNoGrupo(codigo, meuHabito){
+  if(!socialDisponivel()) throw new Error('Entra na tua conta primeiro');
+  const c=String(codigo||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(c.length<4) throw new Error('Código curto demais');
+  const r=await fetch(_syncBase()+'/rest/v1/rpc/entrar_no_grupo',{
+    method:'POST', headers:_syncHeaders(),
+    body:JSON.stringify({p_codigo:c,p_habito:meuHabito,p_nome:meuPrimeiroNome()})
+  });
+  if(!r.ok) throw new Error('Não consegui agora ('+r.status+')');
+  const res=await r.json();
+  if(!res||!res.ok) throw new Error((res&&res.erro)||'código não encontrado');
+  await carregarGrupos();
+  await sincronizarGrupos();
+  return res.nome||'';
+}
+
+async function sairDoGrupo(id){
+  if(!socialDisponivel()) return false;
+  try{
+    const eu=usuarioAtual().id;
+    const r=await fetch(_syncBase()+'/rest/v1/constante_grupo_membros?grupo_id=eq.'+encodeURIComponent(id)+'&user_id=eq.'+encodeURIComponent(eu),
+      {method:'DELETE',headers:_syncHeaders()});
+    if(!r.ok) return false;
+    social().grupos=grupos().filter(g=>g.id!==id);
+    saveState({skipSync:true});
+    return true;
+  }catch(e){ return false; }
+}
+
+async function ajustarMetaGrupo(id, meta){
+  if(!socialDisponivel()) return false;
+  try{
+    const r=await fetch(_syncBase()+'/rest/v1/constante_grupos?id=eq.'+encodeURIComponent(id),
+      {method:'PATCH',headers:_syncHeaders(),body:JSON.stringify({meta:meta})});
+    if(!r.ok) return false;
+    const g=grupos().find(x=>x.id===id); if(g) g.meta=meta;
+    saveState({skipSync:true});
+    return true;
+  }catch(e){ return false; }
+}
+
+// manda o meu lado do dia de hoje pra cada grupo
+async function sincronizarGrupos(){
+  if(!socialDisponivel()) return;
+  const eu=usuarioAtual().id, hoje=hojeISO(), d=S.days[hoje]||{};
+  for(const g of grupos()){
+    const meu=meuHabitoNoGrupo(g);
+    if(!meu) continue;
+    const feito=!!(d.habitos&&d.habitos[meu]===true);
+    const jaTem=(g.dias||[]).some(x=>x.user_id===eu&&x.data===hoje);
+    if(feito===jaTem) continue;
+    try{
+      if(feito){
+        await fetch(_syncBase()+'/rest/v1/constante_grupo_dias',{
+          method:'POST', headers:{..._syncHeaders(),'Prefer':'resolution=ignore-duplicates'},
+          body:JSON.stringify([{grupo_id:g.id,user_id:eu,data:hoje}])
+        });
+        g.dias=(g.dias||[]).concat([{grupo_id:g.id,user_id:eu,data:hoje}]);
+      } else {
+        await fetch(_syncBase()+'/rest/v1/constante_grupo_dias?grupo_id=eq.'+encodeURIComponent(g.id)
+          +'&user_id=eq.'+encodeURIComponent(eu)+'&data=eq.'+hoje,{method:'DELETE',headers:_syncHeaders()});
+        g.dias=(g.dias||[]).filter(x=>!(x.user_id===eu&&x.data===hoje));
+      }
+    }catch(e){}
+  }
+  saveState({skipSync:true});
+}
+
+function secaoGrupos(){
+  if(!socialDisponivel()) return '';
+  const lista=grupos();
+  let html='<section class="card"><h2>Juntos'
+    +'<button class="btn mini sec-btn dir" data-action="grupo-add">+ Grupo</button></h2>';
+  if(!lista.length){
+    html+='<p class="sec small">Um grupo de 2 a 8 pessoas com um hábito em comum: o contador só anda no dia em que o grupo bate a meta. Se um dia passar sem bater, ele recomeça — e a constância de cada um segue intacta.</p>';
+    return html+'</section>';
+  }
+  html+='<p class="muted small">O contador anda no dia em que a meta do grupo é batida. A constância de cada um continua sendo dela.</p>';
+  lista.forEach(g=>{
+    const n=streakGrupo(g), hoje=grupoHoje(g), meta=metaGrupo(g), qtd=(g.membros||[]).length;
+    const bateramHoje=hoje.filter(m=>m.ok).length;
+    html+='<div class="mt" style="padding-bottom:0.6rem;border-bottom:1px solid var(--grid)">'
+      +'<div class="linha" style="gap:0.6rem">'
+      +'<span style="font-size:1.5rem;flex:none">'+(n>0?'🔥':'🌱')+'</span>'
+      +'<span class="esq"><b>'+esc(g.nome||'Grupo')+'</b> <span class="chip">'+qtd+(qtd===1?' pessoa':' pessoas')+'</span>'
+      +'<div class="muted small">'+(n>0?n+(n===1?' dia':' dias')+' seguidos':'ainda não começou')
+      +' · meta: '+(meta>=qtd?'todo mundo':meta+' de '+qtd)+'</div></span>'
+      +'<button class="edit" data-action="grupo-sair" data-id="'+esc(g.id)+'" aria-label="Sair do grupo">✕</button></div>'
+      +'<div class="small mt" style="display:flex;gap:0.35rem;flex-wrap:wrap">'
+      +hoje.map(m=>'<span class="chip"'+(m.ok?' style="border-color:var(--good)"':'')+'>'+(m.ok?'✅ ':'⬜ ')+esc(m.nome||'alguém')+'</span>').join('')
+      +'</div>'
+      +'<div class="muted small mt">'+bateramHoje+' de '+qtd+' bateram hoje'+(bateramHoje>=meta?' — o dia contou ✓':'')+'</div>'
+      +'<div class="acoes mt" style="display:flex;gap:0.4rem;flex-wrap:wrap">'
+      +'<button class="btn mini sec-btn" data-action="grupo-convidar" data-c="'+esc(g.codigo)+'" data-n="'+esc(g.nome||'Grupo')+'">Convidar</button>'
+      +'<button class="btn mini sec-btn" data-action="grupo-meta" data-id="'+esc(g.id)+'">Mudar a meta</button>'
+      +'</div></div>';
+  });
+  return html+'</section>';
+}

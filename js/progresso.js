@@ -151,6 +151,7 @@ function viewProgresso(){
 function viewProgressoTab(){
   let html=viewProgresso();
   if(typeof secaoAmigos==='function') html+=secaoAmigos();
+  if(typeof secaoGrupos==='function') html+=secaoGrupos();
   if(typeof secaoConquistas==='function') html+=secaoConquistas();
   return html;
 }

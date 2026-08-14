@@ -147,6 +147,12 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:48, data:'2026-08-14', titulo:'O foguinho em grupo', itens:[
+    '🔥 Nova seção Juntos: um grupo de 2 a 8 pessoas com um hábito em comum. Cada um escolhe qual hábito SEU conta ali, e o contador do grupo só anda no dia em que a meta for batida. Se um dia passar sem bater, ele recomeça do zero.',
+    '🎯 A meta começa em "todo mundo" — que é o foguinho clássico, de dois. Se o grupo for grande, vocês podem afrouxar pra "4 de 6" e o contador respeita isso.',
+    '🧍 Esse contador é do grupo. A tua constância individual não é afetada por nada disso: você bate o teu dia normalmente e ela segue igual.',
+    '🔒 Entra quem tem o código do grupo. Cada um sai sozinho quando quiser, e ninguém tira ninguém.'
+  ]},
   { v:47, data:'2026-08-14', titulo:'Dá pra puxar alguém junto', itens:[
     '🤝 Agora dá pra adicionar uma pessoa: você manda teu código, ela entra com ele (ou o contrário) e vocês passam a ver a constância um do outro na aba Progresso.',
     '👀 Ela vê teu nome, teus dias de constância e tua moldura. Hábito, só o que VOCÊ marcar pra compartilhar — um por um. Peso, dinheiro, humor, remédios, apostas e anotações nunca saem daqui.',

@@ -74,6 +74,10 @@ const ACOES={
     else d.habitos[id]=true;
     recalcXP(diaFoco()); saveState(); render();
     if(marcou){ vibrar(); animaCheck('[data-action="habit"][data-id="'+id+'"]'); }
+    // se esse hábito faz parte de algum grupo, avisa o grupo (só no dia de hoje)
+    if(ehHojeFoco()&&typeof gruposDoHabito==='function'&&gruposDoHabito(id).length){
+      sincronizarGrupos().then(()=>{ if(UI.tab==='progresso') render(); });
+    }
   },
   'deslize-limpar':el=>{ const d=getDia(); delete d.habitos[el.dataset.id]; recalcXP(diaFoco()); saveState(); fecharModal(); render(); },
   'deslize':el=>{
@@ -888,17 +892,82 @@ const ACOES={
     }catch(e){ toast('❌ '+e.message); }
   },
   'amigo-hab':el=>{ alternarCompartilhado(el.dataset.id); render(); },
-  'amigo-del':el=>{
-    const a=(social().amigos||[]).find(x=>x.id===el.dataset.id);
-    abrirModal('<h3>Remover '+esc(a?a.nome:'essa pessoa')+'?</h3>'
-      +'<p class="sec small">Vocês dois param de ver a constância um do outro. Dá pra adicionar de novo depois, com o código.</p>'
-      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
-      +'<button class="btn perigo" data-action="amigo-del-ok" data-id="'+esc(el.dataset.id)+'">Remover</button></div>');
+  'grupo-add':()=>{
+    if(!S.habits.length){ toast('Cria um hábito teu primeiro — é ele que conta no grupo'); return; }
+    const opc=S.habits.map(h=>'<option value="'+esc(h.id)+'">'+esc((h.icone||'⭐')+' '+h.nome)+'</option>').join('');
+    abrirModal('<h3>🔥 Juntos</h3>'
+      +'<p class="sec small">Um grupo de até 8 pessoas com um hábito em comum. O contador só anda no dia em que o grupo bate a meta — no começo, a meta é <b>todo mundo</b>, e vocês podem afrouxar depois.</p>'
+      +'<div class="grupo-titulo">Criar um grupo</div>'
+      +campo('gr-nome','Nome (ex.: Academia da firma)','text','')
+      +'<div class="campo"><label>Meu hábito nesse grupo</label><select id="gr-hab">'+opc+'</select></div>'
+      +'<button class="btn bloco" data-action="grupo-criar">Criar e pegar o código</button>'
+      +'<div class="grupo-titulo mt">Ou entrar num grupo</div>'
+      +campo('gr-cod','Código que te mandaram','text','')
+      +'<div class="campo"><label>Meu hábito nesse grupo</label><select id="gr-hab2">'+opc+'</select></div>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Fechar</button>'
+      +'<button class="btn" data-action="grupo-entrar">Entrar</button></div>');
   },
-  'amigo-del-ok':async el=>{
-    const ok=await removerAmigo(el.dataset.id);
+  'grupo-criar':async()=>{
+    const nome=val('gr-nome')||'Juntos', hab=val('gr-hab');
+    if(!hab){ toast('Escolhe um hábito teu'); return; }
+    toast('Criando…');
+    try{
+      const g=await criarGrupo(nome,hab);
+      fecharModal(); render();
+      toast('🔥 Grupo criado — manda o código '+(g&&g.codigo?g.codigo:'')+' pra galera');
+      if(typeof metrica==='function') metrica('grupo-criado');
+    }catch(e){ toast('❌ '+e.message); }
+  },
+  'grupo-entrar':async()=>{
+    const c=val('gr-cod'), hab=val('gr-hab2');
+    if(!c){ toast('Cola o código do grupo'); return; }
+    if(!hab){ toast('Escolhe um hábito teu'); return; }
+    toast('Procurando…');
+    try{
+      const nome=await entrarNoGrupo(c,hab);
+      fecharModal(); render();
+      toast('🔥 Você entrou'+(nome?' em "'+nome+'"':'')+'!');
+      if(typeof metrica==='function') metrica('grupo-entrou');
+    }catch(e){ toast('❌ '+e.message); }
+  },
+  'grupo-convidar':el=>{
+    const c=el.dataset.c||'', n=el.dataset.n||'grupo';
+    const msg='Bora manter a constância junto? Entra no grupo "'+n+'" no Constante com o código '+c;
+    if(navigator.share){ navigator.share({text:msg}).catch(()=>{}); return; }
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(msg).then(()=>toast('📋 Copiado — manda pra galera')).catch(()=>toast('Código: '+c));
+      return;
+    }
+    toast('Código do grupo: '+c);
+  },
+  'grupo-meta':el=>{
+    const g=grupos().find(x=>x.id===el.dataset.id); if(!g) return;
+    const qtd=(g.membros||[]).length, atual=metaGrupo(g);
+    let ops='';
+    for(let i=2;i<=qtd;i++) ops+='<option value="'+i+'"'+(atual===i?' selected':'')+'>'+(i>=qtd?'todo mundo ('+i+')':i+' de '+qtd)+'</option>';
+    abrirModal('<h3>Meta do grupo</h3>'
+      +'<p class="sec small">Quantas pessoas precisam bater no mesmo dia pro contador andar. Com gente demais, exigir todo mundo pode virar peso — vocês decidem juntos.</p>'
+      +'<div class="campo"><label>Precisa bater</label><select id="gr-meta">'+ops+'</select></div>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn" data-action="grupo-meta-ok" data-id="'+esc(g.id)+'" data-q="'+qtd+'">Salvar</button></div>');
+  },
+  'grupo-meta-ok':async el=>{
+    const v=Number(val('gr-meta'))||0, qtd=Number(el.dataset.q)||0;
+    const ok=await ajustarMetaGrupo(el.dataset.id, (v>=qtd?null:v));
     fecharModal(); render();
-    toast(ok?'Removido':'Não consegui agora — tenta de novo');
+    toast(ok?'Meta ajustada':'Não consegui agora');
+  },
+  'grupo-sair':el=>{
+    const g=grupos().find(x=>x.id===el.dataset.id);
+    abrirModal('<h3>Sair de "'+esc(g?g.nome:'grupo')+'"?</h3>'
+      +'<p class="sec small">Você para de aparecer pro grupo e o contador some pra você. Teu hábito e tua constância individual continuam iguais. Dá pra voltar depois com o código.</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Ficar</button>'
+      +'<button class="btn perigo" data-action="grupo-sair-ok" data-id="'+esc(el.dataset.id)+'">Sair</button></div>');
+  },
+  'grupo-sair-ok':async el=>{
+    const ok=await sairDoGrupo(el.dataset.id);
+    fecharModal(); render();
+    toast(ok?'Você saiu do grupo':'Não consegui agora');
   },
   'caderno-ia':el=>abrirCadernoIA(el.dataset.id,el.dataset.m),
   'assist-salvar-caderno':el=>salvarRespostaNoCaderno(Number(el.dataset.ix)),
@@ -1097,7 +1166,7 @@ function ligarEventos(){
       if(document.body.classList.contains('modo-login')) return;
       UI.tab=nav.dataset.nav; setDiaFoco(null); render(); window.scrollTo({top:0});
       if(nav.dataset.nav==='progresso'&&typeof carregarAmigos==='function'){
-        carregarAmigos().then(()=>{ if(UI.tab==='progresso') render(); });
+        Promise.all([carregarAmigos(),carregarGrupos()]).then(()=>{ if(UI.tab==='progresso') render(); });
       }
       if(typeof metrica==='function') metrica('tab:'+nav.dataset.nav);
       return;
@@ -1203,7 +1272,11 @@ function sincronizarPosLogin(){
       // sabe se essa conta já tem dados, e escrever aqui venceria a mesclagem depois.
       if(!deuCerto) return;
       if(typeof publicarCartao==='function') publicarCartao(true);
-      if(typeof carregarAmigos==='function') carregarAmigos().then(()=>{ try{ if(UI.tab==='progresso') render(); }catch(e){} });
+      if(typeof carregarAmigos==='function'){
+        Promise.all([carregarAmigos(),carregarGrupos()])
+          .then(()=>{ if(typeof sincronizarGrupos==='function') return sincronizarGrupos(); })
+          .then(()=>{ try{ if(UI.tab==='progresso') render(); }catch(e){} });
+      }
       if(typeof boasVindas==='function' && !document.body.classList.contains('modo-login')) boasVindas();
     });
 }

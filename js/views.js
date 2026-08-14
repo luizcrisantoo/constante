@@ -23,6 +23,7 @@ function render(){
     html=fn();
   }
   view.innerHTML=html;
+  view.classList.toggle('grana-oculta', UI.tab==='grana'&&typeof granaOculta==='function'&&granaOculta());
   if(UI.tab!==_tabAnterior){ _tabAnterior=UI.tab; view.classList.remove('anim'); void view.offsetWidth; view.classList.add('anim'); }
   renderTopbar();
   if(UI.sub&&UI.sub.tipo==='progresso') hidratarFotos();

@@ -147,6 +147,10 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:49, data:'2026-08-14', titulo:'Esconder os valores da Grana', itens:[
+    '🙈 A aba Grana ganhou um botão de esconder: os valores ficam borrados e voltam com um toque. Serve pra abrir o app no ônibus, no trampo ou com gente do lado sem mostrar quanto você tem.',
+    '💾 A escolha fica salva: se você escondeu, continua escondido na próxima vez que abrir.'
+  ]},
   { v:48, data:'2026-08-14', titulo:'O foguinho em grupo', itens:[
     '🔥 Nova seção Juntos: um grupo de 2 a 8 pessoas com um hábito em comum. Cada um escolhe qual hábito SEU conta ali, e o contador do grupo só anda no dia em que a meta for batida. Se um dia passar sem bater, ele recomeça do zero.',
     '🎯 A meta começa em "todo mundo" — que é o foguinho clássico, de dois. Se o grupo for grande, vocês podem afrouxar pra "4 de 6" e o contador respeita isso.',

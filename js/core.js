@@ -10,6 +10,10 @@ function fmtData(iso){ const d=isoToDate(iso); return pad2(d.getDate())+'/'+pad2
 function fmtDataLonga(iso){ const d=isoToDate(iso); return DIAS_NOME[d.getDay()]+', '+pad2(d.getDate())+'/'+pad2(d.getMonth()+1)+'/'+d.getFullYear(); }
 function agoraHM(){ const d=new Date(); return pad2(d.getHours())+':'+pad2(d.getMinutes()); }
 function hmParaMin(hm){ if(!hm) return null; const [h,m]=hm.split(':').map(Number); return h*60+(m||0); }
+// Dinheiro que pode ser escondido: o app inteiro escreve valor por aqui, e a aba
+// Grana decide se mostra ou borra. Útil pra quem abre o app no ônibus, no trampo.
+function granaOculta(){ return !!(S.settings&&S.settings.granaOculta); }
+function $$(v){ return '<span class="dinheiro">'+fmtBRL(v)+'</span>'; }
 function fmtBRL(v){ const n=Number(v); return (isFinite(n)?n:0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
 function unidadeBets(){ const b=S.bets||{}; if(b.unidade&&UNIDADES[b.unidade]) return b.unidade; return b.ativo?'brl':'min'; }
 function fmtQtd(v){ const n=Number(v); const x=isFinite(n)?n:0; return (Math.round(x*100)/100).toString().replace('.',','); }

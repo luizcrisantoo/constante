@@ -78,9 +78,9 @@ function calendarioGastos(mesSel,hoje){
       html+='<div class="cal-dia futuro"><span class="cal-n num">'+dia+'</span></div>';
     } else {
       html+='<button type="button" class="'+cls+'" data-action="grana-dia" data-d="'+iso+'"'
-        +' aria-label="Dia '+dia+' — '+(tot>0?fmtBRL(tot):'sem gasto')+'">'
+        +' aria-label="Dia '+dia+' — '+(granaOculta()?'valor escondido':(tot>0?fmtBRL(tot):'sem gasto'))+'">'
         +'<span class="cal-n num">'+dia+'</span>'
-        +'<span class="cal-tot num">'+(tot>0?fmtBRLCurto(tot):'')+'</span></button>';
+        +'<span class="cal-tot num dinheiro">'+(tot>0?fmtBRLCurto(tot):'')+'</span></button>';
     }
   }
   return html+'</div>';
@@ -99,9 +99,9 @@ function secaoGastos(){
   let html='<section class="card"><h2>Gastos</h2>'
     +'<div class="linha">'
     +(ehMesAtual
-      ? '<div class="esq"><span class="hero-num num">'+fmtBRL(totDia)+'</span><div class="hero-sub">gasto hoje</div></div>'
-        +'<div style="text-align:right"><b class="num">'+fmtBRL(totMes)+'</b><div class="hero-sub">no mês</div></div>'
-      : '<div class="esq"><span class="hero-num num">'+fmtBRL(totMes)+'</span><div class="hero-sub">em '+esc(fmtMes(mesSel))+'</div></div>'
+      ? '<div class="esq"><span class="hero-num num">'+$$(totDia)+'</span><div class="hero-sub">gasto hoje</div></div>'
+        +'<div style="text-align:right"><b class="num">'+$$(totMes)+'</b><div class="hero-sub">no mês</div></div>'
+      : '<div class="esq"><span class="hero-num num">'+$$(totMes)+'</span><div class="hero-sub">em '+esc(fmtMes(mesSel))+'</div></div>'
         +'<div style="text-align:right"><b class="num">'+doMes.length+'</b><div class="hero-sub">lançamentos</div></div>')
     +'</div>'
     +'<div class="linha mt" style="gap:0.4rem">'
@@ -117,14 +117,14 @@ function secaoGastos(){
 
   if(diaAberto){
     const doSel=gastosDoDia(UI.granaDia).slice().sort((a,b)=>a.id<b.id?1:-1);
-    html+='<div class="grupo-titulo">'+(UI.granaDia===hoje?'Hoje':esc(fmtDataLonga(UI.granaDia)))+' · '+fmtBRL(totalLista(doSel))+'</div>';
+    html+='<div class="grupo-titulo">'+(UI.granaDia===hoje?'Hoje':esc(fmtDataLonga(UI.granaDia)))+' · '+$$(totalLista(doSel))+'</div>';
     if(!doSel.length) html+='<p class="muted small">Nada lançado nesse dia ainda.</p>';
     doSel.forEach(g=>{
       const c=catGasto(g.cat);
       html+='<div class="linha" style="padding:0.35rem 0;border-bottom:1px solid var(--grid)">'
         +'<span style="width:1.4rem;text-align:center">'+esc(c.icone)+'</span>'
         +'<span class="esq small">'+esc(g.desc||c.nome)+'</span>'
-        +'<span class="num small">'+fmtBRL(g.valor)+'</span>'
+        +'<span class="num small">'+$$(g.valor)+'</span>'
         +'<button class="edit" data-action="gasto-remover" data-id="'+esc(g.id)+'" aria-label="Remover">✕</button></div>';
     });
     html+='<button class="btn bloco mt" data-action="gasto-add" data-d="'+esc(UI.granaDia)+'">+ Registrar gasto em '+esc(fmtData(UI.granaDia))+'</button>';
@@ -139,7 +139,7 @@ function secaoGastos(){
         +'<span style="width:1.4rem;text-align:center">'+esc(pc.cat.icone)+'</span>'
         +'<span class="small" style="width:6.5rem">'+esc(pc.cat.nome)+'</span>'
         +'<span class="progress" style="flex:1"><span style="width:'+w+'%;background:'+esc(pc.cat.cor)+'"></span></span>'
-        +'<span class="num small" style="width:5rem;text-align:right">'+fmtBRL(pc.total)+'</span></div>';
+        +'<span class="num small" style="width:5rem;text-align:right">'+$$(pc.total)+'</span></div>';
     });
     html+='</div>';
   }
@@ -152,13 +152,13 @@ function secaoGastos(){
       if(g.data!==diaG){
         diaG=g.data;
         const totD=totalLista(doMesLista.filter(x=>x.data===diaG));
-        html+='<div class="grupo-titulo">'+(diaG===hoje?'Hoje':fmtData(diaG))+' · '+fmtBRL(totD)+'</div>';
+        html+='<div class="grupo-titulo">'+(diaG===hoje?'Hoje':fmtData(diaG))+' · '+$$(totD)+'</div>';
       }
       const c=catGasto(g.cat);
       html+='<div class="linha" style="padding:0.35rem 0;border-bottom:1px solid var(--grid)">'
         +'<span style="width:1.4rem;text-align:center">'+esc(c.icone)+'</span>'
         +'<span class="esq small">'+esc(g.desc||c.nome)+'</span>'
-        +'<span class="num small">'+fmtBRL(g.valor)+'</span>'
+        +'<span class="num small">'+$$(g.valor)+'</span>'
         +'<button class="edit" data-action="gasto-remover" data-id="'+esc(g.id)+'" aria-label="Remover">✕</button></div>';
     });
     html+='</details>';

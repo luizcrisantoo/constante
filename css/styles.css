@@ -362,3 +362,9 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
 .mini-chart .bar.neutra{
   background:repeating-linear-gradient(45deg,var(--surface-3),var(--surface-3) 3px,transparent 3px,transparent 6px);
 }
+
+/* ---- v49: esconder os valores da Grana (app aberto no ônibus, no trampo) ---- */
+.grana-oculta .dinheiro{
+  filter:blur(8px); user-select:none; transition:filter 0.18s ease;
+}
+.dinheiro{ transition:filter 0.18s ease; }

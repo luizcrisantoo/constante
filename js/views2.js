@@ -1,7 +1,11 @@
 'use strict';
 
 function viewGrana(){
-  let html=secaoGastos();
+  let html='<div class="linha" style="margin-bottom:0.4rem">'
+    +'<span class="esq muted small">'+(granaOculta()?'valores escondidos nesta tela':'')+'</span>'
+    +'<button class="btn mini sec-btn" data-action="grana-olho" aria-label="'+(granaOculta()?'Mostrar os valores':'Esconder os valores')+'">'
+    +(granaOculta()?'👁️ mostrar':'🙈 esconder')+'</button></div>';
+  html+=secaoGastos();
 
   const temDividas=S.finance.dividas.length>0;
   if(!temDividas){
@@ -14,11 +18,11 @@ function viewGrana(){
   const fin=resumoFinanceiro();
   const pct=fin.total?Math.round(100*fin.pago/fin.total):0;
   html+='<section class="card"><h2>Dívidas — visão geral</h2>'
-    +'<div class="linha"><div class="esq"><span class="hero-num num">'+fmtBRL(fin.saldo)+'</span><div class="hero-sub">faltam · já pagou '+fmtBRL(fin.pago)+' de '+fmtBRL(fin.total)+'</div></div>'
+    +'<div class="linha"><div class="esq"><span class="hero-num num">'+$$(fin.saldo)+'</span><div class="hero-sub">faltam · já pagou '+$$(fin.pago)+' de '+$$(fin.total)+'</div></div>'
     +'<span class="chip num">'+pct+'% pago</span></div>'
     +'<div class="progress verde mt"><span style="width:'+pct+'%"></span></div>'
-    +'<div class="linha mt"><span class="esq muted small">Renda: <b class="num">'+fmtBRL(fin.renda)+'</b>/mês</span>'
-    +'<span class="muted small">Aporte: <b class="num">'+fmtBRL(S.finance.aporteMensal)+'</b>/mês <button class="btn mini sec-btn" data-action="aporte-edit">Mudar</button></span></div>'
+    +'<div class="linha mt"><span class="esq muted small">Renda: <b class="num">'+$$(fin.renda)+'</b>/mês</span>'
+    +'<span class="muted small">Aporte: <b class="num">'+$$(S.finance.aporteMensal)+'</b>/mês <button class="btn mini sec-btn" data-action="aporte-edit">Mudar</button></span></div>'
     +'</section>';
 
   html+='<section class="card"><h2>Fila de pagamento (bola de neve) <button class="btn mini sec-btn dir" data-action="divida-add">+ Dívida</button></h2>';
@@ -29,14 +33,14 @@ function viewGrana(){
     const idSeguro=esc(dv.id);
     html+='<div class="divida '+(quit?'quitada':'')+'">'
       +'<div class="topo"><span class="chip num">'+(ix+1)+'º</span><span class="nome">'+esc(dv.nome)+'</span>'
-      +'<span class="valores num">'+(quit?'✅ quitada!':fmtBRL(saldo)+' de '+fmtBRL(dv.total))+'</span></div>'
+      +'<span class="valores num">'+(quit?'✅ quitada!':$$(saldo)+' de '+$$(dv.total))+'</span></div>'
       +'<div class="progress verde fina"><span style="width:'+pctD+'%"></span></div>'
       +'<div class="linha mt">'
       +(quit?'':'<button class="btn mini esq" data-action="pagar" data-id="'+idSeguro+'">Registrar pagamento</button>')
       +'<button class="btn mini sec-btn" data-action="divida-edit" data-id="'+idSeguro+'" aria-label="Editar dívida">✎</button>'
       +'</div>'
       +(dv.pagos.length?'<details><summary>Histórico ('+dv.pagos.length+')</summary><ul style="margin-left:1.1rem" class="small sec">'
-        +dv.pagos.map(p=>'<li class="num">'+fmtData(p.data)+' — '+fmtBRL(p.valor)+'</li>').join('')+'</ul></details>':'')
+        +dv.pagos.map(p=>'<li class="num">'+fmtData(p.data)+' — '+$$(p.valor)+'</li>').join('')+'</ul></details>':'')
       +'</div>';
   });
   html+='</section>';
@@ -47,10 +51,10 @@ function viewGrana(){
     html+='<div class="aviso">Com o aporte atual, a quitação passa de 10 anos — aumenta o aporte mensal pra encurtar isso.</div>'
       +'<button class="btn sec-btn mt" data-action="aporte-edit">Ajustar aporte mensal</button>';
   } else if(proj.fim){
-    html+='<div class="ok-box">Mantendo '+fmtBRL(S.finance.aporteMensal)+'/mês, você fica <b>livre de dívidas em '+esc(proj.fim)+'</b> 🕊️ — e cada economia que virar pagamento antecipa isso.</div>';
+    html+='<div class="ok-box">Mantendo '+$$(S.finance.aporteMensal)+'/mês, você fica <b>livre de dívidas em '+esc(proj.fim)+'</b> 🕊️ — e cada economia que virar pagamento antecipa isso.</div>';
     html+='<details class="mt"><summary class="muted small">Ver mês a mês</summary><table class="tabela mt"><thead><tr><th>Mês</th><th>Pagamentos</th><th class="num">Resta</th></tr></thead><tbody>';
     proj.meses.forEach(mm=>{
-      html+='<tr><td class="num">'+esc(mm.label)+'</td><td>'+mm.pagamentos.map(p=>esc(p.nome)+' '+fmtBRL(p.valor)+(p.quitou?' ✅':'')).join('<br>')+'</td><td class="num">'+fmtBRL(mm.resta)+'</td></tr>';
+      html+='<tr><td class="num">'+esc(mm.label)+'</td><td>'+mm.pagamentos.map(p=>esc(p.nome)+' '+$$(p.valor)+(p.quitou?' ✅':'')).join('<br>')+'</td><td class="num">'+$$(mm.resta)+'</td></tr>';
     });
     html+='</tbody></table></details>';
   } else {
@@ -88,7 +92,7 @@ function secaoReducao(){
     +'<button class="btn" data-action="sos-abrir">🌊 Tô com vontade</button>'
     +'</div>';
   if(u==='brl' && econ>0 && S.finance.dividas.length){
-    html+='<div class="ok-box mt">💰 Você deixou de gastar <b class="num">'+fmtBRL(econ)+'</b> nas semanas fechadas. '
+    html+='<div class="ok-box mt">💰 Você deixou de gastar <b class="num">'+$$(econ)+'</b> nas semanas fechadas. '
       +'<button class="btn mini mt" data-action="economia-transferir">Transformar em pagamento de dívida</button></div>';
   } else if(u!=='brl' && econ>0){
     html+='<div class="ok-box mt">🎉 Você ficou <b class="num">'+fmtUnidade(econ,u)+'</b> abaixo do limite nas semanas fechadas. Cada semana dentro da meta é um degrau.</div>';
@@ -253,7 +257,7 @@ function viewConfig(){
 
   html+='<section class="card"><h2>Rendas mensais</h2><div class="lista-edit">';
   S.finance.rendas.forEach((r,ix)=>{
-    html+='<div class="item-edit"><span class="nome">'+esc(r.nome)+'</span><span class="num">'+fmtBRL(r.valor)+'</span>'
+    html+='<div class="item-edit"><span class="nome">'+esc(r.nome)+'</span><span class="num">'+$$(r.valor)+'</span>'
       +'<button class="btn mini sec-btn" data-action="renda-edit" data-ix="'+ix+'" aria-label="Editar renda">✎</button></div>';
   });
   html+='</div><button class="btn mini sec-btn mt" data-action="renda-add">+ Renda</button></section>';

@@ -892,6 +892,11 @@ const ACOES={
     }catch(e){ toast('❌ '+e.message); }
   },
   'amigo-hab':el=>{ alternarCompartilhado(el.dataset.id); render(); },
+  'grana-olho':()=>{
+    S.settings.granaOculta=!granaOculta();
+    saveState(); render();
+    toast(granaOculta()?'🙈 Valores escondidos — só nesta tela':'👁️ Valores à mostra');
+  },
   'grupo-add':()=>{
     if(!S.habits.length){ toast('Cria um hábito teu primeiro — é ele que conta no grupo'); return; }
     const opc=S.habits.map(h=>'<option value="'+esc(h.id)+'">'+esc((h.icone||'⭐')+' '+h.nome)+'</option>').join('');

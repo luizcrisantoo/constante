@@ -7,7 +7,8 @@ let _assistBusy = false;
 const TIPOS_BLOCO=['aula','estagio','treino','refeicao','estudo','sites','idioma','leitura','sono','livre','pausa','desloc','remedios','revisao'];
 
 function assistenteDisponivel(){
-  return typeof produtoAtivo==='function' && produtoAtivo() && typeof clienteSB==='function' && clienteSB();
+  return typeof produtoAtivo==='function' && produtoAtivo() && typeof clienteSB==='function' && !!clienteSB()
+    && typeof tokenAcesso==='function' && !!tokenAcesso();   // sem conta não há assistente (a chamada iria falhar com 401)
 }
 
 function abrirAssistente(){

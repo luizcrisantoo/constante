@@ -258,7 +258,17 @@ function viewConfig(){
   });
   html+='</div><button class="btn mini sec-btn mt" data-action="renda-add">+ Renda</button></section>';
 
-  if(produtoAtivo()){
+  if(produtoAtivo()&&typeof ehVisitante==='function'&&ehVisitante()){
+    html+='<section class="card"><h2>Conta</h2>'
+      +'<p class="sec">Você tá usando <b>sem conta</b> — tudo fica guardado só neste aparelho.</p>'
+      +'<p class="muted small mt">Com conta, teus dados salvam na nuvem, aparecem no celular e no computador, e o assistente 🤖 fica disponível.</p>'
+      +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+      +'<button class="btn" data-action="visitante-criar-conta">Criar conta</button>'
+      +'<button class="btn sec-btn" data-action="visitante-ja-tenho">Entrar numa conta</button>'
+      +'</div>'
+      +'<p class="muted small mt"><a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a></p>'
+      +'</section>';
+  } else if(produtoAtivo()){
     const u=usuarioAtual();
     const _se=(typeof syncEstado==='function')?syncEstado():'local';
     const _seTxt={ok:'☁️ Salvo na nuvem',pendente:'☁️ Mudança recente a caminho da nuvem',sincronizando:'☁️ Sincronizando…',offline:'✈️ Sem conexão — salvo neste aparelho',erro:'☁️ A última sincronização falhou — tenta de novo abaixo'}[_se]||'';

@@ -33,12 +33,17 @@ function lsSet(v){
     }
   }
 }
-function lsLimparConta(){ const k=storeKey(); delete _mem[k]; try{ localStorage.removeItem(k); }catch(e){} }
+function lsLimparConta(){
+  if(!_userKey) return;   // sem conta ativa a chave é a base (dados de quem usa sem conta) — não apaga
+  const k=storeKey(); delete _mem[k];
+  try{ localStorage.removeItem(k); }catch(e){}
+}
 
-function migrarLocalUmaVez(){
+function marcarMigrado(){ try{ localStorage.setItem(MIGRADO_FLAG,'1'); }catch(e){} }
+function migrarLocalUmaVez(forcar){
   try{
-    if(localStorage.getItem(MIGRADO_FLAG)) return null;
-    const base=localStorage.getItem(STORE_KEY);
+    if(!forcar && localStorage.getItem(MIGRADO_FLAG)) return null;
+    const base=localStorage.getItem(STORE_KEY)||_mem[STORE_KEY]||null;
     localStorage.setItem(MIGRADO_FLAG,'1');
     return base||null;
   }catch(e){ return null; }
@@ -105,6 +110,7 @@ function sanearEstado(){
   if(!Array.isArray(S.gastos.lancamentos)) S.gastos.lancamentos=[];
   if(!S.estudo||!Array.isArray(S.estudo.cadernos)) S.estudo=defaultState().estudo;
   if(!Array.isArray(S.categorias)) S.categorias=defaultState().categorias;
+  onbEstado();
 }
 function loadState(){
   const raw=lsGet();
@@ -187,6 +193,52 @@ function repetirOntem(soContar){
   });
   if(!soContar&&n){ recalcXP(iso); saveState(); }
   return n;
+}
+// ---- Onboarding por intenção ----
+function onbEstado(){
+  if(!S.settings.onboard||typeof S.settings.onboard!=='object'||Array.isArray(S.settings.onboard))
+    S.settings.onboard={feito:false,intencoes:[],vitoria:''};
+  if(!Array.isArray(S.settings.onboard.intencoes)) S.settings.onboard.intencoes=[];
+  return S.settings.onboard;
+}
+function temIntencao(id){ return onbEstado().intencoes.indexOf(id)>=0; }
+// Só pra quem chega de verdade em branco: quem já tem dados nunca vê a abertura.
+function precisaOnboarding(){
+  const o=onbEstado();
+  if(o.feito) return false;
+  if(S.habits.length||S.routine.length) return false;
+  if((S.profile.nome||'').trim()) return false;
+  if(S.settings.ultimaVisita||S.settings.nomeAdiado) return false;
+  // qualquer rastro de uso (dia com algo marcado, peso, gasto) já descarta a abertura.
+  // Obs.: dia VAZIO não conta — o próprio render() cria o registro de hoje ao abrir o app.
+  const usou=Object.keys(S.days||{}).some(k=>{
+    const d=S.days[k]||{};
+    return (d.xp||0)>0 || (d.nota||'').trim() || (Array.isArray(d.apostas)&&d.apostas.length) || d.treino;
+  });
+  if(usou) return false;
+  if((S.pesos||[]).length||(S.gastos&&S.gastos.lancamentos||[]).length) return false;
+  return true;
+}
+function addHabitoSimples(nome,icone,tipo){
+  if(!nome) return null;
+  if(S.habits.some(h=>(h.nome||'').toLowerCase()===nome.toLowerCase())) return null;
+  const h={id:'hb'+uid(),nome:nome,icone:icone||'⭐',tipo:(tipo==='evitar'?'evitar':'fazer'),dias:[0,1,2,3,4,5,6],xp:10};
+  S.habits.push(h); return h;
+}
+// Prepara só o que a intenção pede — e nunca por cima do que a pessoa já tem.
+function aplicarIntencoes(lista){
+  (lista||[]).forEach(id=>{
+    if(id==='agua'&&!Number(S.profile.aguaAlvoMl)){
+      const kg=Number(S.profile.peso)||0;
+      S.profile.aguaAlvoMl = kg>0 ? Math.round(kg*35/100)*100 : 2000;   // ~35 ml/kg
+    }
+    if(id==='comer'&&!S.diet.refeicoes.length){
+      [['Café da manhã','07:30'],['Almoço','12:00'],['Janta','19:30']].forEach(r=>{
+        S.diet.refeicoes.push({id:'ref'+uid(),nome:r[0],hora:r[1],kcal:0,prot:0,itens:[],subs:[]});
+      });
+    }
+    if(id==='aposta') S.bets.ativo=true;
+  });
 }
 function diaConta(iso){
   const d=S.days[iso]; if(!d) return false;
@@ -727,6 +779,12 @@ function gastosDoMes(anoMes){
   return S.gastos.lancamentos.filter(g=>g.data&&g.data.slice(0,7)===anoMes);
 }
 function totalLista(lista){ return lista.reduce((a,g)=>a+(g.valor||0),0); }
+// Valor curto pra caber na casinha do calendário: 35 / 1,2k
+function fmtBRLCurto(v){
+  const n=Math.round(Number(v)||0);
+  if(n>=1000) return String(Math.round(n/100)/10).replace('.',',')+'k';
+  return String(n);
+}
 function mesDeslocado(anoMes,n){
   const y=Number(anoMes.slice(0,4)), m=Number(anoMes.slice(5,7))-1+(n||0);
   const d=new Date(y,m,1);

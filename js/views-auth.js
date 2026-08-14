@@ -53,11 +53,15 @@ function renderLogin(){
       +'<button class="btn bloco mt" data-action="auth-nova-senha-salvar">Salvar e entrar</button>';
   }
 
+  const semConta=(a.tela==='entrar'||a.tela==='criar')
+    ? '<button class="btn sec-btn bloco mt" data-action="visitante-entrar">Ver o app sem criar conta</button>'
+      +'<p class="muted small centro mt">Dá pra experimentar tudo antes. Se você criar conta depois, o que anotou vai junto.</p>'
+    : '';
   document.getElementById('view').innerHTML=
     '<div class="login-wrap">'
     +'<div class="login-logo">c<em>o</em>nstante</div>'
     +'<p class="login-tag">sua vida no ritmo certo — sem picos, sempre constante 🟣</p>'
-    +'<section class="card">'+corpo+'</section>'
+    +'<section class="card">'+corpo+semConta+'</section>'
     +'<p class="centro muted small">Seus dados são só seus: protegidos por conta, sem anúncio, sem venda de dados.<br><a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a></p>'
     +'</div>';
   document.getElementById('top-stats').innerHTML='';

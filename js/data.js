@@ -1,6 +1,28 @@
 'use strict';
 const DIAS_NOME = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const DIAS_ABREV = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+// Onboarding por intenção: o que a pessoa veio buscar → o que o app já deixa pronto.
+const INTENCOES = [
+  {id:'treino', icone:'💪', nome:'Treinar com constância'},
+  {id:'comer',  icone:'🍽️', nome:'Comer melhor'},
+  {id:'agua',   icone:'💧', nome:'Beber mais água'},
+  {id:'sono',   icone:'😴', nome:'Dormir melhor'},
+  {id:'estudo', icone:'📚', nome:'Estudar / organizar o dia'},
+  {id:'grana',  icone:'💰', nome:'Controlar a grana'},
+  {id:'cabeca', icone:'🧠', nome:'Cuidar da cabeça'},
+  {id:'aposta', icone:'🎯', nome:'Reduzir apostas'}
+];
+// Sugestões — não são receita: a pessoa tira o que não faz sentido antes de começar.
+const SUGESTOES_HABITO = {
+  treino:[{icone:'🤸',nome:'Alongar 10 min',tipo:'fazer'},{icone:'🚶',nome:'Caminhar 20 min',tipo:'fazer'}],
+  comer :[{icone:'🍎',nome:'Comer uma fruta',tipo:'fazer'},{icone:'🥤',nome:'Refrigerante',tipo:'evitar'}],
+  agua  :[{icone:'💧',nome:'Garrafa de água por perto',tipo:'fazer'}],
+  sono  :[{icone:'🌙',nome:'Dormir antes das 00h',tipo:'fazer'},{icone:'📵',nome:'Celular na cama',tipo:'evitar'}],
+  estudo:[{icone:'📚',nome:'Estudar 30 min',tipo:'fazer'},{icone:'📖',nome:'Ler 10 páginas',tipo:'fazer'}],
+  grana :[{icone:'🧾',nome:'Anotar os gastos do dia',tipo:'fazer'}],
+  cabeca:[{icone:'🧘',nome:'Respirar 3 min',tipo:'fazer'},{icone:'📝',nome:'Escrever como foi o dia',tipo:'fazer'}],
+  aposta:[{icone:'🎯',nome:'Apostar',tipo:'evitar'}]
+};
 const MESES_NOME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const UNIDADES = {
   min: { nome:'minutos', abrev:'min' },
@@ -19,7 +41,8 @@ function defaultState(){
     },
     settings: {
       sono:{ deitar:'23:00', acordar:'07:00', deitarFds:'23:30', acordarFds:'08:00', melatonina:'' },
-      syncUrl:'', syncKey:'', syncCode:'', syncAuto:true, ultimaSync:null
+      syncUrl:'', syncKey:'', syncCode:'', syncAuto:true, ultimaSync:null,
+      onboard:{ feito:false, intencoes:[], vitoria:'' }
     },
     pesos: [],
     habits: [],
@@ -124,6 +147,15 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:42, data:'2026-08-14', titulo:'Calendário na Grana', itens:[
+    '📅 A Grana agora tem calendário do mês: cada dia mostra quanto saiu, e tocando num dia você abre ele — vê os gastos daquele dia e lança direto ali. Esqueceu terça? Toca na terça e anota.',
+    '💰 O botão de registrar já vem com o dia que você abriu, e depois de salvar o app te mostra o dia onde o gasto caiu.'
+  ]},
+  { v:41, data:'2026-08-14', titulo:'Dá pra experimentar sem criar conta', itens:[
+    '🔓 Quem chega agora pode usar o app inteiro antes de criar conta — e quando criar, o que já foi anotado vai junto pra conta.',
+    '👋 Tem uma abertura nova: o app pergunta teu nome e o que te trouxe aqui, e já deixa pronto o que importa pra você (sem receita de bolo — dá pra tirar o que não faz sentido na hora).',
+    '🎯 E te empurra pra primeira vitória: marcar uma coisa só, hoje. É assim que a linha começa.'
+  ]},
   { v:40, data:'2026-08-14', titulo:'Empurrar treino, repetir ontem e meses na Grana', itens:[
     '⏭ Não deu pra treinar hoje? Agora dá pra empurrar a ficha pra amanhã — ela aparece no dia seguinte e você não perde o músculo da semana. Some sozinho depois.',
     '↩️ De manhã, se o dia for igual ao de ontem, o botão “Repetir ontem” marca os mesmos hábitos, refeições e remédios de uma vez (água, sono e humor ficam de fora — esses são de hoje).',

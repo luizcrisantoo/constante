@@ -1,6 +1,6 @@
 'use strict';
 
-const UI={ tab:'hoje', rotinaDia:new Date().getDay(), sub:null, granaMes:null };
+const UI={ tab:'hoje', rotinaDia:new Date().getDay(), sub:null, granaMes:null, granaDia:null };
 
 const TIPO_LABEL={aula:'Aula',estagio:'Estágio',treino:'Treino',refeicao:'Refeição',estudo:'Estudo',
   sites:'Sites',idioma:'Idiomas',leitura:'Leitura',sono:'Sono',livre:'Livre',pausa:'Pausa',
@@ -34,6 +34,13 @@ function render(){
     S.gamif.recordeVisto=recAtual;
     saveState({skipSync:true});
     if(recAntes>0) toast('🏆 Novo recorde pessoal: '+recAtual+' dia'+(recAtual===1?'':'s')+' de constância!');
+  }
+  const _onbR=(typeof onbEstado==='function')?onbEstado():null;
+  if(_onbR&&_onbR.vitoria==='pendente'&&(S.days[hojeISO()]&&(S.days[hojeISO()].xp||0)>0)){
+    _onbR.vitoria='feita';
+    saveState({skipSync:true});
+    toast('🎉 Primeira vitória! É assim mesmo: uma coisa por vez, todo dia.');
+    if(typeof metrica==='function') metrica('primeira-vitoria');
   }
   if(novas.length===1){
     toast('🏆 '+novas[0].icone+' '+esc(novas[0].nome));
@@ -95,6 +102,21 @@ function viewHoje(){
     html+='<section class="card" style="border-left:3px solid var(--good)"><h2>🌱 Bom te ver de novo</h2>'
       +'<p class="sec small">Ficar uns dias fora acontece — recomeçar também é constância. Começa leve: marca UMA coisa hoje (uma água já conta).</p>'
       +'<div class="acoes mt"><button class="btn mini" data-action="recomeco-ok">Bora 🌱</button></div></section>';
+  }
+
+  if(typeof ehVisitante==='function'&&ehVisitante()){
+    html+='<section class="card" style="border-left:3px solid var(--brand)"><h2>🔓 Você tá sem conta</h2>'
+      +'<p class="sec small">Pode usar tudo assim. Só que os dados ficam <b>só neste aparelho</b> — se limpar o navegador, somem. Criando conta, eles salvam na nuvem e aparecem no celular também (e o que você já anotou vai junto).</p>'
+      +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+      +'<button class="btn" data-action="visitante-criar-conta">Criar conta e salvar</button>'
+      +'<button class="btn sec-btn" data-action="visitante-ja-tenho">Já tenho conta</button>'
+      +'</div></section>';
+  }
+
+  const onbV=(typeof onbEstado==='function')?onbEstado():null;
+  if(onbV&&onbV.vitoria==='pendente'&&xpHoje===0){
+    html+='<section class="card" style="border-left:3px solid var(--good)"><h2>🎯 Tua primeira vitória</h2>'
+      +'<p class="sec small">Marca <b>uma</b> coisa que você já fez hoje — pode ser um copo de água. Não precisa ser um dia perfeito: precisa começar.</p></section>';
   }
 
   // Card de novidades: curto de propósito — no máx. 3 itens, o resto fica no histórico.

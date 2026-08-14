@@ -398,10 +398,12 @@ const ACOES={
   'zerar-confirma':()=>{ S=defaultState(); saveState({skipSync:true}); fecharModal(); render(); toast('Recomeço. Bora 🌱'); },
 
   'auth-tela':el=>{
+    if(el.dataset.t==='entrar') marcarQuerMigrar(false);
     UI.auth={tela:el.dataset.t,email:val('au-email')||(UI.auth&&UI.auth.email)||''};
     renderLogin();
   },
   'auth-entrar':async el=>{
+    marcarQuerMigrar(false);  // entrar numa conta existente nunca empurra rascunho local por cima
     const email=val('au-email');
     const senha=(document.getElementById('au-senha')||{}).value||'';
     if(!email||!senha){ UI.auth.erro='Preenche e-mail e senha.'; UI.auth.msg=''; renderLogin(); return; }
@@ -463,6 +465,7 @@ const ACOES={
     try{
       await authTrocarSenha(s1);
       _emRecuperacao=false;
+      marcarVisitante(false); marcarQuerMigrar(false);
       const u=usuarioAtual(); if(u) carregarEstadoDaConta(u);
       toast('🔒 Senha nova salva'); sairModoLogin(); renderSeguro(); sincronizarPosLogin();
     }
@@ -612,6 +615,58 @@ const ACOES={
     fecharModal(); render(); toast('Registro apagado');
   },
 
+  'onb-chip':el=>{
+    const on=el.classList.toggle('sel');
+    el.setAttribute('aria-pressed',on?'true':'false');
+    vibrar(8);
+  },
+  'onb-passo2':()=>{
+    _onb.nome=val('onb-nome');
+    _onb.intencoes=Array.prototype.map.call(document.querySelectorAll('#onb-intencoes .sel'),x=>x.dataset.i);
+    abrirModal(telaOnbPasso2());
+  },
+  'onb-voltar1':()=>abrirModal(telaOnbPasso1()),
+  'onb-concluir':()=>{
+    const habs=Array.prototype.map.call(document.querySelectorAll('#onb-habitos .sel'),
+      x=>({nome:x.dataset.n,icone:x.dataset.ic,tipo:x.dataset.tp}));
+    if(_onb.nome) S.profile.nome=_onb.nome; else S.settings.nomeAdiado=true;
+    const o=onbEstado();
+    o.intencoes=_onb.intencoes.slice(); o.feito=true;
+    // quem já marcou algo hoje não "ganha" a primeira vitória de graça
+    o.vitoria=(recalcXP(hojeISO())>0)?'feita':'pendente';
+    aplicarIntencoes(o.intencoes);
+    habs.forEach(h=>addHabitoSimples(h.nome,h.icone,h.tipo));
+    S.settings.ultimaVisita=hojeISO();
+    saveState(); fecharModal(); UI.tab='hoje'; render();
+    toast('Prontinho'+(S.profile.nome?', '+S.profile.nome:'')+'! Teu Constante já tá montado 💜');
+    if(typeof metrica==='function') metrica('onboarding-feito',{n:o.intencoes.length});
+  },
+  'onb-pular':()=>{
+    const nomeDigitado=val('onb-nome');
+    if(nomeDigitado) S.profile.nome=nomeDigitado; else S.settings.nomeAdiado=true;
+    const o=onbEstado(); o.feito=true;
+    o.vitoria=(recalcXP(hojeISO())>0)?'feita':'pendente';
+    S.settings.ultimaVisita=hojeISO();
+    saveState({skipSync:true}); fecharModal(); render();
+    if(typeof metrica==='function') metrica('onboarding-pulado');
+  },
+  'visitante-entrar':()=>{
+    marcarVisitante(true);
+    loadState();          // recarrega o que já existe na chave local (ex.: depois de um logout)
+    sairModoLogin(); renderSeguro();
+    if(typeof metrica==='function') metrica('visitante-entrou');
+    if(precisaOnboarding()) setTimeout(abrirOnboarding,350); else boasVindas();
+  },
+  'visitante-criar-conta':()=>{
+    marcarQuerMigrar(true);   // criar conta = "leva junto o que eu já anotei"
+    marcarVisitante(false);
+    UI.auth={tela:'criar',email:''}; renderLogin();
+  },
+  'visitante-ja-tenho':()=>{
+    marcarQuerMigrar(false);  // conta que já existe: não sobe o rascunho por cima dela
+    marcarVisitante(false);
+    UI.auth={tela:'entrar',email:''}; renderLogin();
+  },
   'treino-adiar':el=>{
     const t=treinoPorId(el.dataset.id); if(!t){ toast('Treino não encontrado'); return; }
     const novo=adiarTreino(el.dataset.id);
@@ -640,15 +695,23 @@ const ACOES={
     const m=el.dataset.m;
     if(!/^\d{4}-\d{2}$/.test(m)) return;
     UI.granaMes=(m===hojeISO().slice(0,7))?null:m;
+    UI.granaDia=null;
     render();
   },
-  'gasto-add':()=>{
+  'grana-dia':el=>{
+    const d=el.dataset.d;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||d>hojeISO()) return;
+    UI.granaDia=(UI.granaDia===d)?null:d;
+    vibrar(8); render();
+  },
+  'gasto-add':el=>{
+    const dPre=(el&&el.dataset&&/^\d{4}-\d{2}-\d{2}$/.test(el.dataset.d||''))?el.dataset.d:dataPadraoGasto();
     const cats=S.gastos.categorias.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.icone+' '+c.nome)+'</option>').join('');
-    abrirModal('<h3>Registrar gasto</h3>'
+    abrirModal('<h3>Registrar gasto'+(dPre!==hojeISO()?' <span class="chip">'+esc(fmtData(dPre))+'</span>':'')+'</h3>'
       +campo('ga-valor','Valor (R$)','number','')
       +'<div class="campo"><label>Categoria</label><select id="ga-cat">'+cats+'</select></div>'
       +'<div class="grid-2">'+campo('ga-desc','Descrição (ex.: uber, cantina)','text','')
-      +'<div class="campo"><label>Dia (esqueceu ontem? sem crise)</label><input type="date" id="ga-data" value="'+dataPadraoGasto()+'" max="'+hojeISO()+'"></div></div>'
+      +'<div class="campo"><label>Dia (esqueceu ontem? sem crise)</label><input type="date" id="ga-data" value="'+dPre+'" max="'+hojeISO()+'"></div></div>'
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
       +'<button class="btn" data-action="gasto-salvar">Registrar</button></div>'
       +'<p class="muted small mt"><button class="deslize-btn" data-action="gasto-nova-cat">+ Criar categoria</button></p>');
@@ -657,8 +720,15 @@ const ACOES={
     const v=Number(String(val('ga-valor')).replace(',','.'));
     if(!v||v<=0){ toast('Valor inválido'); return; }
     const dtG=val('ga-data');
-    addGasto(v,val('ga-cat'),val('ga-desc'),(/^\d{4}-\d{2}-\d{2}$/.test(dtG)&&dtG<=hojeISO())?dtG:hojeISO());
-    fecharModal(); render(); toast('Gasto registrado');
+    const dataFinal=(/^\d{4}-\d{2}-\d{2}$/.test(dtG)&&dtG<=hojeISO())?dtG:hojeISO();
+    addGasto(v,val('ga-cat'),val('ga-desc'),dataFinal);
+    // deixa o dia do lançamento aberto na tela: a pessoa vê onde caiu
+    if(UI.tab==='grana'){
+      UI.granaDia=dataFinal;
+      UI.granaMes=(dataFinal.slice(0,7)===hojeISO().slice(0,7))?null:dataFinal.slice(0,7);
+    }
+    fecharModal(); render();
+    toast('Gasto registrado'+(dataFinal===hojeISO()?'':' em '+fmtData(dataFinal)));
   },
   'gasto-nova-cat':()=>{
     abrirModal('<h3>Nova categoria</h3>'
@@ -727,6 +797,61 @@ const ACOES={
   }
 };
 
+// ---- Modo visitante: usar o app antes de criar conta ----
+const VISITANTE_FLAG='constante_visitante';
+const MIGRAR_FLAG='constante_migrar_visitante';
+let _visitante=false;
+// "leva o que anotei pra conta nova" precisa sobreviver ao reload do link de confirmação
+function querMigrar(){ try{ return localStorage.getItem(MIGRAR_FLAG)==='1'; }catch(e){ return false; } }
+function marcarQuerMigrar(v){ try{ v?localStorage.setItem(MIGRAR_FLAG,'1'):localStorage.removeItem(MIGRAR_FLAG); }catch(e){} }
+function ehVisitante(){ return _visitante; }
+function marcarVisitante(v){
+  _visitante=!!v;
+  try{ v?localStorage.setItem(VISITANTE_FLAG,'1'):localStorage.removeItem(VISITANTE_FLAG); }catch(e){}
+  // Trava a migração automática: dado de visitante só entra numa conta quando a pessoa
+  // pede ("criar conta e salvar"). Entrando numa conta que já existe, ele NÃO sobe —
+  // senão um teste de 5 minutos sobrescreveria os hábitos/rotina de quem já usa.
+  if(v&&typeof marcarMigrado==='function') marcarMigrado();
+}
+function visitanteSalvo(){ try{ return localStorage.getItem(VISITANTE_FLAG)==='1'; }catch(e){ return false; } }
+
+// ---- Onboarding por intenção ----
+let _onb={nome:'',intencoes:[]};
+function abrirOnboarding(){
+  _onb={nome:(S.profile.nome||''),intencoes:onbEstado().intencoes.slice()};
+  abrirModal(telaOnbPasso1());
+}
+function telaOnbPasso1(){
+  const chips=INTENCOES.map(i=>{
+    const sel=_onb.intencoes.indexOf(i.id)>=0;
+    return '<button type="button" class="chip-onb'+(sel?' sel':'')+'" data-action="onb-chip" data-i="'+esc(i.id)+'" aria-pressed="'+(sel?'true':'false')+'">'+i.icone+' '+esc(i.nome)+'</button>';
+  }).join('');
+  return '<h3>👋 Bem-vindo ao Constante</h3>'
+    +'<p class="sec small">Duas perguntas rápidas e o app já começa do teu jeito. Dá pra mudar tudo depois.</p>'
+    +campo('onb-nome','Como te chamo?',"text",_onb.nome||'')
+    +'<p class="sec small mt"><b>O que te trouxe aqui?</b> <span class="muted">(pode marcar quantos quiser)</span></p>'
+    +'<div id="onb-intencoes" class="chips-onb">'+chips+'</div>'
+    +'<div class="acoes"><button class="btn sec-btn" data-action="onb-pular">Pular</button>'
+    +'<button class="btn" data-action="onb-passo2">Continuar</button></div>';
+}
+function telaOnbPasso2(){
+  const sug=[];
+  _onb.intencoes.forEach(id=>(SUGESTOES_HABITO[id]||[]).forEach(h=>{
+    if(!sug.some(x=>x.nome===h.nome)) sug.push(h);
+  }));
+  let html='<h3>Quer começar com alguns hábitos?</h3>';
+  if(sug.length){
+    html+='<p class="sec small">Já deixei marcados os que combinam com o que você escolheu. Toca pra tirar o que não faz sentido — nada aqui é obrigatório.</p>'
+      +'<div id="onb-habitos" class="chips-onb">'
+      +sug.map(h=>'<button type="button" class="chip-onb sel" data-action="onb-chip" data-n="'+esc(h.nome)+'" data-ic="'+esc(h.icone)+'" data-tp="'+esc(h.tipo)+'" aria-pressed="true">'+h.icone+' '+esc(h.nome)+(h.tipo==='evitar'?' <span class="muted">· evitar</span>':'')+'</button>').join('')
+      +'</div>';
+  } else {
+    html+='<p class="sec small">Sem problema — você cria os teus hábitos quando quiser, direto na aba Hoje.</p><div id="onb-habitos"></div>';
+  }
+  html+='<div class="acoes"><button class="btn sec-btn" data-action="onb-voltar1">← Voltar</button>'
+    +'<button class="btn" data-action="onb-concluir">Começar</button></div>';
+  return html;
+}
 function pedirNome(){
   abrirModal('<h3>👋 Como você quer ser chamado(a)?</h3>'
     +'<p class="sec small">É assim que o Constante vai te cumprimentar todo dia.</p>'
@@ -735,6 +860,8 @@ function pedirNome(){
     +'<button class="btn" data-action="nome-salvar">Pronto</button></div>');
 }
 function boasVindas(){
+  // Quem chega em branco vê a abertura por intenção — não o modal seco de nome.
+  if(typeof precisaOnboarding==='function'&&precisaOnboarding()){ setTimeout(abrirOnboarding,400); return; }
   const nome=(S.profile.nome||'').trim();
   if(!nome){ if(!S.settings.nomeAdiado) setTimeout(pedirNome,500); return; }
   const ult=S.settings.ultimaVisita;
@@ -822,6 +949,7 @@ function animaCheck(seletor){
 
 // No mês atual sugere hoje; navegando um mês passado, sugere o último dia daquele mês.
 function dataPadraoGasto(){
+  if(typeof UI==='object'&&UI.granaDia&&/^\d{4}-\d{2}-\d{2}$/.test(UI.granaDia)&&UI.granaDia<=hojeISO()) return UI.granaDia;
   const m=(typeof UI==='object'&&UI.granaMes&&/^\d{4}-\d{2}$/.test(UI.granaMes))?UI.granaMes:null;
   if(!m||m>=hojeISO().slice(0,7)) return hojeISO();
   return addDias(mesDeslocado(m,1)+'-01',-1);
@@ -933,10 +1061,16 @@ let _emRecuperacao=false;
 let _usuarioLogado=null;
 
 function sincronizarPosLogin(){
+  let deuCerto=false;
   return syncAgora()
-    .then(()=>{ if(!document.body.classList.contains('modo-login')) render(); })
+    .then(()=>{ deuCerto=true; if(!document.body.classList.contains('modo-login')) render(); })
     .catch(e=>toast('⚠️ '+e.message))
-    .then(()=>{ if(typeof boasVindas==='function' && !document.body.classList.contains('modo-login')) boasVindas(); });
+    .then(()=>{
+      // Se a nuvem não respondeu, NÃO abre a abertura/boas-vindas: o aparelho ainda não
+      // sabe se essa conta já tem dados, e escrever aqui venceria a mesclagem depois.
+      if(!deuCerto) return;
+      if(typeof boasVindas==='function' && !document.body.classList.contains('modo-login')) boasVindas();
+    });
 }
 
 function carregarEstadoDaConta(u){
@@ -945,18 +1079,27 @@ function carregarEstadoDaConta(u){
   if(typeof metricaIdentificar==='function') metricaIdentificar(u.id);
   setSyncEstado(navigator.onLine===false?'offline':'pendente');
   let raw=lsGet();
-  if(!raw) raw=migrarLocalUmaVez();
+  // quem usou como visitante leva o que anotou pra dentro da conta nova
+  const pediuMigrar=querMigrar();
+  let veioDeVisitante=false;
+  if(!raw){ raw=migrarLocalUmaVez(pediuMigrar); veioDeVisitante=pediuMigrar&&!!raw; }
+  marcarQuerMigrar(false);
   if(raw){ try{ S=deepFill(JSON.parse(raw),defaultState()); }catch(e){ S=defaultState(); } }
   else S=defaultState();
   sanearEstado();
   // (ver core.js) não carimba estado recém-carregado sem dados com a hora atual —
   // deixa a nuvem vencer a 1ª mesclagem em vez de sobrescrevê-la com o vazio.
+  // rascunho de visitante entra SEM carimbo de hora: numa conta que já tem dados,
+  // a nuvem continua sendo a base da mesclagem e nada é sobrescrito.
+  if(veioDeVisitante) delete S._ts;
   lsSet(JSON.stringify(S));
+  if(veioDeVisitante) setTimeout(()=>toast('✅ O que você já tinha anotado veio junto pra tua conta'),900);
 }
 function aoMudarAuth(evento,sessao,antes){
-  if(evento==='PASSWORD_RECOVERY'){ _emRecuperacao=true; UI.auth={tela:'nova-senha'}; renderLogin(); return; }
+  if(evento==='PASSWORD_RECOVERY'){ _emRecuperacao=true; marcarVisitante(false); UI.auth={tela:'nova-senha'}; renderLogin(); return; }
   if(evento==='SIGNED_IN'&&!antes){
     if(_emRecuperacao) return;
+    marcarVisitante(false);
     carregarEstadoDaConta(sessao.user);
     sairModoLogin(); renderSeguro();
     sincronizarPosLogin();
@@ -964,6 +1107,7 @@ function aoMudarAuth(evento,sessao,antes){
     return;
   }
   if(evento==='SIGNED_OUT'){
+    marcarVisitante(false);
     lsLimparConta();
     setUserKey(null);
     setSyncEstado('local');
@@ -978,11 +1122,25 @@ function boot(){
   if(typeof modoProduto==='function'&&modoProduto()){
 
     if(/type=recovery/.test(location.hash)||/type=recovery/.test(location.search)) _emRecuperacao=true;
-    initAuth(aoMudarAuth).then(sessao=>{
-      if(_emRecuperacao){ if(!UI.auth) UI.auth={tela:'nova-senha'}; renderLogin(); return; }
-      if(sessao){ carregarEstadoDaConta(sessao.user); renderSeguro(); sincronizarPosLogin(); }
+    let _telaInicial=false;
+    const semSessao=()=>{
+      if(_telaInicial) return; _telaInicial=true;
+      if(visitanteSalvo()){ _visitante=true; setSyncEstado('local'); renderSeguro(); boasVindas(); }
       else renderLogin();
-    });
+    };
+    // Se a autenticação demorar demais (rede pendurada, portal de wi-fi), mostra algo:
+    // ficar em tela branca é o pior desfecho possível num app que funciona offline.
+    const socorro=setTimeout(semSessao,6000);
+    initAuth(aoMudarAuth).then(sessao=>{
+      clearTimeout(socorro);
+      if(_emRecuperacao){ if(!UI.auth) UI.auth={tela:'nova-senha'}; _telaInicial=true; renderLogin(); return; }
+      if(sessao){
+        if(_telaInicial&&_usuarioLogado===sessao.user.id) return;   // já entrou por SIGNED_IN
+        _telaInicial=true;
+        marcarVisitante(false); carregarEstadoDaConta(sessao.user); renderSeguro(); sincronizarPosLogin();
+      }
+      else semSessao();
+    }).catch(()=>{ clearTimeout(socorro); semSessao(); });
   } else {
     renderSeguro();
     boasVindas();
@@ -1002,6 +1160,7 @@ function boot(){
   };
   const pullAoVoltar=()=>{
     if(document.visibilityState!=='visible') return;
+    if(produtoAtivo()&&!_usuarioLogado) return;   // visitante e tela de senha nova não sincronizam
     if(!(S.settings.syncAuto&&syncConfigurado()&&S.settings.ultimaSync)) return;
     const agora=Date.now();
     if(agora-ultimoPullFoco<20000) return;
@@ -1012,6 +1171,7 @@ function boot(){
   window.addEventListener('focus',pullAoVoltar);
 
   document.addEventListener('visibilitychange',()=>{
+    if(produtoAtivo()&&!_usuarioLogado) return;
     if(document.visibilityState==='hidden'&&S.settings.syncAuto&&syncConfigurado()&&S.settings.ultimaSync){
       clearTimeout(_saveTimer);
       syncPush({flush:true}).catch(falhaSync);

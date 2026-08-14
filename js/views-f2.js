@@ -57,11 +57,36 @@ function graficoEvolucao(ex){
   return svg;
 }
 
+// Calendário do mês: cada dia mostra quanto saiu, e tocar num dia abre o dia.
+function calendarioGastos(mesSel,hoje){
+  const dowIni=isoToDate(mesSel+'-01').getDay();
+  const ultimo=Number(addDias(mesDeslocado(mesSel,1)+'-01',-1).slice(8,10));
+  const porDia={};
+  gastosDoMes(mesSel).forEach(g=>{ porDia[g.data]=(porDia[g.data]||0)+(g.valor||0); });
+  let html='<div class="cal-grana mt">';
+  DIAS_ABREV.forEach(d=>{ html+='<div class="cal-cab">'+esc(d.charAt(0))+'</div>'; });
+  for(let i=0;i<dowIni;i++) html+='<div></div>';
+  for(let dia=1;dia<=ultimo;dia++){
+    const iso=mesSel+'-'+pad2(dia);
+    const tot=porDia[iso]||0;
+    const cls='cal-dia'+(iso===hoje?' hoje':'')+(iso===UI.granaDia?' sel':'')+(tot>0?' tem':'');
+    if(iso>hoje){
+      html+='<div class="cal-dia futuro"><span class="cal-n num">'+dia+'</span></div>';
+    } else {
+      html+='<button type="button" class="'+cls+'" data-action="grana-dia" data-d="'+iso+'"'
+        +' aria-label="Dia '+dia+' — '+(tot>0?fmtBRL(tot):'sem gasto')+'">'
+        +'<span class="cal-n num">'+dia+'</span>'
+        +'<span class="cal-tot num">'+(tot>0?fmtBRLCurto(tot):'')+'</span></button>';
+    }
+  }
+  return html+'</div>';
+}
 function secaoGastos(){
   const hoje=hojeISO();
   const mesAtual=hoje.slice(0,7);
   const mesSel=(UI.granaMes&&/^\d{4}-\d{2}$/.test(UI.granaMes))?UI.granaMes:mesAtual;
   const ehMesAtual=(mesSel===mesAtual);
+  const diaAberto=!!(UI.granaDia&&UI.granaDia.slice(0,7)===mesSel);
   const doDia=gastosDoDia(hoje);
   const doMes=gastosDoMes(mesSel);
   const totDia=totalLista(doDia), totMes=totalLista(doMes);
@@ -82,8 +107,24 @@ function secaoGastos(){
       ? '<button class="btn mini sec-btn" disabled style="opacity:0.35" aria-label="Mês seguinte">›</button>'
       : '<button class="btn mini sec-btn" data-action="grana-mes" data-m="'+mesDeslocado(mesSel,1)+'" aria-label="Mês seguinte">›</button>')
     +'</div>'
-    +(ehMesAtual?'':'<p class="muted small mt">Vendo um mês passado — o registro entra no dia que você escolher.</p>')
-    +'<button class="btn bloco mt" data-action="gasto-add">+ Registrar gasto</button>';
+    +calendarioGastos(mesSel,hoje)
+    +'<p class="muted small">Toca num dia pra ver e lançar o gasto <b>daquele dia</b> — dá pra fechar a semana toda de uma vez.</p>'
+    +(diaAberto?'':'<button class="btn bloco mt" data-action="gasto-add">+ Registrar gasto</button>');
+
+  if(diaAberto){
+    const doSel=gastosDoDia(UI.granaDia).slice().sort((a,b)=>a.id<b.id?1:-1);
+    html+='<div class="grupo-titulo">'+(UI.granaDia===hoje?'Hoje':esc(fmtDataLonga(UI.granaDia)))+' · '+fmtBRL(totalLista(doSel))+'</div>';
+    if(!doSel.length) html+='<p class="muted small">Nada lançado nesse dia ainda.</p>';
+    doSel.forEach(g=>{
+      const c=catGasto(g.cat);
+      html+='<div class="linha" style="padding:0.35rem 0;border-bottom:1px solid var(--grid)">'
+        +'<span style="width:1.4rem;text-align:center">'+esc(c.icone)+'</span>'
+        +'<span class="esq small">'+esc(g.desc||c.nome)+'</span>'
+        +'<span class="num small">'+fmtBRL(g.valor)+'</span>'
+        +'<button class="edit" data-action="gasto-remover" data-id="'+esc(g.id)+'" aria-label="Remover">✕</button></div>';
+    });
+    html+='<button class="btn bloco mt" data-action="gasto-add" data-d="'+esc(UI.granaDia)+'">+ Registrar gasto em '+esc(fmtData(UI.granaDia))+'</button>';
+  }
 
   if(porCat.length){
     const max=porCat[0].total;
@@ -99,19 +140,6 @@ function secaoGastos(){
     html+='</div>';
   }
 
-  const recentes=!ehMesAtual?[]:S.gastos.lancamentos.filter(g=>g.data && g.data>=addDias(hoje,-6) && g.data<=hoje)
-    .sort((a,b)=>a.data<b.data?1:(a.data>b.data?-1:(a.id<b.id?1:-1))).slice(0,30);
-  if(recentes.length){
-    html+='<div class="grupo-titulo">Últimos 7 dias</div>';
-    recentes.forEach(g=>{
-      const c=catGasto(g.cat);
-      html+='<div class="linha" style="padding:0.35rem 0;border-bottom:1px solid var(--grid)">'
-        +'<span style="width:1.4rem;text-align:center">'+esc(c.icone)+'</span>'
-        +'<span class="esq small">'+esc(g.desc||c.nome)+' <span class="muted num">· '+(g.data===hoje?'hoje':fmtData(g.data))+'</span></span>'
-        +'<span class="num small">'+fmtBRL(g.valor)+'</span>'
-        +'<button class="edit" data-action="gasto-remover" data-id="'+esc(g.id)+'" aria-label="Remover">✕</button></div>';
-    });
-  }
   const doMesLista=doMes.slice().sort((a,b)=>a.data<b.data?1:(a.data>b.data?-1:(a.id<b.id?1:-1)));
   if(doMesLista.length){
     html+='<details class="mt"'+(ehMesAtual?'':' open')+'><summary class="muted small">📅 Extrato de '+esc(fmtMes(mesSel))+' ('+doMesLista.length+(doMesLista.length===1?' lançamento':' lançamentos')+')</summary>';

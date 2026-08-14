@@ -311,3 +311,42 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
 @media (prefers-reduced-motion: reduce){
   .avatar-anel, #view.anim, .modal, .toast, .pop{ animation:none !important; }
 }
+
+/* ---- v41: abertura por intenção (chips do onboarding) ---- */
+.chips-onb{ display:flex; flex-wrap:wrap; gap:0.4rem; margin:0.4rem 0 0.2rem; }
+.chip-onb{
+  border:1px solid var(--border); border-radius:999px;
+  padding:0.4rem 0.7rem; font-size:0.82rem; line-height:1.15;
+  background:var(--surface-2); color:var(--ink-2); text-align:left;
+  opacity:0.62; transition:opacity 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.chip-onb.sel{
+  opacity:1; border-color:var(--brand); background:var(--surface-3); color:var(--ink);
+  font-weight:700;
+}
+.chip-onb.sel::after{ content:' ✓'; color:var(--brand-strong); }
+
+/* ---- v42: calendário de gastos na Grana ---- */
+.cal-grana{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.cal-grana .cal-cab{
+  text-align:center; font-size:0.62rem; font-weight:700; letter-spacing:0.04em;
+  color:var(--ink-mute); padding-bottom:2px;
+}
+.cal-dia{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+  min-height:2.5rem; padding:0.15rem 0; border-radius:var(--radius-sm);
+  background:var(--surface-2); border:1px solid transparent; color:var(--ink-2);
+}
+.cal-dia .cal-n{ font-size:0.78rem; font-weight:700; line-height:1; }
+.cal-dia .cal-tot{ font-size:0.6rem; color:var(--ink-mute); line-height:1; min-height:0.6rem; }
+.cal-dia.tem{ background:var(--surface-3); }
+.cal-dia.tem .cal-tot{ color:var(--ink-2); }
+.cal-dia.hoje{ border-color:var(--border); }
+.cal-dia.hoje .cal-n{ color:var(--brand-strong); }
+.cal-dia.sel{ border-color:var(--brand); background:var(--surface-3); }
+.cal-dia.sel .cal-n{ color:var(--ink); }
+.cal-dia.futuro{ opacity:0.28; background:transparent; }
+@media (max-width:359px){
+  .cal-dia{ min-height:2.2rem; }
+  .cal-dia .cal-n{ font-size:0.72rem; }
+}

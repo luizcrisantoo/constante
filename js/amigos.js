@@ -234,8 +234,15 @@ function grupos(){
   if(!Array.isArray(s.grupos)) s.grupos=[];
   return s.grupos;
 }
+function ativos(g){ return (g.membros||[]).filter(m=>(m.status||'ativo')==='ativo'); }
+function convidados(g){ return (g.membros||[]).filter(m=>m.status==='convidado'); }
+function souConvidado(g){
+  const eu=(usuarioAtual()||{}).id;
+  const m=(g.membros||[]).find(x=>x.user_id===eu);
+  return !!(m&&m.status==='convidado');
+}
 function metaGrupo(g){
-  const n=(g.membros||[]).length||1;
+  const n=ativos(g).length||1;
   const m=Number(g.meta);
   return (m&&m>0)?Math.min(m,n):n;   // sem meta definida = todo mundo
 }
@@ -256,7 +263,7 @@ function streakGrupo(g){
 function grupoHoje(g){
   const hoje=hojeISO();
   const quem=new Set((g.dias||[]).filter(x=>x.data===hoje).map(x=>x.user_id));
-  return (g.membros||[]).map(m=>({...m, ok:quem.has(m.user_id)}));
+  return ativos(g).map(m=>({...m, ok:quem.has(m.user_id)}));
 }
 function meuHabitoNoGrupo(g){
   const eu=(usuarioAtual()||{}).id;
@@ -264,7 +271,7 @@ function meuHabitoNoGrupo(g){
   return m?m.habito:'';
 }
 function gruposDoHabito(idHabito){
-  return grupos().filter(g=>meuHabitoNoGrupo(g)===idHabito);
+  return grupos().filter(g=>!souConvidado(g)&&meuHabitoNoGrupo(g)===idHabito);
 }
 function codigoNovo(){
   const abc='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -276,7 +283,7 @@ function meuPrimeiroNome(){ return String(S.profile.nome||'').trim().split(/\s+/
 async function carregarGrupos(){
   if(!socialDisponivel()) return grupos();
   try{
-    const rm=await fetch(_syncBase()+'/rest/v1/constante_grupo_membros?select=grupo_id,user_id,habito,nome',{headers:_syncHeaders()});
+    const rm=await fetch(_syncBase()+'/rest/v1/constante_grupo_membros?select=grupo_id,user_id,habito,nome,status,convidou',{headers:_syncHeaders()});
     if(!rm.ok) throw new Error('falha');
     const membros=await rm.json();
     const ids=[...new Set(membros.map(m=>m.grupo_id))];
@@ -298,7 +305,7 @@ async function carregarGrupos(){
   }catch(e){ return grupos(); }
 }
 
-async function criarGrupo(nome, meuHabito){
+async function criarGrupo(nome, meuHabito, convidar){
   if(!socialDisponivel()) throw new Error('Entra na tua conta primeiro');
   const eu=usuarioAtual().id, codigo=codigoNovo();
   const rg=await fetch(_syncBase()+'/rest/v1/constante_grupos',{
@@ -312,10 +319,37 @@ async function criarGrupo(nome, meuHabito){
     body:JSON.stringify([{grupo_id:g.id,user_id:eu,habito:meuHabito,nome:meuPrimeiroNome()}])
   });
   if(!rm.ok) throw new Error('Grupo criado, mas não consegui te colocar dentro');
+  if(convidar&&convidar.length) await convidarParaGrupo(g.id,convidar.slice(0,7));
   await carregarGrupos();
   await sincronizarGrupos();
   return g;
 }
+
+// Convida amigos (eles só entram de fato quando aceitarem e escolherem o hábito)
+async function convidarParaGrupo(idGrupo, idsAmigos){
+  if(!socialDisponivel()||!idsAmigos||!idsAmigos.length) return 0;
+  const eu=usuarioAtual().id;
+  const linhas=idsAmigos.map(id=>({grupo_id:idGrupo,user_id:id,habito:'',nome:'',status:'convidado',convidou:eu}));
+  try{
+    const r=await fetch(_syncBase()+'/rest/v1/constante_grupo_membros',{
+      method:'POST', headers:{..._syncHeaders(),'Prefer':'resolution=ignore-duplicates'},
+      body:JSON.stringify(linhas)
+    });
+    return r.ok?linhas.length:0;
+  }catch(e){ return 0; }
+}
+
+async function aceitarGrupo(idGrupo, meuHabito){
+  if(!socialDisponivel()) throw new Error('Entra na tua conta primeiro');
+  const eu=usuarioAtual().id;
+  const r=await fetch(_syncBase()+'/rest/v1/constante_grupo_membros?grupo_id=eq.'+encodeURIComponent(idGrupo)+'&user_id=eq.'+encodeURIComponent(eu),
+    {method:'PATCH',headers:_syncHeaders(),body:JSON.stringify({status:'ativo',habito:meuHabito,nome:meuPrimeiroNome()})});
+  if(!r.ok) throw new Error('Não consegui aceitar agora ('+r.status+')');
+  await carregarGrupos();
+  await sincronizarGrupos();
+  return true;
+}
+async function recusarGrupo(idGrupo){ return sairDoGrupo(idGrupo); }
 
 async function entrarNoGrupo(codigo, meuHabito){
   if(!socialDisponivel()) throw new Error('Entra na tua conta primeiro');
@@ -331,6 +365,24 @@ async function entrarNoGrupo(codigo, meuHabito){
   await carregarGrupos();
   await sincronizarGrupos();
   return res.nome||'';
+}
+
+// Nota de privacidade: o que viaja é o ID do hábito, nunca o nome. Os outros veem
+// só o teu primeiro nome e se você bateu — por isso aqui não há filtro de "evitar".
+// Se um dia alguém for mostrar o nome do hábito pro grupo, precisa filtrar antes.
+async function trocarHabitoNoGrupo(id, habito){
+  if(!socialDisponivel()) return false;
+  try{
+    const eu=usuarioAtual().id;
+    const r=await fetch(_syncBase()+'/rest/v1/constante_grupo_membros?grupo_id=eq.'+encodeURIComponent(id)+'&user_id=eq.'+encodeURIComponent(eu),
+      {method:'PATCH',headers:_syncHeaders(),body:JSON.stringify({habito:habito,nome:meuPrimeiroNome()})});
+    if(!r.ok) return false;
+    const g=grupos().find(x=>x.id===id);
+    if(g){ const m=(g.membros||[]).find(x=>x.user_id===eu); if(m) m.habito=habito; }
+    saveState({skipSync:true});
+    await sincronizarGrupos();
+    return true;
+  }catch(e){ return false; }
 }
 
 async function sairDoGrupo(id){
@@ -363,6 +415,7 @@ async function sincronizarGrupos(){
   if(!socialDisponivel()) return;
   const eu=usuarioAtual().id, hoje=hojeISO(), d=S.days[hoje]||{};
   for(const g of grupos()){
+    if(souConvidado(g)) continue;      // convite pendente não conta dia
     const meu=meuHabitoNoGrupo(g);
     if(!meu) continue;
     const feito=!!(d.habitos&&d.habitos[meu]===true);
@@ -387,16 +440,37 @@ async function sincronizarGrupos(){
 
 function secaoGrupos(){
   if(!socialDisponivel()) return '';
-  const lista=grupos();
-  let html='<section class="card"><h2>Juntos'
+  const todos=grupos();
+  const convites=todos.filter(souConvidado);
+  const lista=todos.filter(g=>!souConvidado(g));
+
+  let cvt='';
+  if(convites.length){
+    cvt='<section class="card" style="border-left:3px solid var(--brand)"><h2>Te chamaram</h2>';
+    convites.forEach(g=>{
+      const quem=(g.membros||[]).find(m=>m.user_id===(g.membros.find(x=>x.user_id===(usuarioAtual()||{}).id)||{}).convidou);
+      cvt+='<div class="linha mt" style="gap:0.6rem"><span style="font-size:1.4rem;flex:none">🔥</span>'
+        +'<span class="esq"><b>'+esc(g.nome||'Grupo')+'</b>'
+        +'<div class="muted small">'+(quem&&quem.nome?esc(quem.nome)+' te chamou':'você foi chamado')
+        +' · '+ativos(g).length+' pessoa'+(ativos(g).length===1?'':'s')+' dentro</div></span></span>'
+        +'</div>'
+        +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+        +'<button class="btn" data-action="grupo-aceitar" data-id="'+esc(g.id)+'" data-n="'+esc(g.nome||'Grupo')+'">Entrar</button>'
+        +'<button class="btn sec-btn" data-action="grupo-recusar" data-id="'+esc(g.id)+'">Agora não</button>'
+        +'</div>';
+    });
+    cvt+='</section>';
+  }
+  let html=cvt+'<section class="card"><h2>Juntos'
     +'<button class="btn mini sec-btn dir" data-action="grupo-add">+ Grupo</button></h2>';
   if(!lista.length){
-    html+='<p class="sec small">Um grupo de 2 a 8 pessoas com um hábito em comum: o contador só anda no dia em que o grupo bate a meta. Se um dia passar sem bater, ele recomeça — e a constância de cada um segue intacta.</p>';
+    html+='<p class="sec small">Um grupo de 2 a 8 pessoas puxando junto. <b>Cada um escolhe o próprio hábito</b> — pode ser "Academia" pra você e "Correr" pra outra pessoa. O contador só anda no dia em que o grupo bate a meta; se um dia passar sem bater, ele recomeça. A constância de cada um segue intacta.</p>'
+      +'<button class="btn bloco mt" data-action="grupo-add">+ Criar ou entrar num grupo</button>';
     return html+'</section>';
   }
-  html+='<p class="muted small">O contador anda no dia em que a meta do grupo é batida. A constância de cada um continua sendo dela.</p>';
+  html+='<p class="muted small">Cada pessoa escolhe o <b>próprio</b> hábito — não precisa ser o mesmo nem ter o mesmo nome. O contador anda no dia em que a meta do grupo é batida; a constância de cada um continua sendo dela.</p>';
   lista.forEach(g=>{
-    const n=streakGrupo(g), hoje=grupoHoje(g), meta=metaGrupo(g), qtd=(g.membros||[]).length;
+    const n=streakGrupo(g), hoje=grupoHoje(g), meta=metaGrupo(g), qtd=ativos(g).length;
     const bateramHoje=hoje.filter(m=>m.ok).length;
     html+='<div class="mt" style="padding-bottom:0.6rem;border-bottom:1px solid var(--grid)">'
       +'<div class="linha" style="gap:0.6rem">'
@@ -409,8 +483,15 @@ function secaoGrupos(){
       +hoje.map(m=>'<span class="chip"'+(m.ok?' style="border-color:var(--good)"':'')+'>'+(m.ok?'✅ ':'⬜ ')+esc(m.nome||'alguém')+'</span>').join('')
       +'</div>'
       +'<div class="muted small mt">'+bateramHoje+' de '+qtd+' bateram hoje'+(bateramHoje>=meta?' — o dia contou ✓':'')+'</div>'
+      +(convidados(g).length?'<div class="muted small mt">⏳ '+convidados(g).length+' convite'+(convidados(g).length>1?'s':'')+' esperando resposta</div>':'')
+      +(function(){
+        const meu=S.habits.find(h=>h.id===meuHabitoNoGrupo(g));
+        return '<div class="muted small mt">Teu hábito aqui: <b>'+(meu?esc((meu.icone||'⭐')+' '+meu.nome):'—')+'</b> <span class="muted">(só você vê esse nome)</span></div>';
+      })()
       +'<div class="acoes mt" style="display:flex;gap:0.4rem;flex-wrap:wrap">'
-      +'<button class="btn mini sec-btn" data-action="grupo-convidar" data-c="'+esc(g.codigo)+'" data-n="'+esc(g.nome||'Grupo')+'">Convidar</button>'
+      +'<button class="btn mini sec-btn" data-action="grupo-chamar" data-id="'+esc(g.id)+'">+ Chamar amigo</button>'
+      +'<button class="btn mini sec-btn" data-action="grupo-convidar" data-c="'+esc(g.codigo)+'" data-n="'+esc(g.nome||'Grupo')+'">Mandar código</button>'
+      +'<button class="btn mini sec-btn" data-action="grupo-habito" data-id="'+esc(g.id)+'">Trocar meu hábito</button>'
       +'<button class="btn mini sec-btn" data-action="grupo-meta" data-id="'+esc(g.id)+'">Mudar a meta</button>'
       +'</div></div>';
   });

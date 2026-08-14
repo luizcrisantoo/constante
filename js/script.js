@@ -901,28 +901,85 @@ const ACOES={
   'grupo-add':()=>{
     if(!S.habits.length){ toast('Cria um hábito teu primeiro — é ele que conta no grupo'); return; }
     const opc=S.habits.map(h=>'<option value="'+esc(h.id)+'">'+esc((h.icone||'⭐')+' '+h.nome)+'</option>').join('');
-    abrirModal('<h3>🔥 Juntos</h3>'
-      +'<p class="sec small">Um grupo de até 8 pessoas com um hábito em comum. O contador só anda no dia em que o grupo bate a meta — no começo, a meta é <b>todo mundo</b>, e vocês podem afrouxar depois.</p>'
-      +'<div class="grupo-titulo">Criar um grupo</div>'
-      +campo('gr-nome','Nome (ex.: Academia da firma)','text','')
+    const amigos=(social().amigos||[]);
+    const boxes=amigos.length
+      ? '<div id="gr-amigos" class="chips-onb">'
+        +amigos.map(a=>'<button type="button" class="chip-onb" data-action="onb-chip" data-i="'+esc(a.id)+'" aria-pressed="false">'
+          +esc((a.nome||'?').charAt(0).toUpperCase()+(a.nome||'').slice(1))+'</button>').join('')
+        +'</div>'
+        +'<p class="muted small">Eles recebem um convite e escolhem o próprio hábito ao aceitar. Ninguém entra sem querer.</p>'
+      : '<p class="muted small">Você ainda não adicionou ninguém — cria o grupo e manda o código, ou adiciona as pessoas primeiro ali em cima.</p><div id="gr-amigos"></div>';
+    abrirModal('<h3>🔥 Criar um grupo</h3>'
+      +'<p class="sec small">Até 8 pessoas puxando junto. Cada uma escolhe o próprio hábito — o contador anda no dia em que o grupo bate a meta.</p>'
+      +campo('gr-nome','Nome do grupo (ex.: Academia da firma)','text','')
       +'<div class="campo"><label>Meu hábito nesse grupo</label><select id="gr-hab">'+opc+'</select></div>'
-      +'<button class="btn bloco" data-action="grupo-criar">Criar e pegar o código</button>'
-      +'<div class="grupo-titulo mt">Ou entrar num grupo</div>'
+      +'<div class="grupo-titulo">Chamar quem você já adicionou</div>'
+      +boxes
+      +'<button class="btn bloco mt" data-action="grupo-criar">Criar grupo</button>'
+      +'<div class="grupo-titulo mt">Ou entrar num grupo pelo código</div>'
       +campo('gr-cod','Código que te mandaram','text','')
       +'<div class="campo"><label>Meu hábito nesse grupo</label><select id="gr-hab2">'+opc+'</select></div>'
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Fechar</button>'
-      +'<button class="btn" data-action="grupo-entrar">Entrar</button></div>');
+      +'<button class="btn" data-action="grupo-entrar">Entrar pelo código</button></div>');
   },
   'grupo-criar':async()=>{
     const nome=val('gr-nome')||'Juntos', hab=val('gr-hab');
     if(!hab){ toast('Escolhe um hábito teu'); return; }
+    const chamados=Array.prototype.map.call(document.querySelectorAll('#gr-amigos .sel'),x=>x.dataset.i);
     toast('Criando…');
     try{
-      const g=await criarGrupo(nome,hab);
+      const g=await criarGrupo(nome,hab,chamados);
       fecharModal(); render();
-      toast('🔥 Grupo criado — manda o código '+(g&&g.codigo?g.codigo:'')+' pra galera');
-      if(typeof metrica==='function') metrica('grupo-criado');
+      toast(chamados.length
+        ? '🔥 Grupo criado — '+chamados.length+' convite'+(chamados.length>1?'s':'')+' enviado'+(chamados.length>1?'s':'')
+        : '🔥 Grupo criado — manda o código '+(g&&g.codigo?g.codigo:'')+' pra galera');
+      if(typeof metrica==='function') metrica('grupo-criado',{convidados:chamados.length});
     }catch(e){ toast('❌ '+e.message); }
+  },
+  'grupo-chamar':el=>{
+    const g=grupos().find(x=>x.id===el.dataset.id); if(!g) return;
+    const dentro=new Set((g.membros||[]).map(m=>m.user_id));
+    const livres=(social().amigos||[]).filter(a=>!dentro.has(a.id));
+    if(!livres.length){ toast('Todo mundo que você adicionou já está aqui — usa o código pros outros'); return; }
+    abrirModal('<h3>Chamar pro "'+esc(g.nome||'grupo')+'"</h3>'
+      +'<p class="sec small">Eles recebem um convite e escolhem o próprio hábito ao aceitar.</p>'
+      +'<div id="gr-chamar" class="chips-onb">'
+      +livres.map(a=>'<button type="button" class="chip-onb" data-action="onb-chip" data-i="'+esc(a.id)+'" aria-pressed="false">'+esc(a.nome||'?')+'</button>').join('')
+      +'</div>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn" data-action="grupo-chamar-ok" data-id="'+esc(g.id)+'">Convidar</button></div>');
+  },
+  'grupo-chamar-ok':async el=>{
+    const ids=Array.prototype.map.call(document.querySelectorAll('#gr-chamar .sel'),x=>x.dataset.i);
+    if(!ids.length){ toast('Escolhe pelo menos uma pessoa'); return; }
+    const n=await convidarParaGrupo(el.dataset.id,ids);
+    await carregarGrupos();
+    fecharModal(); render();
+    toast(n?('📨 '+n+' convite'+(n>1?'s':'')+' enviado'+(n>1?'s':'')):'Não consegui agora');
+  },
+  'grupo-aceitar':el=>{
+    if(!S.habits.length){ toast('Cria um hábito teu primeiro — é ele que conta no grupo'); return; }
+    abrirModal('<h3>Entrar em "'+esc(el.dataset.n||'grupo')+'"</h3>'
+      +'<p class="sec small">Escolhe qual hábito <b>teu</b> conta nesse grupo. Quando você marcar ele na tela Hoje, conta como teu dia batido aqui. Ninguém vê o nome dele.</p>'
+      +'<div class="campo"><label>Meu hábito</label><select id="gr-hab4">'
+      +S.habits.map(h=>'<option value="'+esc(h.id)+'">'+esc((h.icone||'⭐')+' '+h.nome)+'</option>').join('')
+      +'</select></div>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Agora não</button>'
+      +'<button class="btn" data-action="grupo-aceitar-ok" data-id="'+esc(el.dataset.id)+'">Entrar</button></div>');
+  },
+  'grupo-aceitar-ok':async el=>{
+    const h=val('gr-hab4'); if(!h){ toast('Escolhe um hábito'); return; }
+    try{
+      await aceitarGrupo(el.dataset.id,h);
+      fecharModal(); render();
+      toast('🔥 Você está dentro');
+      if(typeof metrica==='function') metrica('grupo-aceitou');
+    }catch(e){ toast('❌ '+e.message); }
+  },
+  'grupo-recusar':async el=>{
+    const ok=await recusarGrupo(el.dataset.id);
+    render();
+    toast(ok?'Convite recusado':'Não consegui agora');
   },
   'grupo-entrar':async()=>{
     const c=val('gr-cod'), hab=val('gr-hab2');
@@ -945,6 +1002,24 @@ const ACOES={
       return;
     }
     toast('Código do grupo: '+c);
+  },
+  'grupo-habito':el=>{
+    const g=grupos().find(x=>x.id===el.dataset.id); if(!g) return;
+    const atual=meuHabitoNoGrupo(g);
+    if(!S.habits.length){ toast('Você não tem hábito pra escolher'); return; }
+    abrirModal('<h3>Meu hábito em "'+esc(g.nome||'grupo')+'"</h3>'
+      +'<p class="sec small">É o hábito que, quando você marca na tela Hoje, conta como teu dia batido nesse grupo. Ninguém vê o nome dele — só o teu nome e se você bateu.</p>'
+      +'<div class="campo"><label>Meu hábito</label><select id="gr-hab3">'
+      +S.habits.map(h=>'<option value="'+esc(h.id)+'"'+(h.id===atual?' selected':'')+'>'+esc((h.icone||'⭐')+' '+h.nome)+'</option>').join('')
+      +'</select></div>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn" data-action="grupo-habito-ok" data-id="'+esc(g.id)+'">Salvar</button></div>');
+  },
+  'grupo-habito-ok':async el=>{
+    const h=val('gr-hab3'); if(!h){ toast('Escolhe um hábito'); return; }
+    const ok=await trocarHabitoNoGrupo(el.dataset.id,h);
+    fecharModal(); render();
+    toast(ok?'Trocado — o dia de hoje já conta por ele':'Não consegui agora');
   },
   'grupo-meta':el=>{
     const g=grupos().find(x=>x.id===el.dataset.id); if(!g) return;

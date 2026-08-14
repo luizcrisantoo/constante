@@ -148,6 +148,8 @@ const FRASES = [
 // ============================================================
 const NOVIDADES = [
   { v:49, data:'2026-08-14', titulo:'Esconder os valores da Grana', itens:[
+    '👋 Criar grupo ficou como no WhatsApp: você dá um nome e marca quem quer chamar entre as pessoas que já adicionou. Elas recebem um convite e, ao aceitar, escolhem o próprio hábito — ninguém entra sem querer. Pra quem não está na tua lista, o código continua funcionando.',
+    '👥 No grupo, cada pessoa escolhe o PRÓPRIO hábito (pode ser "Academia" pra um e "Correr" pra outro) — e agora dá pra trocar o teu depois, sem sair do grupo. O nome do teu hábito não aparece pra ninguém: o grupo vê só o teu nome e se você bateu.',
     '🔒 Hábito de EVITAR (tipo "sem apostas", "sem cigarro") nunca pode ser compartilhado com ninguém — nem se você quiser. O nome desses hábitos diz coisa íntima demais, então o app simplesmente não oferece. Se algum já estava compartilhado, ele saiu sozinho.',
     '👥 Pessoas e Juntos subiram pro topo da aba Progresso — antes estavam embaixo dos gráficos e ninguém achava.',
     '🙈 A aba Grana ganhou um botão de esconder: os valores ficam borrados e voltam com um toque. Serve pra abrir o app no ônibus, no trampo ou com gente do lado sem mostrar quanto você tem.',

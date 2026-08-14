@@ -147,6 +147,11 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:43, data:'2026-08-14', titulo:'A linha que não quebra', itens:[
+    '🌙 Dia difícil, viagem ou doença? Agora dá pra marcar o dia como neutro: ele não conta como falha e a tua constância PAUSA em vez de zerar. (Também não vira vitória — ninguém sobe a linha dizendo que o dia foi ruim.)',
+    '📅 Esqueceu de marcar ontem? Na tela Hoje tem um "‹ esqueci de marcar ontem": dá pra voltar até 2 dias e arrumar o registro, do jeito que já dava com os gastos.',
+    '🔒 O peso agora entra borrado e só aparece quando você toca no 👁️ — pra quem usa o app com gente por perto.'
+  ]},
   { v:42, data:'2026-08-14', titulo:'Calendário na Grana', itens:[
     '📅 A Grana agora tem calendário do mês: cada dia mostra quanto saiu, e tocando num dia você abre ele — vê os gastos daquele dia e lança direto ali. Esqueceu terça? Toca na terça e anota.',
     '💰 O botão de registrar já vem com o dia que você abriu, e depois de salvar o app te mostra o dia onde o gasto caiu.'

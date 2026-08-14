@@ -72,10 +72,10 @@ const ACOES={
     const marcou=!(d.habitos[id]===true);
     if(d.habitos[id]===true) delete d.habitos[id];
     else d.habitos[id]=true;
-    recalcXP(hojeISO()); saveState(); render();
+    recalcXP(diaFoco()); saveState(); render();
     if(marcou){ vibrar(); animaCheck('[data-action="habit"][data-id="'+id+'"]'); }
   },
-  'deslize-limpar':el=>{ const d=getDia(); delete d.habitos[el.dataset.id]; recalcXP(hojeISO()); saveState(); fecharModal(); render(); },
+  'deslize-limpar':el=>{ const d=getDia(); delete d.habitos[el.dataset.id]; recalcXP(diaFoco()); saveState(); fecharModal(); render(); },
   'deslize':el=>{
     const id=el.dataset.id;
     if(id==='apostas'){ ACOES['apostar'](); return; }
@@ -87,15 +87,15 @@ const ACOES={
   },
   'deslize-confirmar':el=>{
     const d=getDia(); d.habitos[el.dataset.id]=false;
-    recalcXP(hojeISO()); saveState(); fecharModal(); render();
+    recalcXP(diaFoco()); saveState(); fecharModal(); render();
     toast('Registrado. Amanhã conta de novo 💪');
   },
 
-  'ref':el=>{ const d=getDia(); const id=el.dataset.id; const marcou=!d.refeicoes[id]; if(d.refeicoes[id]) delete d.refeicoes[id]; else d.refeicoes[id]=true; recalcXP(hojeISO()); saveState(); render(); if(marcou){ vibrar(); animaCheck('[data-action="ref"][data-id="'+id+'"]'); } },
-  'med':el=>{ const d=getDia(); const id=el.dataset.id; const marcou=!d.meds[id]; if(d.meds[id]) delete d.meds[id]; else d.meds[id]=true; recalcXP(hojeISO()); saveState(); render(); if(marcou){ vibrar(); animaCheck('[data-action="med"][data-id="'+id+'"]'); } },
-  'agua':el=>{ const d=getDia(); d.agua=Math.max(0,(d.agua||0)+Number(el.dataset.ml)); recalcXP(hojeISO()); saveState(); render(); if(Number(el.dataset.ml)>0) vibrar(8); },
-  'humor':el=>{ const d=getDia(); d.humor=Number(el.dataset.v); recalcXP(hojeISO()); saveState(); render(); },
-  'energia':el=>{ const d=getDia(); d.energia=Number(el.dataset.v); recalcXP(hojeISO()); saveState(); render(); },
+  'ref':el=>{ const d=getDia(); const id=el.dataset.id; const marcou=!d.refeicoes[id]; if(d.refeicoes[id]) delete d.refeicoes[id]; else d.refeicoes[id]=true; recalcXP(diaFoco()); saveState(); render(); if(marcou){ vibrar(); animaCheck('[data-action="ref"][data-id="'+id+'"]'); } },
+  'med':el=>{ const d=getDia(); const id=el.dataset.id; const marcou=!d.meds[id]; if(d.meds[id]) delete d.meds[id]; else d.meds[id]=true; recalcXP(diaFoco()); saveState(); render(); if(marcou){ vibrar(); animaCheck('[data-action="med"][data-id="'+id+'"]'); } },
+  'agua':el=>{ const d=getDia(); d.agua=Math.max(0,(d.agua||0)+Number(el.dataset.ml)); recalcXP(diaFoco()); saveState(); render(); if(Number(el.dataset.ml)>0) vibrar(8); },
+  'humor':el=>{ const d=getDia(); d.humor=Number(el.dataset.v); recalcXP(diaFoco()); saveState(); render(); },
+  'energia':el=>{ const d=getDia(); d.energia=Number(el.dataset.v); recalcXP(diaFoco()); saveState(); render(); },
 
   'semana-toggle':()=>{
     S.treinos.semanaAtiva=(S.treinos.semanaAtiva==='B')?'A':'B';
@@ -118,7 +118,7 @@ const ACOES={
     const dv=val('tr-dia'); t.diaSemana=(dv==='')?null:Number(dv);
     saveState(); fecharModal(); render();
   },
-  'treino-check':()=>{ const d=getDia(); d.treino=!d.treino; recalcXP(hojeISO()); saveState(); if(d.treino) toast('💪 Treino contou! (+10 XP de bônus)'); render(); if(d.treino){ vibrar(); animaCheck('[data-action="treino-check"]'); } },
+  'treino-check':()=>{ const d=getDia(); d.treino=!d.treino; recalcXP(diaFoco()); saveState(); if(d.treino) toast('💪 Treino contou! (+10 XP de bônus)'); render(); if(d.treino){ vibrar(); animaCheck('[data-action="treino-check"]'); } },
   'recomeco-ok':()=>{ UI.recomecoLeve=false; render(); toast('Um passo de cada vez 💜'); },
 
   'rotina-dia':el=>{ UI.rotinaDia=Number(el.dataset.d); render(); },
@@ -612,6 +612,41 @@ const ACOES={
     fecharModal(); render(); toast('Registro apagado');
   },
 
+  'dia-foco':el=>{
+    const d=el.dataset.d;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+    const dif=diffDias(d,hojeISO());
+    if(dif<0||dif>DIAS_PRA_TRAS) return;
+    setDiaFoco(d); vibrar(8); render(); window.scrollTo({top:0});
+  },
+  'dia-neutro':()=>{
+    const iso=diaFoco();
+    const quando=(iso===hojeISO())?'hoje':fmtData(iso);
+    abrirModal('<h3>🌙 '+(iso===hojeISO()?'Hoje':'Esse dia')+' não deu</h3>'
+      +'<p class="sec small">Acontece. Marcando assim, esse dia não conta como falha — a tua linha <b>pausa</b> em vez de zerar. Ele também não vira vitória: ninguém sobe a constância dizendo que o dia foi difícil.</p>'
+      +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+      +'<button class="btn sec-btn" data-action="dia-neutro-ok" data-v="viagem">🧳 Viagem</button>'
+      +'<button class="btn sec-btn" data-action="dia-neutro-ok" data-v="doente">🤒 Doente</button>'
+      +'<button class="btn sec-btn" data-action="dia-neutro-ok" data-v="dificil">🌧️ Dia difícil</button>'
+      +'</div>'
+      +'<p class="muted small mt">Vale pro dia '+esc(quando)+'. Dá pra desfazer quando quiser.</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button></div>');
+  },
+  'dia-neutro-ok':el=>{
+    const d=getDia(); d.neutro=el.dataset.v||'dificil';
+    saveState(); fecharModal(); vibrar(12); render();
+    toast('🌙 Dia marcado — tua linha continua de pé');
+    if(typeof metrica==='function') metrica('dia-neutro');
+  },
+  'dia-neutro-desfazer':()=>{
+    const d=getDia(); d.neutro='';
+    saveState(); render(); toast('Voltou ao normal');
+  },
+  'peso-ver':el=>{
+    const card=el.closest('.peso-card'); if(!card) return;
+    const on=card.classList.toggle('revelado');
+    el.textContent=on?'🙈 esconder':'👁️ ver';
+  },
   'onb-chip':el=>{
     const on=el.classList.toggle('sel');
     el.setAttribute('aria-pressed',on?'true':'false');
@@ -630,7 +665,7 @@ const ACOES={
     const o=onbEstado();
     o.intencoes=_onb.intencoes.slice(); o.feito=true;
     // quem já marcou algo hoje não "ganha" a primeira vitória de graça
-    o.vitoria=(recalcXP(hojeISO())>0)?'feita':'pendente';
+    o.vitoria=(recalcXP(diaFoco())>0)?'feita':'pendente';
     aplicarIntencoes(o.intencoes);
     habs.forEach(h=>addHabitoSimples(h.nome,h.icone,h.tipo));
     S.settings.ultimaVisita=hojeISO();
@@ -642,7 +677,7 @@ const ACOES={
     const nomeDigitado=val('onb-nome');
     if(nomeDigitado) S.profile.nome=nomeDigitado; else S.settings.nomeAdiado=true;
     const o=onbEstado(); o.feito=true;
-    o.vitoria=(recalcXP(hojeISO())>0)?'feita':'pendente';
+    o.vitoria=(recalcXP(diaFoco())>0)?'feita':'pendente';
     S.settings.ultimaVisita=hojeISO();
     saveState({skipSync:true}); fecharModal(); render();
     if(typeof metrica==='function') metrica('onboarding-pulado');
@@ -931,7 +966,7 @@ function ligarEventos(){
     const nav=ev.target.closest('[data-nav]');
     if(nav){
       if(document.body.classList.contains('modo-login')) return;
-      UI.tab=nav.dataset.nav; render(); window.scrollTo({top:0});
+      UI.tab=nav.dataset.nav; setDiaFoco(null); render(); window.scrollTo({top:0});
       if(typeof metrica==='function') metrica('tab:'+nav.dataset.nav);
       return;
     }
@@ -963,7 +998,7 @@ function ligarEventos(){
           if(elH) elH.value=d.sono.h;
         }
       }
-      recalcXP(hojeISO()); saveState(); renderTopbar();
+      recalcXP(diaFoco()); saveState(); renderTopbar();
       clearTimeout(_sonoToastT);
       _sonoToastT=setTimeout(()=>toast('😴 Sono anotado ✓'),700);
       return;

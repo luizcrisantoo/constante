@@ -129,6 +129,8 @@ function saveState(opts){
   S._ts=new Date().toISOString();
   const dHoje=S.days[hojeISO()];
   if(dHoje) dHoje._m=S._ts;
+  const foco=diaFoco();
+  if(foco!==hojeISO()&&S.days[foco]) S.days[foco]._m=S._ts;
   lsSet(JSON.stringify(S));
 
   if(!(opts&&opts.skipSync) && syncConfigurado()) setSyncEstado('pendente');
@@ -142,10 +144,26 @@ function diaVazio(){
   return { habitos:{}, refeicoes:{}, meds:{}, agua:0,
            sono:{h:null,score:null,deitou:'',acordou:''},
            humor:null, energia:null, nota:'',
-           apostas:[], deslizes:{}, treino:false, treinoNota:'', xp:0 };
+           apostas:[], deslizes:{}, treino:false, treinoNota:'', neutro:'', xp:0 };
 }
+// Dia que a tela Hoje está mostrando. Normalmente é hoje; a pessoa pode voltar
+// até 2 dias pra consertar o que esqueceu de marcar (o mesmo espírito do gasto retroativo).
+const DIAS_PRA_TRAS=2;
+let _diaFoco=null;
+function diaFoco(){
+  if(!_diaFoco) return hojeISO();
+  const dif=diffDias(_diaFoco,hojeISO());
+  return (dif>=0&&dif<=DIAS_PRA_TRAS)?_diaFoco:hojeISO();
+}
+function setDiaFoco(iso){ _diaFoco=(iso&&iso!==hojeISO())?iso:null; }
+function ehHojeFoco(){ return diaFoco()===hojeISO(); }
+
+// Dia neutro: viajei / doente / dia difícil. Não conta como vitória nem como falha.
+function diaNeutro(iso){ const d=S.days[iso]; return !!(d&&d.neutro); }
+const NEUTRO_LABEL={viagem:'🧳 Viagem',doente:'🤒 Doente',dificil:'🌧️ Dia difícil'};
+
 function getDia(iso){
-  iso=iso||hojeISO();
+  iso=iso||diaFoco();
   if(!S.days[iso]) S.days[iso]=diaVazio();
   return deepFill(S.days[iso],diaVazio());
 }
@@ -259,7 +277,8 @@ function streakGeral(){
   let s=0; let d=hojeISO();
   if(diaConta(d)) s++;
   d=addDias(d,-1);
-  while(diaConta(d)){ s++; d=addDias(d,-1); }
+  // dia neutro não soma (ninguém ganha linha marcando "foi difícil") mas também não quebra
+  while(diaConta(d)||diaNeutro(d)){ if(diaConta(d)) s++; d=addDias(d,-1); }
   return s;
 }
 function streakHabito(id){
@@ -282,7 +301,10 @@ function melhorStreak(){
   if(!datas.length) return 0;
   let best=0,cur=0,prev=null;
   for(const iso of datas){
-    if(!diaConta(iso)){ prev=iso; cur=0; continue; }
+    if(!diaConta(iso)){
+      if(diaNeutro(iso)){ prev=iso; continue; }   // pausa: mantém a contagem viva
+      prev=iso; cur=0; continue;
+    }
     if(prev && diffDias(prev,iso)===1 && cur>0) cur++;
     else cur=1;
     prev=iso; best=Math.max(best,cur);
@@ -660,6 +682,7 @@ function mesclarDia(a,b){
   out.deslizes=Object.assign({},a.deslizes,b.deslizes);
   out.treino=!!(a.treino||b.treino);
   out.treinoNota=b.treinoNota||a.treinoNota||'';
+  out.neutro=b.neutro||a.neutro||'';
   out.burnout=b.burnout||a.burnout;
   out._m=(a._m||b._m)||undefined;
   return out;

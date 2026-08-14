@@ -9,6 +9,7 @@ const TIPO_LABEL={aula:'Aula',estagio:'Estágio',treino:'Treino',refeicao:'Refei
 let _tabAnterior=null;
 function render(){
   recalcXP(hojeISO());
+  if(typeof diaFoco==='function'&&diaFoco()!==hojeISO()) recalcXP(diaFoco());
   const novas=checarConquistas();
   const view=document.getElementById('view');
 
@@ -75,7 +76,8 @@ function renderTopbar(){
 }
 
 function viewHoje(){
-  const iso=hojeISO();
+  const iso=diaFoco();
+  const ehHoje=(iso===hojeISO());
   const d=getDia(iso);
   const sauda=saudacaoHora();
   const frase=FRASES[((diffDias('2026-01-01',iso)%FRASES.length)+FRASES.length)%FRASES.length];
@@ -98,20 +100,38 @@ function viewHoje(){
   if(prox) html+='<div class="agora" style="border-color:var(--baseline)"><b>Depois:</b> '+esc(prox.t)+' <span class="muted num">('+esc(prox.i)+')</span></div>';
   html+='</section>';
 
-  if(UI.recomecoLeve){
+  // Consertar o que ficou pra trás: até 2 dias, sem drama
+  const ontem=addDias(hojeISO(),-1);
+  if(ehHoje){
+    html+='<p class="muted small centro" style="margin:-0.2rem 0 0.6rem">'
+      +'<button class="deslize-btn" data-action="dia-foco" data-d="'+ontem+'">‹ esqueci de marcar ontem</button></p>';
+  } else {
+    const anterior=addDias(iso,-1);
+    const podeAnterior=diffDias(anterior,hojeISO())<=DIAS_PRA_TRAS;
+    html+='<section class="card" style="border-left:3px solid var(--brand)">'
+      +'<div class="linha"><div class="esq"><b>📅 Arrumando '+esc(fmtDataLonga(iso))+'</b>'
+      +'<div class="muted small">O que você marcar aqui entra nesse dia.</div></div></div>'
+      +'<div class="linha mt" style="gap:0.4rem">'
+      +(podeAnterior?'<button class="btn mini sec-btn" data-action="dia-foco" data-d="'+anterior+'">‹ '+esc(fmtData(anterior))+'</button>':'<span></span>')
+      +'<span class="esq"></span>'
+      +'<button class="btn mini" data-action="dia-foco" data-d="'+hojeISO()+'">Voltar pra hoje ›</button>'
+      +'</div></section>';
+  }
+
+  if(ehHoje&&UI.recomecoLeve){
     html+='<section class="card" style="border-left:3px solid var(--good)"><h2>🌱 Bom te ver de novo</h2>'
       +'<p class="sec small">Ficar uns dias fora acontece — recomeçar também é constância. Começa leve: marca UMA coisa hoje (uma água já conta).</p>'
       +'<div class="acoes mt"><button class="btn mini" data-action="recomeco-ok">Bora 🌱</button></div></section>';
   }
 
-  const onbV=(typeof onbEstado==='function')?onbEstado():null;
+  const onbV=(ehHoje&&typeof onbEstado==='function')?onbEstado():null;
   if(onbV&&onbV.vitoria==='pendente'&&xpHoje===0){
     html+='<section class="card" style="border-left:3px solid var(--good)"><h2>🎯 Tua primeira vitória</h2>'
       +'<p class="sec small">Marca <b>uma</b> coisa que você já fez hoje — pode ser um copo de água. Não precisa ser um dia perfeito: precisa começar.</p></section>';
   }
 
   // Card de novidades: curto de propósito — no máx. 3 itens, o resto fica no histórico.
-  const nvs=(typeof novidadesNaoVistas==='function')?novidadesNaoVistas():[];
+  const nvs=(ehHoje&&typeof novidadesNaoVistas==='function')?novidadesNaoVistas():[];
   if(nvs.length){
     const itensNv=[]; nvs.forEach(n=>n.itens.forEach(it=>itensNv.push(it)));
     const mostraNv=itensNv.slice(0,3), restoNv=itensNv.length-mostraNv.length;
@@ -126,15 +146,20 @@ function viewHoje(){
   }
 
 
-  const podeRepetir=(xpHoje===0)&&(typeof repetirOntem==='function')&&repetirOntem(true)>0;
-  html+='<section class="card"><h2>Seu dia'
+  const podeRepetir=ehHoje&&(xpHoje===0)&&(typeof repetirOntem==='function')&&repetirOntem(true)>0;
+  html+='<section class="card"><h2>'+(ehHoje?'Seu dia':'Esse dia')
     +(podeRepetir?'<button class="btn mini sec-btn dir" data-action="repetir-ontem">↩️ Repetir ontem</button>':'')
     +'</h2>'
+    +(d.neutro
+      ? '<div class="linha" style="padding-bottom:0.4rem"><span class="esq sec small">🌙 '+esc(NEUTRO_LABEL[d.neutro]||'Dia difícil')+' — a linha continua de pé, esse dia não conta como falha.</span>'
+        +'<button class="deslize-btn" data-action="dia-neutro-desfazer">desfazer</button></div>'
+      : '')
     +'<div class="linha"><div class="esq"><span class="hero-num num">'+xpHoje+'</span> <span class="muted">/ '+xpPoss+' XP</span></div>'
     +'<div>'+nv.icone+' <b>'+esc(nv.nome)+'</b>'+(nv.prox?' <span class="muted small">→ '+nv.prox.icone+' aos '+nv.prox.xp+'</span>':'')+'</div></div>'
     +'<div class="progress mt"><span style="width:'+Math.min(100,Math.round(100*xpHoje/Math.max(1,xpPoss)))+'%"></span></div>'
     +'<div class="muted small mt">Dia conta pra constância com '+Math.min(80,Math.round(xpPoss*0.5))+'+ XP.</div>'
     +barraSemana()
+    +(d.neutro?'':'<p class="muted small mt" style="text-align:center"><button class="deslize-btn" data-action="dia-neutro">🌙 '+(ehHoje?'hoje':'esse dia')+' não deu? marca como dia difícil</button></p>')
     +'</section>';
 
   if(!S.habits.length && !S.routine.length){
@@ -154,13 +179,13 @@ function viewHoje(){
   const habs=habitosDoDia(iso);
   const fazer=habs.filter(x=>x.tipo==='fazer');
   const evitar=habs.filter(x=>x.tipo==='evitar');
-  html+='<section class="card"><h2>Hábitos de hoje <button class="btn mini sec-btn dir" data-action="habito-add">+ Hábito</button></h2>';
+  html+='<section class="card"><h2>Hábitos '+(ehHoje?'de hoje':'do dia')+' <button class="btn mini sec-btn dir" data-action="habito-add">+ Hábito</button></h2>';
   if(!habs.length){
     html+='<p class="muted small">Nenhum hábito pra hoje. Toque em “+ Hábito” pra criar o primeiro.</p>';
   } else {
     fazer.forEach(hb=>{ html+=habRow(hb,d); });
     if(evitar.length){
-      html+='<div class="grupo-titulo">Evitar hoje (marca no fim do dia se venceu)</div>';
+      html+='<div class="grupo-titulo">'+(ehHoje?'Evitar hoje (marca no fim do dia se venceu)':'Evitar nesse dia')+'</div>';
       evitar.forEach(hb=>{ html+=habRow(hb,d); });
     }
   }
@@ -170,7 +195,7 @@ function viewHoje(){
   html+='<section class="card"><h2>Treino</h2>'
     +'<button class="hab '+(d.treino?'feito':'')+'" data-action="treino-check" style="width:100%">'
     +'<span class="ic">🏋️</span>'
-    +'<span class="nome">Treinei hoje<span class="sub">Vale qualquer um: academia, corrida, futevôlei, vôlei, cardio…</span></span>'
+    +'<span class="nome">'+(ehHoje?'Treinei hoje':'Treinei nesse dia')+'<span class="sub">Vale qualquer um: academia, corrida, futevôlei, vôlei, cardio…</span></span>'
     +'<span class="check">✓</span></button>';
   const nTr=treinosNaSemana();
   if(nTr>0) html+='<p class="muted small mt">💪 '+nTr+' treino'+(nTr>1?'s':'')+' nos últimos 7 dias.</p>';
@@ -228,10 +253,10 @@ function viewHoje(){
     +'<button class="btn mini sec-btn" data-action="agua" data-ml="-250">−250ml</button></div></section>';
 
   const so=d.sono||{};
-  html+='<section class="card"><h2>Sono (noite passada)</h2>'
+  html+='<section class="card"><h2>Sono '+(ehHoje?'(noite passada)':'(noite desse dia)')+'</h2>'
     +'<div class="sono-form">'
-    +'<div><label>Deitou (ontem)</label><input type="time" data-sono="deitou" value="'+esc(so.deitou||'')+'"></div>'
-    +'<div><label>Acordou (hoje)</label><input type="time" data-sono="acordou" value="'+esc(so.acordou||'')+'"></div>'
+    +'<div><label>Deitou'+(ehHoje?' (ontem)':'')+'</label><input type="time" data-sono="deitou" value="'+esc(so.deitou||'')+'"></div>'
+    +'<div><label>Acordou'+(ehHoje?' (hoje)':'')+'</label><input type="time" data-sono="acordou" value="'+esc(so.acordou||'')+'"></div>'
     +'<div><label>Horas dormidas</label><input type="number" step="0.1" min="0" max="16" placeholder="ex.: 7,5" data-sono="h" value="'+esc(so.h!=null?so.h:'')+'"></div>'
     +'<div><label>Nota do sono (0–100)</label><input type="number" min="0" max="100" data-sono="score" value="'+esc(so.score!=null?so.score:'')+'"></div>'
     +'</div>'
@@ -280,15 +305,15 @@ function barraSemana(){
     const iso=addDias(hoje,-i);
     const xp=(S.days[iso]&&S.days[iso].xp)||0;
     max=Math.max(max,xp);
-    dias.push({iso,xp});
+    dias.push({iso,xp,neutro:(typeof diaNeutro==='function'&&diaNeutro(iso))});
   }
   dias.forEach((dd,ix)=>{
     const alt=Math.max(3,Math.round(56*dd.xp/max));
     const ehHoje=dd.iso===hoje;
     const mostraVal=ehHoje||dd.xp===max&&dd.xp>0;
-    html+='<div class="col" title="'+fmtData(dd.iso)+': '+dd.xp+' XP">'
-      +'<span class="val num">'+(mostraVal?dd.xp:'')+'</span>'
-      +'<div class="bar '+(dd.xp===0?'apagada':'')+'" style="height:'+alt+'px'+(ehHoje?';background:var(--brand)':'')+'"></div>'
+    html+='<div class="col" title="'+fmtData(dd.iso)+': '+(dd.neutro?'dia neutro':dd.xp+' XP')+'">'
+      +'<span class="val num">'+(dd.neutro?'🌙':(mostraVal?dd.xp:''))+'</span>'
+      +'<div class="bar '+(dd.neutro?'neutra':(dd.xp===0?'apagada':''))+'" style="height:'+(dd.neutro?12:alt)+'px'+(ehHoje&&!dd.neutro?';background:var(--brand)':'')+'"></div>'
       +'<span class="lbl">'+DIAS_ABREV[isoToDate(dd.iso).getDay()]+'</span></div>';
   });
   return html+'</div>';
@@ -397,7 +422,9 @@ function viewDieta(){
     +'<p class="muted small mt">'+esc(S.diet.hidratacao)+'</p></section>';
 
   const ult=S.pesos.length?S.pesos[S.pesos.length-1]:null;
-  html+='<section class="card"><h2>Peso (sábado, em jejum)</h2>'
+  html+='<section class="card peso-card"><h2>Peso (sábado, em jejum)'
+    +(ult?'<button class="btn mini sec-btn dir" data-action="peso-ver" aria-label="Mostrar ou esconder o peso">👁️ ver</button>':'')
+    +'</h2>'
     +'<div class="linha"><div class="esq">'
     +(ult?'<span class="hero-num num">'+esc(String(ult.kg).replace('.',','))+'</span> <span class="muted">kg em '+fmtData(ult.data)+'</span>':'<span class="muted">Nenhum peso registrado ainda.</span>')
     +'</div><button class="btn mini" data-action="peso-add">Registrar</button></div>'

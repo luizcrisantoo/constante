@@ -147,6 +147,10 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:50, data:'2026-08-14', titulo:'Layout que não estoura mais a tela', itens:[
+    '📱 Corrigido o problema que alguns relataram no Android: ao trocar de aba, a tela saía do lugar e só voltava dando zoom pra fora e pra dentro. A causa era o layout deixando o conteúdo passar da largura da tela — um nome de hábito comprido ou a barra dos dias da Rotina empurravam a página inteira.',
+    '✅ Agora nada cria rolagem lateral: texto longo quebra a linha, a barra dos dias rola dentro dela mesma, e as telas foram medidas em 320, 360 e 412 pixels de largura pra garantir.'
+  ]},
   { v:49, data:'2026-08-14', destaque:true, titulo:'Agora dá pra fazer junto com alguém', itens:[
     '👥 COMO ADICIONAR ALGUÉM: aba Progresso → Pessoas → "+ Adicionar". O app te dá um código de 8 letras — manda pra pessoa pelo zap (tem botão de enviar). Basta UM de vocês digitar o código do outro; depois disso os dois se veem. Ninguém te encontra por busca nem por e-mail: só entra quem você convidar, e você desfaz quando quiser.',
     '👀 O QUE A PESSOA VÊ: teu nome, teus dias de constância e tua moldura. Hábito, só o que VOCÊ marcar, um por um — e o nome dele aparece, então renomeia antes se for algo pessoal. Hábito de EVITAR (tipo "sem apostas") nunca pode ser compartilhado, nem se você quiser. Peso, dinheiro, humor, remédios, apostas e anotações não saem daqui de jeito nenhum.',

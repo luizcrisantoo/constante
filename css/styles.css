@@ -1,7 +1,12 @@
 @import url('variables.css');
 
 *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
-html{ -webkit-text-size-adjust:100%; }
+html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+/* trava final: nada nunca cria rolagem horizontal na página */
+html, body{ overflow-x:hidden; max-width:100%; }
+svg{ max-width:100%; }
+table{ width:100%; table-layout:fixed; }
+td, th{ overflow-wrap:anywhere; }
 body{
   font-family:var(--font); background:var(--bg); color:var(--ink);
   line-height:1.45; min-height:100dvh;
@@ -62,10 +67,16 @@ body.teclado-aberto .sos-fab{ display:none; }
 .bottom-nav button.ativo{ color:var(--brand-strong); }
 .bottom-nav button.ativo .ic{ transform:translateY(-1px); }
 
-main{ max-width:640px; margin:0 auto; padding:var(--sp-md); display:grid; gap:var(--sp-md); }
+/* minmax(0,1fr): sem isso, item de grid nunca encolhe abaixo do conteúdo dele —
+   um nome comprido ou uma barra larga empurrava a página inteira pra fora da tela
+   (no Android isso vira "preciso dar zoom pra caber"). */
+main{ max-width:640px; margin:0 auto; padding:var(--sp-md);
+  display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-md); }
+main > *{ min-width:0; }
 .card{
   background:var(--surface); border:1px solid var(--border);
   border-radius:var(--radius); padding:var(--sp-md);
+  min-width:0; overflow-wrap:break-word;
 }
 .card h2{ font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em;
   color:var(--ink-mute); margin-bottom:var(--sp-sm); font-weight:700;
@@ -76,8 +87,9 @@ main{ max-width:640px; margin:0 auto; padding:var(--sp-md); display:grid; gap:va
 .small{ font-size:0.8rem; }
 .sec{ color:var(--ink-2); }
 .num{ font-variant-numeric:tabular-nums; }
-.linha{ display:flex; align-items:center; gap:var(--sp-sm); }
-.linha .esq{ margin-right:auto; }
+.linha{ display:flex; align-items:center; gap:var(--sp-sm); min-width:0; flex-wrap:wrap; }
+.linha .esq{ margin-right:auto; min-width:0; overflow-wrap:anywhere; }
+.linha > *{ min-width:0; }
 .chip{
   display:inline-block; border:1px solid var(--border); border-radius:999px;
   padding:0.15rem 0.6rem; font-size:0.78rem; color:var(--ink-2); background:var(--surface-2);
@@ -149,9 +161,11 @@ main{ max-width:640px; margin:0 auto; padding:var(--sp-md); display:grid; gap:va
 .mini-chart .col .lbl{ font-size:0.66rem; color:var(--ink-mute); }
 .mini-chart .col .val{ font-size:0.66rem; color:var(--ink-2); font-variant-numeric:tabular-nums; height:0.9em; }
 
-.dias-nav{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; }
+.dias-nav{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px;
+  min-width:0; max-width:100%; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.dias-nav::-webkit-scrollbar{ display:none; }
 .dias-nav button{
-  flex:1; min-width:3.2rem; padding:0.45rem 0.2rem; border-radius:var(--radius-sm);
+  flex:1 0 auto; min-width:2.9rem; padding:0.45rem 0.2rem; border-radius:var(--radius-sm);
   background:var(--surface-2); border:1px solid var(--border);
   font-size:0.8rem; font-weight:700; color:var(--ink-2);
 }
@@ -202,7 +216,7 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
 .conquista .nome{ font-weight:700; font-size:0.9rem; }
 .conquista .desc{ font-size:0.78rem; color:var(--ink-mute); }
 
-.cfg-grid{ display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-sm); }
+.cfg-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--sp-sm); }
 .cfg-grid label, .campo label{ font-size:0.75rem; color:var(--ink-mute); display:block; margin-bottom:2px; }
 .campo{ margin-bottom:var(--sp-sm); }
 .lista-edit .item-edit{ display:flex; gap:0.5rem; align-items:center; padding:0.4rem 0;

@@ -17,17 +17,21 @@ function render(){
   if(UI.sub&&UI.sub.tipo==='treino') html=viewTreinoDetalhe(UI.sub.id);
   else if(UI.sub&&UI.sub.tipo==='caderno') html=viewCadernoDetalhe(UI.sub.id);
   else if(UI.sub&&UI.sub.tipo==='progresso') html=viewProgresso();
+  else if(UI.sub&&UI.sub.tipo==='revisao'&&typeof viewRevisao==='function') html=viewRevisao();
   else {
     UI.sub=null;
     const fn={hoje:viewHoje,rotina:viewRotina,dieta:viewDieta,grana:viewGrana,mente:viewMente,progresso:viewProgressoTab,config:viewConfig}[UI.tab]||viewHoje;
     html=fn();
   }
   view.innerHTML=html;
-  view.classList.toggle('grana-oculta', UI.tab==='grana'&&typeof granaOculta==='function'&&granaOculta());
+  // a revisão da semana também mostra dinheiro: respeita o mesmo botão de esconder
+  const _telaComGrana=(UI.tab==='grana')||!!(UI.sub&&UI.sub.tipo==='revisao');
+  view.classList.toggle('grana-oculta', _telaComGrana&&typeof granaOculta==='function'&&granaOculta());
   if(UI.tab!==_tabAnterior){ _tabAnterior=UI.tab; view.classList.remove('anim'); void view.offsetWidth; view.classList.add('anim'); }
   renderTopbar();
   if(UI.sub&&UI.sub.tipo==='progresso') hidratarFotos();
-  document.querySelectorAll('.bottom-nav button').forEach(b=>{
+  if(typeof renderNav==='function') renderNav();
+  else document.querySelectorAll('.bottom-nav button').forEach(b=>{
     b.classList.toggle('ativo',b.dataset.nav===UI.tab);
   });
   const recAtual=melhorStreak();
@@ -143,6 +147,8 @@ function viewHoje(){
     html+='<section class="card" style="border-left:3px solid var(--good)"><h2>🎯 Tua primeira vitória</h2>'
       +'<p class="sec small">Marca <b>uma</b> coisa que você já fez hoje — pode ser um copo de água. Não precisa ser um dia perfeito: precisa começar.</p></section>';
   }
+
+  if(ehHoje&&typeof cardRevisaoHoje==='function') html+=cardRevisaoHoje();
 
   if(typeof _temAtualizacao!=='undefined'&&_temAtualizacao&&ehHoje){
     html+='<section class="card" style="border-left:3px solid var(--brand)">'

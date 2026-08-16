@@ -150,6 +150,16 @@ function viewProgresso(){
 
 function viewProgressoTab(){
   let html='';
+  // só oferece o atalho se a tela que ele abre existir de verdade (fase5.js pode
+  // não ter entrado no cache do service worker)
+  if(typeof resumoSemana==='function'&&typeof viewRevisao==='function'){
+    const r=resumoSemana();
+    html+='<section class="card"><div class="linha">'
+      +'<div class="esq"><b>📊 Revisão da semana</b>'
+      +'<div class="muted small">'+esc(fmtData(r.ini)+' a '+fmtData(r.fim))+' · '
+      +r.contaram+' de '+r.dias.length+' dia'+(r.dias.length===1?'':'s')+' contaram</div></div>'
+      +'<button class="btn mini" data-action="revisao-abrir">Ver</button></div></section>';
+  }
   if(typeof secaoAmigos==='function') html+=secaoAmigos();
   if(typeof secaoGrupos==='function') html+=secaoGrupos();
   html+=viewProgresso();

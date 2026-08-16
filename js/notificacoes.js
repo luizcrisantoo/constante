@@ -63,7 +63,7 @@ function secaoNotificacoes(){
         +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
         +'<button class="btn sec-btn" data-action="notif-exemplo">Ver exemplo</button>'
         +'<button class="btn sec-btn" data-action="notif-desativar">Desativar aqui</button><button class="btn" data-action="notif-ativar">Reativar</button></div>'
-        +'<p class="muted small mt">O agendamento dos lembretes (dormir, refeições, hábitos) entra na próxima atualização.</p>';
+        +'<p class="muted small mt">Logo abaixo, em <b>Avisos que ajudam</b>, dá pra criar de uma vez os lembretes dos blocos da tua rotina.</p>';
     } else if(_pushInscrito===false){
       corpo='<div class="aviso">🔔 Falta um passo: a permissão tá concedida, mas os lembretes ainda não foram registrados neste aparelho.</div>'
         +'<button class="btn mt" data-action="notif-ativar">Finalizar ativação</button>';
@@ -178,7 +178,8 @@ function salvarLembrete(id){
   if(!Array.isArray(S.lembretes)) S.lembretes=[];
   if(id){
     const l=S.lembretes.find(x=>x.id===id);
-    if(l){ l.hora=hora; l.texto=texto.slice(0,120); l.dias=dias; }
+    // editou na mão → o aviso vira seu: regerar os da rotina não mexe mais nele
+    if(l){ l.hora=hora; l.texto=texto.slice(0,120); l.dias=dias; l.deRotina=false; }
   } else {
     S.lembretes.push({id:'lb'+uid(), hora:hora, texto:texto.slice(0,120), dias:dias, ativo:true});
   }

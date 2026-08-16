@@ -382,3 +382,27 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
   filter:blur(8px); user-select:none; transition:filter 0.18s ease;
 }
 .dinheiro{ transition:filter 0.18s ease; }
+
+/* ---- v51: barra de baixo personalizável (folha "Mais" e escolha das abas) ---- */
+.abas-mais{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0.45rem; }
+.aba-op{
+  display:flex; align-items:center; gap:0.5rem; min-width:0;
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  background:var(--surface-2); color:var(--ink-2);
+  padding:0.55rem 0.65rem; font-size:0.88rem; font-weight:600; text-align:left;
+  transition:border-color 0.15s ease, background 0.15s ease, opacity 0.15s ease;
+}
+.aba-op .ic{ font-size:1.15rem; line-height:1; flex:none; }
+.aba-op span:not(.ic):not(.pos){ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.aba-op .pos{ margin-left:auto; font-size:0.72rem; color:var(--brand-strong); font-weight:800; flex:none; }
+.aba-op.sel{ border-color:var(--brand); background:var(--surface-3); color:var(--ink); }
+.aba-op.cheia{ opacity:0.45; }
+
+/* ---- v51: projetos financeiros ---- */
+.proj-item{ padding:0.5rem 0; border-bottom:1px solid var(--grid); }
+.proj-item:last-of-type{ border-bottom:none; }
+.chip-proj{
+  display:inline-block; margin-left:0.3rem; padding:0.05rem 0.4rem;
+  border:1px solid var(--border); border-radius:999px;
+  font-size:0.68rem; color:var(--ink-mute); white-space:nowrap; vertical-align:middle;
+}

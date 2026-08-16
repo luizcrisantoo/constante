@@ -14,8 +14,10 @@ alter table public.constante_grupo_membros
 alter table public.constante_grupo_membros
   add column if not exists convidou uuid references auth.users(id) on delete set null;
 
--- quem já estava dentro segue ativo
-update public.constante_grupo_membros set status = 'ativo' where status is null;
+-- quem já estava dentro segue ativo (a coluna nasce NOT NULL DEFAULT 'ativo',
+-- então quem foi criado antes desta migração já entra como ativo automaticamente)
+update public.constante_grupo_membros set status = 'ativo'
+  where status is distinct from 'convidado' and status <> 'ativo';
 
 -- ---------- 2. Ajudantes ----------
 -- membro de verdade (conta pra meta e pode ver os dias)
@@ -130,3 +132,44 @@ begin
   return old;
 end;
 $$;
+
+-- ---------- 6. O limite de 8 vale pra TODO caminho ----------
+-- entrar_no_grupo() checa o limite, mas aceitar um convite é um UPDATE direto na
+-- própria linha (a política deixa, e tem que deixar). Sem esta trava, 20 convites
+-- aceitos viravam um grupo de 20. A regra tem que morar no banco, não na tela.
+create or replace function public.checar_lotacao_grupo()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_ativos int;
+begin
+  -- só interessa quando a linha PASSA a ser ativa
+  if new.status <> 'ativo' then
+    return new;
+  end if;
+  if tg_op = 'UPDATE' and old.status = 'ativo' then
+    return new;                     -- já era ativo: trocar hábito/nome não lota nada
+  end if;
+
+  select count(*) into v_ativos
+  from public.constante_grupo_membros
+  where grupo_id = new.grupo_id and status = 'ativo' and user_id <> new.user_id;
+
+  if v_ativos >= 8 then
+    raise exception 'grupo cheio: o limite é 8 pessoas ativas';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_lotacao_grupo on public.constante_grupo_membros;
+create trigger trg_lotacao_grupo
+  before insert or update on public.constante_grupo_membros
+  for each row execute function public.checar_lotacao_grupo();
+
+-- Convite não conta como vaga: dá pra chamar 10 e os 8 primeiros que aceitarem entram.
+-- Quem chegar depois recebe o erro acima, que o app mostra como "grupo cheio".
+
+-- ---------- Conferir depois de rodar ----------
+--   select column_name, data_type from information_schema.columns
+--     where table_name = 'constante_grupo_membros';
+--   select tgname from pg_trigger where tgrelid = 'public.constante_grupo_membros'::regclass;

@@ -344,7 +344,13 @@ async function aceitarGrupo(idGrupo, meuHabito){
   const eu=usuarioAtual().id;
   const r=await fetch(_syncBase()+'/rest/v1/constante_grupo_membros?grupo_id=eq.'+encodeURIComponent(idGrupo)+'&user_id=eq.'+encodeURIComponent(eu),
     {method:'PATCH',headers:_syncHeaders(),body:JSON.stringify({status:'ativo',habito:meuHabito,nome:meuPrimeiroNome()})});
-  if(!r.ok) throw new Error('Não consegui aceitar agora ('+r.status+')');
+  if(!r.ok){
+    // o banco é quem segura o limite de 8 (o convite não reserva vaga):
+    // traduz o erro dele em português de gente
+    let txt=''; try{ txt=await r.text(); }catch(e){}
+    if(/cheio/i.test(txt)) throw new Error('Esse grupo já está cheio (8 pessoas)');
+    throw new Error('Não consegui aceitar agora ('+r.status+')');
+  }
   await carregarGrupos();
   await sincronizarGrupos();
   return true;

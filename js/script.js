@@ -766,9 +766,13 @@ const ACOES={
   'gasto-add':el=>{
     const dPre=(el&&el.dataset&&/^\d{4}-\d{2}-\d{2}$/.test(el.dataset.d||''))?el.dataset.d:dataPadraoGasto();
     const cats=S.gastos.categorias.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.icone+' '+c.nome)+'</option>').join('');
+    // O seletor de projeto só existe pra quem criou algum: quem só quer anotar o uber
+    // não pode ver campo a mais.
+    const temProj=(typeof projetosAtivos==='function')&&projetosAtivos().length>0;
     abrirModal('<h3>Registrar gasto'+(dPre!==hojeISO()?' <span class="chip">'+esc(fmtData(dPre))+'</span>':'')+'</h3>'
       +campo('ga-valor','Valor (R$)','number','')
       +'<div class="campo"><label>Categoria</label><select id="ga-cat">'+cats+'</select></div>'
+      +(temProj?'<div class="campo"><label>Projeto (opcional — pra qual objetivo)</label><select id="ga-proj">'+opcoesProjeto('')+'</select></div>':'')
       +'<div class="grid-2">'+campo('ga-desc','Descrição (ex.: uber, cantina)','text','')
       +'<div class="campo"><label>Dia (esqueceu ontem? sem crise)</label><input type="date" id="ga-data" value="'+dPre+'" max="'+hojeISO()+'"></div></div>'
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
@@ -780,7 +784,7 @@ const ACOES={
     if(!v||v<=0){ toast('Valor inválido'); return; }
     const dtG=val('ga-data');
     const dataFinal=(/^\d{4}-\d{2}-\d{2}$/.test(dtG)&&dtG<=hojeISO())?dtG:hojeISO();
-    addGasto(v,val('ga-cat'),val('ga-desc'),dataFinal);
+    addGasto(v,val('ga-cat'),val('ga-desc'),dataFinal,val('ga-proj'));
     // deixa o dia do lançamento aberto na tela: a pessoa vê onde caiu
     if(UI.tab==='grana'){
       UI.granaDia=dataFinal;
@@ -897,6 +901,114 @@ const ACOES={
     S.settings.granaOculta=!granaOculta();
     saveState(); render();
     toast(granaOculta()?'🙈 Valores escondidos — só nesta tela':'👁️ Valores à mostra');
+  },
+
+  // ---- v51: barra de baixo personalizável ----
+  'barra-mais':()=>abrirMaisAbas(),
+  'barra-config':()=>{ _barraTmp=null; abrirBarraConfig(); },
+  'barra-ir':el=>{
+    const id=el.dataset.id;
+    if(!abaPorId(id)) return;
+    fecharModal(); UI.tab=id; UI.sub=null; setDiaFoco(null); render(); window.scrollTo({top:0});
+    if(id==='progresso'&&typeof carregarAmigos==='function'){
+      Promise.all([carregarAmigos(),carregarGrupos()]).then(()=>{ if(UI.tab==='progresso') render(); });
+    }
+    if(typeof metrica==='function') metrica('tab:'+id);
+  },
+  'barra-toggle':el=>{
+    const id=el.dataset.id;
+    if(!abaPorId(id)||id==='hoje') return;
+    if(!_barraTmp) _barraTmp=barraAtual().filter(x=>x!=='hoje');
+    const ix=_barraTmp.indexOf(id);
+    if(ix>=0) _barraTmp.splice(ix,1);
+    else if(_barraTmp.length<BARRA_MAX-1) _barraTmp.push(id);
+    else { toast('A barra cabe '+(BARRA_MAX-1)+' além do Hoje — tira uma pra pôr outra'); return; }
+    vibrar(8); abrirBarraConfig();
+  },
+  'barra-sugerida':()=>{ _barraTmp=barraSugerida().filter(x=>x!=='hoje'); abrirBarraConfig(); },
+  'barra-salvar':()=>{
+    salvarBarra(_barraTmp||[]);
+    _barraTmp=null; fecharModal(); render();
+    toast('📱 Barra do teu jeito ✓');
+  },
+
+  // ---- v51: projetos financeiros ----
+  'proj-add':()=>abrirModalProjeto(null),
+  'proj-edit':el=>abrirModalProjeto(el.dataset.id),
+  'proj-modelo':el=>{
+    const i=document.getElementById('pj-icone'), n=document.getElementById('pj-nome');
+    if(i) i.value=el.dataset.i||'🎯';
+    if(n){ n.value=el.dataset.n||''; n.focus(); }
+  },
+  'proj-salvar':el=>{
+    const id=el.dataset.id||'';
+    const nome=val('pj-nome'), icone=val('pj-icone')||'🎯';
+    const alvoN=Number(String(val('pj-alvo')).replace(',','.'));
+    if(!nome){ toast('Dá um nome pro objetivo'); return; }
+    if(id){
+      const p=projPorId(id); if(!p){ fecharModal(); return; }
+      p.nome=nome.slice(0,40); p.icone=icone.slice(0,4);
+      p.alvo=(alvoN>0?round2(alvoN):null);
+      saveState();
+    } else {
+      addProjeto(nome,icone,alvoN);
+    }
+    fecharModal(); render();
+    toast(id?'Projeto atualizado ✓':'🎯 Projeto criado — agora ele aparece na hora de registrar o gasto');
+  },
+  'proj-del':el=>{
+    const p=projPorId(el.dataset.id); if(!p) return;
+    const n=gastosDoProjeto(p.id).length;
+    abrirModal('<h3>Apagar “'+esc(p.nome)+'”?</h3>'
+      +'<p class="sec small">'+(n?('Os '+n+' gasto'+(n===1?'':'s')+' continuam na tua Grana — some só a etiqueta do objetivo.')
+                                :'Nenhum gasto está marcado nele.')+'</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn perigo" data-action="proj-del-ok" data-id="'+esc(p.id)+'">Apagar</button></div>');
+  },
+  'proj-del-ok':el=>{ removerProjeto(el.dataset.id); fecharModal(); render(); toast('Projeto apagado'); },
+  'proj-marcar':el=>{ _projMarcar=[]; abrirMarcarGastos(el.dataset.id); },
+  'proj-marcar-item':el=>{
+    const id=el.dataset.id, ix=_projMarcar.indexOf(id);
+    if(ix>=0) _projMarcar.splice(ix,1); else _projMarcar.push(id);
+    el.classList.toggle('sel',ix<0);
+    const bt=document.querySelector('[data-action="proj-marcar-ok"]');
+    if(bt) bt.textContent='Marcar ('+_projMarcar.length+')';
+  },
+  'proj-marcar-ok':el=>{
+    const n=marcarProjetoEmGastos(_projMarcar,el.dataset.id);
+    _projMarcar=[]; fecharModal(); render();
+    toast(n?(n+' gasto'+(n===1?'':'s')+' marcado'+(n===1?'':'s')+' ✓'):'Nenhum gasto selecionado');
+  },
+
+  // ---- v51: revisão da semana ----
+  'revisao-abrir':()=>{
+    S.settings.revisaoVista=inicioSemana();
+    saveState({skipSync:true});
+    UI.sub={tipo:'revisao'}; render(); window.scrollTo({top:0});
+  },
+  'revisao-depois':()=>{
+    S.settings.revisaoVista=inicioSemana();
+    saveState({skipSync:true}); render();
+    toast('Fica aqui quando quiser: aba Progresso 📊');
+  },
+  'revisao-fechar':()=>{ UI.sub=null; render(); window.scrollTo({top:0}); },
+  'revisao-rotina':()=>{ UI.sub=null; UI.tab='rotina'; render(); window.scrollTo({top:0}); },
+
+  // ---- v51: avisos que ajudam ----
+  'avisos-criar':()=>{
+    const r=criarAvisosDaRotina();
+    render();
+    if(!r.criados&&r.repetidos) toast('Teus avisos da rotina já estavam criados ✓');
+    else if(!r.criados&&r.calados) toast('Tudo o que sobrou cai dentro do silêncio — nada foi criado');
+    else if(!r.criados) toast('Nada pra criar por aqui');
+    else toast('🔔 '+r.criados+' aviso'+(r.criados===1?'':'s')+(r.refeitos?' atualizado':' criado')+(r.criados===1?'':'s')
+      +(r.calados?' · '+r.calados+' pulado'+(r.calados===1?'':'s')+' pelo silêncio':''));
+  },
+  'avisos-pausar':()=>{
+    const pausar=!lembretesPausados();
+    if(!(S.lembretes||[]).length){ toast('Você ainda não tem avisos'); return; }
+    pausarTodosLembretes(pausar); render();
+    toast(pausar?'🔕 Tudo pausado — nada vai te incomodar':'🔔 Avisos religados');
   },
   'grupo-add':()=>{
     if(!S.habits.length){ toast('Cria um hábito teu primeiro — é ele que conta no grupo'); return; }
@@ -1214,6 +1326,34 @@ function abrirModalRenda(ix){
     +'<button class="btn" data-action="renda-salvar" data-ix="'+(ix!=null?ix:'')+'">Salvar</button></div>');
 }
 
+// Segurar o dedo na barra de baixo abre a personalização das abas.
+// (é atalho, não caminho único: Ajustes → Barra de baixo faz o mesmo, pra quem
+//  não descobre gesto ou não consegue segurar o toque)
+let _barraLongo=false, _barraT=null, _barraXY=null;
+function ligarToqueLongoBarra(){
+  const nav=document.getElementById('bottom-nav');
+  if(!nav) return;
+  const cancela=()=>{ if(_barraT){ clearTimeout(_barraT); _barraT=null; } _barraXY=null; };
+  nav.addEventListener('pointerdown',ev=>{
+    _barraLongo=false;                       // toque novo começa limpo
+    if(document.body.classList.contains('modo-login')) return;
+    cancela();
+    _barraXY={x:ev.clientX,y:ev.clientY};
+    _barraT=setTimeout(()=>{
+      _barraT=null; _barraLongo=true; vibrar(14);
+      _barraTmp=null; abrirBarraConfig();
+    },600);
+  });
+  // só cancela se o dedo ANDOU: micro-tremor não pode matar o gesto
+  nav.addEventListener('pointermove',ev=>{
+    if(!_barraXY) return;
+    if(Math.abs(ev.clientX-_barraXY.x)>12||Math.abs(ev.clientY-_barraXY.y)>12) cancela();
+  });
+  ['pointerup','pointercancel','pointerleave'].forEach(e=>nav.addEventListener(e,cancela));
+  nav.addEventListener('contextmenu',ev=>ev.preventDefault());
+  window.addEventListener('scroll',cancela,{passive:true});
+}
+
 function vibrar(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms||12); }catch(e){} }
 function animaCheck(seletor){
   requestAnimationFrame(()=>{
@@ -1241,11 +1381,17 @@ function ligarEventos(){
     if(!ehCampo(document.activeElement)) document.body.classList.remove('teclado-aberto');
   },100); });
 
+  ligarToqueLongoBarra();
+
   document.body.addEventListener('click',ev=>{
     const nav=ev.target.closest('[data-nav]');
     if(nav){
       if(document.body.classList.contains('modo-login')) return;
-      UI.tab=nav.dataset.nav; setDiaFoco(null); render(); window.scrollTo({top:0});
+      // veio de um toque longo na barra: já abriu a personalização, não troca de aba
+      if(_barraLongo){ _barraLongo=false; ev.preventDefault(); return; }
+      // UI.sub=null é obrigatório: sem isso a subtela (treino, caderno, revisão)
+      // continua na frente e a barra troca de aba sem nada mudar na tela
+      UI.tab=nav.dataset.nav; UI.sub=null; setDiaFoco(null); render(); window.scrollTo({top:0});
       if(nav.dataset.nav==='progresso'&&typeof carregarAmigos==='function'){
         Promise.all([carregarAmigos(),carregarGrupos()]).then(()=>{ if(UI.tab==='progresso') render(); });
       }
@@ -1286,6 +1432,21 @@ function ligarEventos(){
       return;
     }
     if(t.dataset.campo==='nota'){ getDia().nota=t.value; saveState(); toast('📝 Anotado ✓'); return; }
+    if(t.dataset.avisos){
+      const a=cfgAvisos();
+      if(t.dataset.avisos==='antecedencia') a.antecedencia=Number(t.value)||0;
+      else a[t.dataset.avisos]=t.value||a[t.dataset.avisos];
+      cfgAvisos(); saveState();
+      // redesenha SÓ este cartão: um render() inteiro limparia os outros campos
+      // da tela de Ajustes que a pessoa estivesse preenchendo
+      const sec=document.getElementById('sec-avisos');
+      if(sec&&typeof secaoAvisos==='function'){
+        const tmp=document.createElement('div');
+        tmp.innerHTML=secaoAvisos();
+        if(tmp.firstElementChild) sec.replaceWith(tmp.firstElementChild);
+      } else render();
+      return;
+    }
     if(t.dataset.cfg){
       setPath(S,t.dataset.cfg,t.value); saveState(); renderTopbar();
       if(Date.now()-_cfgSalvoTs>15000){ _cfgSalvoTs=Date.now(); toast('✓ Salvo'); }

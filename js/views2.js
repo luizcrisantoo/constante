@@ -6,6 +6,7 @@ function viewGrana(){
     +'<button class="btn mini sec-btn" data-action="grana-olho" aria-label="'+(granaOculta()?'Mostrar os valores':'Esconder os valores')+'">'
     +(granaOculta()?'👁️ mostrar':'🙈 esconder')+'</button></div>';
   html+=secaoGastos();
+  if(typeof secaoProjetos==='function') html+=secaoProjetos();
 
   const temDividas=S.finance.dividas.length>0;
   if(!temDividas){
@@ -291,7 +292,9 @@ function viewConfig(){
       +'<p class="muted small mt">'+(st.ultimaSync?'Última sync: '+new Date(st.ultimaSync).toLocaleString('pt-BR'):'Nunca sincronizado')+' · passo a passo no GUIA-PUBLICACAO.md</p></section>';
   }
 
+  if(typeof secaoBarra==='function') html+=secaoBarra();
   html+=secaoNotificacoes();
+  if(typeof secaoAvisos==='function') html+=secaoAvisos();
   html+=secaoLembretes();
 
   html+='<section class="card"><h2>Novidades</h2>'

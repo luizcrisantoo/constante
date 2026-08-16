@@ -31,7 +31,9 @@
 
   <button class="sos-fab" data-action="sos-abrir" aria-label="SOS impulso — respiração guiada">🌊</button>
 
-  <nav class="bottom-nav" aria-label="Navegação principal">
+  <!-- Os botões abaixo são só o esqueleto: renderNav() reescreve a barra com as
+       abas que a pessoa escolheu (Ajustes → Barra de baixo, ou toque longo aqui). -->
+  <nav class="bottom-nav" id="bottom-nav" aria-label="Navegação principal">
     <button data-nav="hoje"><span class="ic">☀️</span>Hoje</button>
     <button data-nav="rotina"><span class="ic">📅</span>Rotina</button>
     <button data-nav="dieta"><span class="ic">🍽️</span>Dieta</button>
@@ -56,6 +58,7 @@
   <script src="js/assistente.js" defer></script>
   <script src="js/progresso.js" defer></script>
   <script src="js/amigos.js" defer></script>
+  <script src="js/fase5.js" defer></script>
   <script src="js/notificacoes.js" defer></script>
   <script src="js/metrica.js" defer></script>
   <script src="js/script.js" defer></script>

@@ -114,6 +114,16 @@ function sanearEstado(){
   if(!S.gastos||typeof S.gastos!=='object') S.gastos=defaultState().gastos;
   if(!Array.isArray(S.gastos.categorias)) S.gastos.categorias=defaultState().gastos.categorias;
   if(!Array.isArray(S.gastos.lancamentos)) S.gastos.lancamentos=[];
+  if(!Array.isArray(S.gastos.projetos)) S.gastos.projetos=[];
+  // backup importado / blob da nuvem não são confiáveis: corta tamanho na LEITURA
+  S.gastos.projetos.forEach(p=>{
+    if(!p||typeof p!=='object') return;
+    p.nome=String(p.nome==null?'':p.nome).slice(0,40);
+    p.icone=String(p.icone==null?'🎯':p.icone).slice(0,4);
+  });
+  S.gastos.projetos=S.gastos.projetos.filter(p=>p&&typeof p==='object'&&p.id);
+  // Um lançamento pode citar um projeto que ainda não chegou da nuvem. NÃO se limpa
+  // o campo aqui: quem lê é que ignora projeto desconhecido (projPorId devolve null).
   if(!S.estudo||!Array.isArray(S.estudo.cadernos)) S.estudo=defaultState().estudo;
   if(!Array.isArray(S.categorias)) S.categorias=defaultState().categorias;
   lixeira(); limparLixeiraVelha();
@@ -699,6 +709,11 @@ function mesclarEstado(remoto){
   }
   if(outro.gamif) S.gamif.conquistas=[...new Set([...(S.gamif.conquistas||[]),...(outro.gamif.conquistas||[])])];
 
+  // projetos ANTES dos lançamentos: assim nenhum lançamento que chega da nuvem
+  // aponta pra um projeto que ainda não existe deste lado
+  if(outro.gastos&&Array.isArray(outro.gastos.projetos)){
+    S.gastos.projetos=uniaoLanc(S.gastos.projetos,outro.gastos.projetos);
+  }
   if(outro.gastos&&Array.isArray(outro.gastos.lancamentos)){
     S.gastos.lancamentos=uniaoLanc(S.gastos.lancamentos,outro.gastos.lancamentos);
   }
@@ -918,10 +933,13 @@ function evolucaoCarga(ex){
 }
 
 function catGasto(id){ return S.gastos.categorias.find(c=>c.id===id)||{nome:'?',icone:'📦',cor:'var(--c-livre)'}; }
-function addGasto(valor,catId,descricao,dataISO){
+function addGasto(valor,catId,descricao,dataISO,projId){
   const v=round2(Number(String(valor).replace(',','.'))||0);
   if(v<=0) return;
-  S.gastos.lancamentos.push({id:uid(),valor:v,cat:catId,desc:descricao||'',data:dataISO||hojeISO()});
+  const g={id:uid(),valor:v,cat:catId,desc:descricao||'',data:dataISO||hojeISO()};
+  // campo some quando não é usado: nada de "proj:''" sujando o backup de quem não usa
+  if(projId&&projPorId(projId)) g.proj=projId;
+  S.gastos.lancamentos.push(g);
   saveState();
 }
 function removerGasto(id){ apagarItem(id); S.gastos.lancamentos=S.gastos.lancamentos.filter(g=>g.id!==id); saveState(); }
@@ -957,6 +975,246 @@ function gastosPorCategoria(lista){
 function addCategoriaGasto(nome,icone){
   if(!nome) return;
   S.gastos.categorias.push({id:uid(),nome:nome,icone:icone||'📦',cor:'var(--c-livre)'});
+  saveState();
+}
+
+// ---------- v51: projetos financeiros (gasto por objetivo) ----------
+// Categoria responde "com o QUE gastei"; projeto responde "pra QUAL objetivo".
+// Quem não cria nenhum projeto não vê nada disso — nem um campo a mais no lançamento.
+function projetos(){
+  if(!S.gastos) S.gastos=defaultState().gastos;
+  if(!Array.isArray(S.gastos.projetos)) S.gastos.projetos=[];
+  // backup importado / blob da nuvem não são confiáveis: corta tamanho na LEITURA
+  S.gastos.projetos.forEach(p=>{
+    if(!p||typeof p!=='object') return;
+    p.nome=String(p.nome==null?'':p.nome).slice(0,40);
+    p.icone=String(p.icone==null?'🎯':p.icone).slice(0,4);
+  });
+  S.gastos.projetos=S.gastos.projetos.filter(p=>p&&typeof p==='object'&&p.id);
+  return S.gastos.projetos;
+}
+function projetosAtivos(){ return projetos().filter(p=>p&&!p.arquivado); }
+function projPorId(id){ return id?(projetos().find(p=>p&&p.id===id)||null):null; }
+function addProjeto(nome,icone,alvo){
+  nome=String(nome||'').trim().slice(0,40);
+  if(!nome) return null;
+  const p={ id:'pj'+uid(), nome:nome, icone:String(icone||'🎯').slice(0,4),
+            alvo:(Number(alvo)>0?round2(Number(alvo)):null), inicio:hojeISO(), arquivado:false };
+  projetos().push(p); saveState();
+  return p;
+}
+function removerProjeto(id){
+  apagarItem(id);
+  // o gasto continua existindo: some só o vínculo com o objetivo
+  S.gastos.lancamentos.forEach(g=>{ if(g&&g.proj===id) delete g.proj; });
+  S.gastos.projetos=projetos().filter(p=>p&&p.id!==id);
+  saveState();
+}
+function gastosDoProjeto(id){ return S.gastos.lancamentos.filter(g=>g&&g.proj===id); }
+function totalProjeto(id){ return totalLista(gastosDoProjeto(id)); }
+// gastos que ainda não têm objetivo — pra etiquetar o que já foi lançado antes
+function gastosSemProjeto(desdeISO){
+  const lim=desdeISO||addDias(hojeISO(),-75);
+  return S.gastos.lancamentos.filter(g=>g&&g.data>=lim&&(!g.proj||!projPorId(g.proj)))
+    .sort((a,b)=>a.data<b.data?1:(a.data>b.data?-1:0));
+}
+function marcarProjetoEmGastos(ids,projId){
+  if(!projPorId(projId)) return 0;
+  let n=0;
+  (ids||[]).forEach(id=>{ const g=S.gastos.lancamentos.find(x=>x&&x.id===id); if(g){ g.proj=projId; n++; } });
+  if(n) saveState();
+  return n;
+}
+
+// ---------- v51: semana (pra revisão de domingo) ----------
+// Semana de segunda a domingo — no domingo ela fecha inteira.
+function inicioSemana(iso){
+  iso=iso||hojeISO();
+  const dow=isoToDate(iso).getDay();        // 0=Dom … 6=Sáb
+  return addDias(iso, dow===0 ? -6 : (1-dow));
+}
+function diasDaSemana(iso){
+  const ini=inicioSemana(iso);
+  const out=[]; const hoje=hojeISO();
+  for(let i=0;i<7;i++){ const d=addDias(ini,i); if(d<=hoje) out.push(d); }
+  return out;
+}
+function semanaFechada(iso){ return isoToDate(iso||hojeISO()).getDay()===0; }
+
+// Retrato da semana. Sem nota, sem ranking: só o que aconteceu.
+function resumoSemana(iso){
+  const dias=diasDaSemana(iso);
+  const ini=inicioSemana(iso), fim=addDias(ini,6);
+  const contaram=dias.filter(diaConta).length;
+  const neutros=dias.filter(diaNeutro).length;
+  const xp=dias.reduce((a,d)=>a+((S.days[d]&&S.days[d].xp)||0),0);
+  const treinos=dias.filter(d=>S.days[d]&&S.days[d].treino).length;
+
+  const habitos=S.habits.map(h=>{
+    const previstos=dias.filter(d=>h.dias.includes(isoToDate(d).getDay()));
+    const feitos=previstos.filter(d=>S.days[d]&&S.days[d].habitos&&S.days[d].habitos[h.id]===true);
+    return { h:h, previstos:previstos.length, feitos:feitos.length,
+             pct: previstos.length?Math.round(100*feitos.length/previstos.length):null };
+  }).filter(x=>x.previstos>0);
+
+  const sonos=dias.map(d=>S.days[d]&&S.days[d].sono&&Number(S.days[d].sono.h)).filter(h=>isFinite(h)&&h>0);
+  const sonoMedia=sonos.length?Math.round(10*sonos.reduce((a,b)=>a+b,0)/sonos.length)/10:null;
+
+  const lancs=S.gastos.lancamentos.filter(g=>g.data>=ini&&g.data<=fim);
+  const porCat=gastosPorCategoria(lancs);
+
+  return { ini, fim, dias, contaram, neutros, xp, treinos, habitos,
+           sonoMedia, sonoDias:sonos.length,
+           gasto:totalLista(lancs), lancs:lancs.length, topCat:porCat[0]||null,
+           fechada:semanaFechada(iso), streak:streakGeral() };
+}
+
+// ---------- v51: barra de baixo personalizável ----------
+function abaPorId(id){ return (typeof ABAS!=='undefined')?(ABAS.find(a=>a.id===id)||null):null; }
+// Quanto cada aba já foi usada de verdade. Serve pra quem já tinha o app antes da
+// v51: ninguém pode perder da barra justamente a aba que usa todo dia.
+function usoDaAba(id){
+  try{
+    if(id==='rotina')    return (S.routine||[]).length;
+    if(id==='dieta')     return (S.diet&&S.diet.refeicoes?S.diet.refeicoes.length:0)
+                              + Object.keys(S.days||{}).filter(k=>S.days[k]&&S.days[k].refeicoes&&Object.keys(S.days[k].refeicoes).length).length;
+    if(id==='grana')     return (S.gastos&&S.gastos.lancamentos?S.gastos.lancamentos.length:0)
+                              + (S.finance&&S.finance.dividas?S.finance.dividas.length*5:0);
+    if(id==='mente')     return (S.estudo&&S.estudo.cadernos?S.estudo.cadernos.length*3:0)
+                              + Object.keys(S.days||{}).filter(k=>S.days[k]&&(S.days[k].humor||(S.days[k].nota||'').trim())).length
+                              + ((S.bets&&S.bets.ativo)?10:0);
+    if(id==='progresso') return (S.progresso||[]).length*3
+                              + ((S.social&&S.social.amigos?S.social.amigos.length:0)*5);
+    if(id==='config')    return (S.lembretes||[]).length;
+  }catch(e){}
+  return 0;
+}
+// Sem escolha salva: primeiro a intenção do primeiro uso, depois o que a pessoa
+// mais usa, e o padrão só completa o que sobrou.
+function barraSugerida(){
+  const its=(typeof onbEstado==='function')?(onbEstado().intencoes||[]):[];
+  const out=['hoje'];
+  const poe=t=>{ if(t&&t!=='hoje'&&out.indexOf(t)<0&&out.length<BARRA_MAX) out.push(t); };
+  its.forEach(i=>poe(BARRA_POR_INTENCAO[i]));
+  (typeof ABAS!=='undefined'?ABAS:[]).filter(a=>!a.fixa)
+    .map(a=>({id:a.id, uso:usoDaAba(a.id)}))
+    .filter(x=>x.uso>0)
+    .sort((a,b)=>b.uso-a.uso)
+    .forEach(x=>poe(x.id));
+  BARRA_PADRAO.forEach(poe);
+  return out;
+}
+function barraAtual(){
+  const salva=(S.settings&&Array.isArray(S.settings.barra)&&S.settings.barra.length)?S.settings.barra:null;
+  let ids=(salva||barraSugerida()).filter(id=>!!abaPorId(id));
+  ids=ids.filter((id,i)=>ids.indexOf(id)===i);     // sem repetido
+  ids=ids.filter(id=>id!=='hoje');
+  ids.unshift('hoje');                             // Hoje é sempre a primeira
+  return ids.slice(0,BARRA_MAX);
+}
+function abasForaDaBarra(){
+  const naBarra=barraAtual();
+  return (typeof ABAS!=='undefined'?ABAS:[]).filter(a=>naBarra.indexOf(a.id)<0);
+}
+function salvarBarra(ids){
+  ids=(Array.isArray(ids)?ids:[]).filter(id=>!!abaPorId(id)&&id!=='hoje');
+  ids=ids.filter((id,i)=>ids.indexOf(id)===i).slice(0,BARRA_MAX-1);
+  S.settings.barra=['hoje'].concat(ids);
+  saveState();
+}
+
+// ---------- v51: avisos (lembretes gerados da rotina) ----------
+function cfgAvisos(){
+  if(!S.settings.avisos||typeof S.settings.avisos!=='object') S.settings.avisos=defaultState().settings.avisos;
+  const a=S.settings.avisos;
+  if(!/^\d{1,2}:\d{2}$/.test(a.silencioDe||'')) a.silencioDe='22:30';
+  if(!/^\d{1,2}:\d{2}$/.test(a.silencioAte||'')) a.silencioAte='06:00';
+  if(![0,10,30].includes(Number(a.antecedencia))) a.antecedencia=0;
+  return a;
+}
+// Silêncio pode atravessar a meia-noite (22:30 → 07:00).
+function noSilencio(hm){
+  const a=cfgAvisos();
+  const m=hmParaMin(hm), de=hmParaMin(a.silencioDe), ate=hmParaMin(a.silencioAte);
+  if(m==null||de==null||ate==null) return false;
+  return (de<=ate) ? (m>=de&&m<ate) : (m>=de||m<ate);
+}
+function hmMenos(hm,min){
+  let m=hmParaMin(hm); if(m==null) return hm;
+  m=(m-(min||0)+1440)%1440;
+  return pad2(Math.floor(m/60))+':'+pad2(m%60);
+}
+// Um aviso por (horário + título), com os dias em que aquele bloco existe.
+function avisosDaRotina(){
+  const a=cfgAvisos();
+  const mapa={};
+  (S.routine||[]).forEach(b=>{
+    if(!b||!b.i||!b.t) return;
+    if(!Number.isInteger(b.d)||b.d<0||b.d>6) return;   // bloco torto não vira aviso torto
+    const hora=hmMenos(b.i,a.antecedencia);
+    const k=hora+'|'+b.t;
+    if(!mapa[k]) mapa[k]={hora:hora, titulo:b.t, tipo:b.tipo, dias:[], origem:b.i};
+    if(mapa[k].dias.indexOf(b.d)<0) mapa[k].dias.push(b.d);
+  });
+  return Object.keys(mapa).map(k=>mapa[k])
+    .map(x=>{ x.dias.sort(); x.calado=noSilencio(x.hora); return x; })
+    .sort((x,y)=>x.hora.localeCompare(y.hora));
+}
+function textoAviso(x){
+  const a=cfgAvisos();
+  const t=String(x.titulo||'').slice(0,90);
+  return a.antecedencia>0 ? ('⏰ '+t+' em '+a.antecedencia+' min') : ('⏰ '+t+' começa agora');
+}
+function jaTemLembrete(hora,texto){
+  return (S.lembretes||[]).some(l=>l&&l.hora===hora&&l.texto===texto);
+}
+// Regera os avisos da rotina: refaz os que o app criou (deRotina) e pula o silêncio.
+// Aviso que a pessoa editou na mão perde o selo deRotina e nunca é mexido aqui —
+// senão mudar a antecedência encheria a lista de duplicados.
+function criarAvisosDaRotina(){
+  if(!Array.isArray(S.lembretes)) S.lembretes=[];
+  const props=avisosDaRotina();
+  const antigos=S.lembretes.filter(l=>l&&l.deRotina===true);
+
+  // monta a lista NOVA antes de tocar na antiga: nunca se apaga o que existe
+  // pra ficar com nada no lugar
+  const novos=[]; let calados=0, repetidos=0;
+  props.forEach(x=>{
+    if(x.calado){ calados++; return; }
+    const texto=textoAviso(x);
+    const meu=S.lembretes.some(l=>l&&l.deRotina!==true&&l.hora===x.hora&&l.texto===texto);
+    if(meu){ repetidos++; return; }              // já existe um teu, igualzinho: respeita
+    // aviso gerado que a pessoa tinha pausado continua pausado depois de refeito
+    const igual=antigos.find(l=>l.texto===texto);
+    novos.push({ id:'lb'+uid(), hora:x.hora, texto:texto,
+                 dias:(x.dias.length===7?[]:x.dias.slice()),
+                 ativo:(igual&&igual.ativo===false)?false:true, deRotina:true });
+  });
+  if(!novos.length&&antigos.length){
+    return {criados:0, calados, repetidos, refeitos:0, mantidos:antigos.length, total:props.length};
+  }
+  antigos.forEach(l=>apagarItem(l.id));
+  S.lembretes=S.lembretes.filter(l=>!(l&&l.deRotina===true)).concat(novos);
+  saveState();
+  return {criados:novos.length, calados, repetidos, refeitos:antigos.length, mantidos:0, total:props.length};
+}
+function lembretesPausados(){
+  const ls=S.lembretes||[];
+  return ls.length>0 && ls.every(l=>l&&l.ativo===false);
+}
+// Pausar tudo é reversível de verdade: religar devolve só o que ESTE botão desligou,
+// nunca o que a pessoa tinha pausado de propósito.
+function pausarTodosLembretes(pausar){
+  (S.lembretes||[]).forEach(l=>{
+    if(!l) return;
+    if(pausar){
+      if(l.ativo===false){ l._eraPausado=true; return; }
+      l.ativo=false;
+    } else {
+      if(l._eraPausado){ delete l._eraPausado; return; }
+      l.ativo=true;
+    }
+  });
   saveState();
 }
 

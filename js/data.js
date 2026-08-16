@@ -24,6 +24,40 @@ const SUGESTOES_HABITO = {
   aposta:[{icone:'🎯',nome:'Apostar',tipo:'evitar'}]
 };
 const MESES_NOME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+// ---- v51: barra de baixo personalizável ----
+// "Hoje" é fixa (é a casa do app). As outras a pessoa escolhe — o que sobrar
+// vai pro botão "Mais", então nada fica inalcançável.
+const ABAS = [
+  {id:'hoje',      icone:'☀️', nome:'Hoje', fixa:true},
+  {id:'rotina',    icone:'📅', nome:'Rotina'},
+  {id:'dieta',     icone:'🍽️', nome:'Dieta'},
+  {id:'grana',     icone:'💰', nome:'Grana'},
+  {id:'mente',     icone:'🧠', nome:'Mente'},
+  {id:'progresso', icone:'📈', nome:'Progresso'},
+  {id:'config',    icone:'⚙️', nome:'Ajustes'}
+];
+const BARRA_MAX = 5;                 // Hoje + 4 à escolha
+const BARRA_PADRAO = ['hoje','rotina','dieta','grana','progresso'];
+// Intenção escolhida no primeiro uso → aba que provavelmente importa pra ela.
+const BARRA_POR_INTENCAO = {
+  treino:'rotina', comer:'dieta', agua:'dieta', sono:'mente',
+  estudo:'rotina', grana:'grana', cabeca:'mente', aposta:'mente'
+};
+
+// ---- v51: projetos financeiros (gasto por objetivo) ----
+// CATEGORIA = com o QUE você gastou · PROJETO = pra QUAL objetivo.
+// São dimensões diferentes: o mesmo gasto pode ter as duas.
+const MODELOS_PROJETO = [
+  {icone:'💍', nome:'Casamento'},
+  {icone:'✈️', nome:'Viagem'},
+  {icone:'🔨', nome:'Reforma'},
+  {icone:'📦', nome:'Mudança'},
+  {icone:'🎓', nome:'Faculdade'},
+  {icone:'🎉', nome:'Festa'},
+  {icone:'🚗', nome:'Carro'},
+  {icone:'✨', nome:''}
+];
 const UNIDADES = {
   min: { nome:'minutos', abrev:'min' },
   vez: { nome:'vezes',   abrev:'x'   },
@@ -42,7 +76,10 @@ function defaultState(){
     settings: {
       sono:{ deitar:'23:00', acordar:'07:00', deitarFds:'23:30', acordarFds:'08:00', melatonina:'' },
       syncUrl:'', syncKey:'', syncCode:'', syncAuto:true, ultimaSync:null,
-      onboard:{ feito:false, intencoes:[], vitoria:'' }
+      onboard:{ feito:false, intencoes:[], vitoria:'' },
+      barra:null,                                  // null = o app sugere pela intenção
+      avisos:{ silencioDe:'22:30', silencioAte:'06:00', antecedencia:0 },
+      revisaoVista:''                              // semana (segunda ISO) já revisada
     },
     pesos: [],
     habits: [],
@@ -92,7 +129,8 @@ function defaultState(){
         {id:'g_casa', nome:'Casa/contas', icone:'🏠', cor:'var(--c-estudo)'},
         {id:'g_outros', nome:'Outros', icone:'📦', cor:'var(--c-livre)'}
       ],
-      lancamentos:[]
+      lancamentos:[],
+      projetos:[]
     },
     estudo: {
       cadernos:[]
@@ -147,6 +185,12 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:51, data:'2026-08-16', destaque:true, titulo:'O sistema ficou calmo — 4 coisas novas', itens:[
+    '📱 A BARRA DE BAIXO AGORA É SUA: "Hoje" fica fixo e você escolhe as outras 4 abas. O que sobrar não some — vai pro botão "Mais" (⋯) no canto. Pra mexer: segure o dedo na própria barra por um segundo, ou vá em Ajustes → Barra de baixo. A ordem é a ordem em que você tocar nas abas.',
+    '💰 PROJETOS NA GRANA: categoria é COM O QUE você gastou (Materiais); projeto é PRA QUAL objetivo (Reforma do apto). Agora dá pra marcar as duas coisas e ver quanto já saiu por objetivo — viagem, casamento, faculdade, o que for. Tem modelos prontos. É totalmente opcional: quem não criar nenhum projeto não vê campo nenhum a mais na hora de lançar o gasto.',
+    '📊 REVISÃO DA SEMANA: no domingo aparece um convite na tela Hoje pra ver o retrato dos seus 7 dias — dias que contaram, hábito por hábito, treinos, sono e gasto da semana. Sem nota, sem ranking, sem cobrança: é retrato, não boletim. Dá pra abrir quando quiser pela aba Progresso.',
+    '🔔 AVISOS QUE AJUDAM: em Ajustes agora dá pra criar os lembretes direto da sua rotina, de uma vez — cada bloco vira um aviso no horário certo e só nos dias em que ele existe. Você escolhe se quer ser avisado na hora ou 10/30 minutos antes, e define um horário de silêncio (padrão 22:30 às 06:00) que o app respeita: nada é criado dentro dele.'
+  ]},
   { v:50, data:'2026-08-14', titulo:'Layout que não estoura mais a tela', itens:[
     '📱 Corrigido o problema que alguns relataram no Android: ao trocar de aba, a tela saía do lugar e só voltava dando zoom pra fora e pra dentro. A causa era o layout deixando o conteúdo passar da largura da tela — um nome de hábito comprido ou a barra dos dias da Rotina empurravam a página inteira.',
     '✅ Agora nada cria rolagem lateral: texto longo quebra a linha, a barra dos dias rola dentro dela mesma, e as telas foram medidas em 320, 360 e 412 pixels de largura pra garantir.'

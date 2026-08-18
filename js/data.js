@@ -79,7 +79,8 @@ function defaultState(){
       onboard:{ feito:false, intencoes:[], vitoria:'' },
       barra:null,                                  // null = o app sugere pela intenção
       avisos:{ silencioDe:'22:30', silencioAte:'06:00', antecedencia:0 },
-      revisaoVista:''                              // semana (segunda ISO) já revisada
+      revisaoVista:'',                             // semana (segunda ISO) já revisada
+      fotoPlanoVisto:false                         // dispensou o convite de fotografar o plano
     },
     pesos: [],
     habits: [],
@@ -185,6 +186,14 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:52, data:'2026-08-18', titulo:'O que já existia, agora aparece', itens:[
+    '↩️ REPETIR ONTEM virou cartão de verdade na tela Hoje, e aparece na hora certa: quando o dia ainda está vazio e ontem teve movimento. Antes era um botãozinho no canto do título que ninguém via.',
+    '🌙 DIA DIFÍCIL agora é oferecido quando você volta depois de uns dias fora — que é justamente quando ele serve. Marcar o dia como difícil não quebra sua linha, e ninguém precisava descobrir isso sozinho.',
+    '📸 FOTOGRAFAR O PLANO deixou de sumir. Enquanto a dieta ou o treino estiverem vazios, o convite fica na tela Hoje: você fotografa a folha do nutri ou a ficha do personal e o app monta. Dá pra dispensar com um toque.',
+    '💰 O CAMPO DE VALOR DO GASTO parou de implicar: agora aceita "12,50", "R$ 12,50", "1.500" e "1.500,75" do mesmo jeito. E se ainda assim não der, a mensagem diz o que fazer em vez de só reclamar.',
+    '⌨️ No Android, o teclado não cobre mais o botão de salvar dentro das janelas — dava pra digitar o gasto e não conseguir registrar.',
+    '⏭ Empurrar o treino pra amanhã agora é um botão, não um link escondido no rodapé.'
+  ]},
   { v:51, data:'2026-08-16', destaque:true, titulo:'O sistema ficou calmo — 4 coisas novas', itens:[
     '📱 A BARRA DE BAIXO AGORA É SUA: "Hoje" fica fixo e você escolhe as outras 4 abas. O que sobrar não some — vai pro botão "Mais" (⋯) no canto. Pra mexer: segure o dedo na própria barra por um segundo, ou vá em Ajustes → Barra de baixo. A ordem é a ordem em que você tocar nas abas.',
     '💰 PROJETOS NA GRANA: categoria é COM O QUE você gastou (Materiais); projeto é PRA QUAL objetivo (Reforma do apto). Agora dá pra marcar as duas coisas e ver quanto já saiu por objetivo — viagem, casamento, faculdade, o que for. Tem modelos prontos. É totalmente opcional: quem não criar nenhum projeto não vê campo nenhum a mais na hora de lançar o gasto.',

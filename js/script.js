@@ -6,7 +6,7 @@ function setPath(obj,caminho,valor){
   for(let i=0;i<partes.length-1;i++) o=o[partes[i]];
   const k=partes[partes.length-1];
   const antigo=o[k];
-  o[k]=(typeof antigo==='number')?(Number(String(valor).replace(',','.'))||0):valor;
+  o[k]=(typeof antigo==='number')?(numeroBR(valor)||0):valor;
 }
 
 const ACOES={
@@ -124,6 +124,10 @@ const ACOES={
   },
   'treino-check':()=>{ const d=getDia(); d.treino=!d.treino; recalcXP(diaFoco()); saveState(); if(d.treino) toast('💪 Treino contou! (+10 XP de bônus)'); render(); if(d.treino){ vibrar(); animaCheck('[data-action="treino-check"]'); } },
   'recomeco-ok':()=>{ UI.recomecoLeve=false; render(); toast('Um passo de cada vez 💜'); },
+  'foto-plano-depois':()=>{
+    S.settings.fotoPlanoVisto=true; saveState({skipSync:true}); render();
+    toast('Sem problema — fica no assistente 🤖 quando você quiser');
+  },
 
   'rotina-dia':el=>{ UI.rotinaDia=Number(el.dataset.d); render(); },
   'bloco-add':el=>abrirModalBloco(Number(el.dataset.d),null),
@@ -195,7 +199,7 @@ const ACOES={
     +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
     +'<button class="btn" data-action="peso-salvar">Salvar</button></div>'),
   'peso-salvar':()=>{
-    const kg=Number(String(val('pe-kg')).replace(',','.'));
+    const kg=numeroBR(val('pe-kg'));
     if(!kg||kg<30||kg>250){ toast('Peso inválido'); return; }
     S.pesos=S.pesos.filter(p=>p.data!==hojeISO());
     S.pesos.push({data:hojeISO(),kg:Math.round(kg*10)/10});
@@ -208,13 +212,13 @@ const ACOES={
     +campo('ap-valor','Valor (R$)','number',S.finance.aporteMensal)
     +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
     +'<button class="btn" data-action="aporte-salvar">Salvar</button></div>'),
-  'aporte-salvar':()=>{ S.finance.aporteMensal=Math.max(0,Number(String(val('ap-valor')).replace(',','.'))||0); saveState(); fecharModal(); render(); },
+  'aporte-salvar':()=>{ S.finance.aporteMensal=Math.max(0,numeroBR(val('ap-valor'))||0); saveState(); fecharModal(); render(); },
 
   'divida-add':()=>abrirModalDivida(null),
   'divida-edit':el=>abrirModalDivida(el.dataset.id),
   'divida-salvar':el=>{
     const id=el.dataset.id;
-    const nome=val('dv-nome'); const total=Number(String(val('dv-total')).replace(',','.'))||0;
+    const nome=val('dv-nome'); const total=numeroBR(val('dv-total'))||0;
     if(!nome||total<=0){ toast('Preenche nome e valor'); return; }
     if(id){ const dv=S.finance.dividas.find(x=>x.id===id); if(dv){ dv.nome=nome; dv.total=total; } }
     else S.finance.dividas.push({id:'dv'+Date.now(),nome,total,pagos:[]});
@@ -235,7 +239,7 @@ const ACOES={
   },
   'pagar-salvar':el=>{
     const dv=S.finance.dividas.find(x=>x.id===el.dataset.id); if(!dv) return;
-    const v=Number(String(val('pg-valor')).replace(',','.'));
+    const v=numeroBR(val('pg-valor'));
     if(!v||v<=0){ toast('Valor inválido'); return; }
     dv.pagos.push({id:uid(),valor:round2(v),data:hojeISO()});
     saveState(); fecharModal(); render();
@@ -272,7 +276,7 @@ const ACOES={
       +'<p class="muted small mt">Se ainda der tempo de evitar: fecha isso e aperta 🌊.</p>');
   },
   'apostar-salvar':()=>{
-    const v=Number(String(val('bt-valor')).replace(',','.'));
+    const v=numeroBR(val('bt-valor'));
     if(!(v>0)){ toast('Valor inválido'); return; }
     registrarAposta(Math.round(v*100)/100);
     fecharModal(); render();
@@ -296,8 +300,8 @@ const ACOES={
   'apostas-ativar-ok':()=>{
     const alvo=String(val('at-alvo')||'').trim().slice(0,60);
     const uni=val('at-unidade'); const unidade=(uni==='vez'||uni==='brl')?uni:'min';
-    const lim=Number(String(val('at-limite')).replace(',','.'))||0;
-    const sem=Number(String(val('at-semanas')).replace(',','.'))||8;
+    const lim=numeroBR(val('at-limite'))||0;
+    const sem=numeroBR(val('at-semanas'))||8;
     S.bets.ativo=true; S.bets.alvo=alvo; S.bets.unidade=unidade;
     S.bets.limiteSemanaInicial=Math.max(0,lim); S.bets.semanasParaZero=Math.max(1,Math.round(sem)); S.bets.inicioPlano=hojeISO();
     saveState(); fecharModal(); render(); toast('Plano ativado — um passo de cada vez 💪');
@@ -366,7 +370,7 @@ const ACOES={
   'renda-edit':el=>abrirModalRenda(Number(el.dataset.ix)),
   'renda-salvar':el=>{
     const ix=el.dataset.ix===''?null:Number(el.dataset.ix);
-    const r={nome:val('rd-nome')||'Renda',valor:Number(String(val('rd-valor')).replace(',','.'))||0};
+    const r={nome:val('rd-nome')||'Renda',valor:numeroBR(val('rd-valor'))||0};
     if(ix===null) S.finance.rendas.push(r); else S.finance.rendas[ix]=r;
     saveState(); fecharModal(); render();
   },
@@ -780,8 +784,13 @@ const ACOES={
       +'<p class="muted small mt"><button class="deslize-btn" data-action="gasto-nova-cat">+ Criar categoria</button></p>');
   },
   'gasto-salvar':()=>{
-    const v=Number(String(val('ga-valor')).replace(',','.'));
-    if(!v||v<=0){ toast('Valor inválido'); return; }
+    const v=numeroBR(val('ga-valor'));
+    if(!isFinite(v)||v<=0){
+      // erro que diz o que fazer, e devolve o foco pro campo em vez de largar a pessoa
+      toast('Escreve só o valor, tipo 12,50 — pode pôr R$ que eu entendo');
+      const c=document.getElementById('ga-valor'); if(c){ c.focus(); c.select&&c.select(); }
+      return;
+    }
     const dtG=val('ga-data');
     const dataFinal=(/^\d{4}-\d{2}-\d{2}$/.test(dtG)&&dtG<=hojeISO())?dtG:hojeISO();
     addGasto(v,val('ga-cat'),val('ga-desc'),dataFinal,val('ga-proj'));
@@ -943,7 +952,7 @@ const ACOES={
   'proj-salvar':el=>{
     const id=el.dataset.id||'';
     const nome=val('pj-nome'), icone=val('pj-icone')||'🎯';
-    const alvoN=Number(String(val('pj-alvo')).replace(',','.'));
+    const alvoN=numeroBR(val('pj-alvo'));
     if(!nome){ toast('Dá um nome pro objetivo'); return; }
     if(id){
       const p=projPorId(id); if(!p){ fecharModal(); return; }
@@ -1354,6 +1363,22 @@ function ligarToqueLongoBarra(){
   window.addEventListener('scroll',cancela,{passive:true});
 }
 
+// Mede o quanto o teclado do celular comeu da tela e devolve isso pro CSS (--kb).
+// O `interactive-widget=resizes-content` no index.html resolve na maioria dos Android;
+// isto aqui é a rede pra quem não respeita (e pro iOS, que só mexe na visualViewport).
+function ligarMedidaDoTeclado(){
+  const vv=window.visualViewport;
+  if(!vv) return;
+  const medir=()=>{
+    const sobra=Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+    // menos de 120px não é teclado (é barra de endereço encolhendo)
+    document.documentElement.style.setProperty('--kb', (sobra>120?sobra:0)+'px');
+  };
+  vv.addEventListener('resize',medir);
+  vv.addEventListener('scroll',medir);
+  medir();
+}
+
 function vibrar(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms||12); }catch(e){} }
 function animaCheck(seletor){
   requestAnimationFrame(()=>{
@@ -1376,7 +1401,15 @@ let _cfgSalvoTs=0;
 function ligarEventos(){
   const ehCampo=el=>el&&/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)&&el.type!=='checkbox'&&el.type!=='radio';
   const noCelular=()=>matchMedia('(max-width:767px), (pointer:coarse)').matches;
-  document.addEventListener('focusin',ev=>{ if(noCelular()&&ehCampo(ev.target)) document.body.classList.add('teclado-aberto'); });
+  ligarMedidaDoTeclado();
+  document.addEventListener('focusin',ev=>{
+    if(noCelular()&&ehCampo(ev.target)) document.body.classList.add('teclado-aberto');
+    // campo dentro de modal: garante que ele (e o botão logo abaixo) fiquem visíveis
+    if(ehCampo(ev.target)&&ev.target.closest('.modal')){
+      const alvo=ev.target;
+      setTimeout(()=>{ try{ alvo.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){} },250);
+    }
+  });
   document.addEventListener('focusout',ev=>{ if(ehCampo(ev.target)) setTimeout(()=>{
     if(!ehCampo(document.activeElement)) document.body.classList.remove('teclado-aberto');
   },100); });
@@ -1414,7 +1447,7 @@ function ligarEventos(){
     if(t.dataset.sono!==undefined&&t.dataset.sono!==''){
       const d=getDia();
       const campoSono=t.dataset.sono;
-      d.sono[campoSono]=t.type==='number'?(t.value===''?null:Number(String(t.value).replace(',','.'))):t.value;
+      d.sono[campoSono]=t.type==='number'?(t.value===''?null:numeroBR(t.value)):t.value;
       if(campoSono==='h') d.sono.hAuto=false; // digitou na mão → o app respeita e não sobrescreve
       if(campoSono==='deitou'||campoSono==='acordou'){
         // recalcula sempre que mexer nos horários — a menos que as horas tenham sido digitadas manualmente
@@ -1527,6 +1560,7 @@ function carregarEstadoDaConta(u){
   _usuarioLogado=u.id;
   setUserKey(u.id);
   if(typeof metricaIdentificar==='function') metricaIdentificar(u.id);
+  avisarAppAberto();
   setSyncEstado(navigator.onLine===false?'offline':'pendente');
   let raw=lsGet();
   let migrou=false;
@@ -1563,16 +1597,26 @@ function aoMudarAuth(evento,sessao,antes){
     UI.auth={tela:'entrar'}; renderLogin();
   }
 }
+// "app-aberto" só sai DEPOIS que a sessão resolve. Disparado no boot, ele saía com o id
+// anônimo do aparelho mesmo pra quem estava logado — e aí a mesma pessoa virava dois ids
+// nos relatórios (o de antes do login nunca mais aparecia). Uma vez por carregamento.
+let _appAbertoEnviado=false;
+function avisarAppAberto(){
+  if(_appAbertoEnviado) return;
+  _appAbertoEnviado=true;
+  if(typeof metrica==='function') metrica('app-aberto');
+}
+
 function boot(){
   loadState();
   ligarEventos();
-  if(typeof metrica==='function') metrica('app-aberto');
   if(typeof modoProduto==='function'&&modoProduto()){
 
     if(/type=recovery/.test(location.hash)||/type=recovery/.test(location.search)) _emRecuperacao=true;
     let _telaInicial=false;
     const semSessao=()=>{
       if(_telaInicial) return; _telaInicial=true;
+      avisarAppAberto();   // aqui o id anônimo é o certo: ninguém está logado
       renderLogin();
     };
     // Se a autenticação demorar demais (rede pendurada, portal de wi-fi), mostra algo:
@@ -1589,6 +1633,7 @@ function boot(){
       else semSessao();
     }).catch(()=>{ clearTimeout(socorro); semSessao(); });
   } else {
+    avisarAppAberto();
     renderSeguro();
     boasVindas();
     if(S.settings.syncAuto&&syncConfigurado()){

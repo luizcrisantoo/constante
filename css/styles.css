@@ -231,7 +231,10 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
 .modal{
   background:var(--surface); border:1px solid var(--border);
   border-radius:var(--radius) var(--radius) 0 0; width:100%; max-width:640px;
-  max-height:88dvh; overflow-y:auto; padding:var(--sp-lg) var(--sp-md) calc(var(--sp-lg) + env(safe-area-inset-bottom,0px));
+  max-height:88dvh; overflow-y:auto;
+  /* --kb = altura do teclado do celular (js/script.js). Sem isso o botão de salvar
+     ficava embaixo do teclado no Android e a pessoa desistia de registrar. */
+  padding:var(--sp-lg) var(--sp-md) calc(var(--sp-lg) + env(safe-area-inset-bottom,0px) + var(--kb, 0px));
   box-shadow:var(--shadow);
 }
 .modal h3{ margin-bottom:var(--sp-sm); }
@@ -406,3 +409,7 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
   border:1px solid var(--border); border-radius:999px;
   font-size:0.68rem; color:var(--ink-mute); white-space:nowrap; vertical-align:middle;
 }
+
+/* ---- v52: teclado do celular não pode cobrir o botão de salvar ---- */
+:root{ --kb:0px; }
+body.teclado-aberto .modal{ max-height:none; }

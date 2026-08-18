@@ -18,6 +18,29 @@ function fmtBRL(v){ const n=Number(v); return (isFinite(n)?n:0).toLocaleString('
 function unidadeBets(){ const b=S.bets||{}; if(b.unidade&&UNIDADES[b.unidade]) return b.unidade; return b.ativo?'brl':'min'; }
 function fmtQtd(v){ const n=Number(v); const x=isFinite(n)?n:0; return (Math.round(x*100)/100).toString().replace('.',','); }
 function fmtUnidade(v,u){ u=u||unidadeBets(); if(u==='brl') return fmtBRL(v); if(u==='vez') return fmtQtd(v)+'x'; return fmtQtd(v)+' min'; }
+// Lê número do jeito que gente escreve: "12,50", "R$ 12,50", "1.500", "1.500,75", "12.50".
+// Antes só trocava vírgula por ponto, então "R$ 12,50" virava "valor inválido" e a pessoa
+// desistia de registrar o gasto. Devolve NaN quando não há número nenhum.
+function numeroBR(x){
+  if(typeof x==='number') return isFinite(x)?x:NaN;
+  let s=String(x==null?'':x).trim();
+  s=s.replace(/[^\d.,-]/g,'');                 // fora R$, espaço, "reais", emoji…
+  if(!s||!/\d/.test(s)) return NaN;
+  const neg=s.charAt(0)==='-';
+  s=s.replace(/-/g,'');
+  const ult=Math.max(s.lastIndexOf(','), s.lastIndexOf('.'));
+  let inteiro=s, decimal='';
+  if(ult>=0){
+    const casas=s.length-ult-1;
+    const sep=s.charAt(ult);
+    // ponto com exatamente 3 casas é separador de milhar no Brasil (1.500), não decimal
+    const ehMilhar=(sep==='.'&&casas===3);
+    if(!ehMilhar){ inteiro=s.slice(0,ult); decimal=s.slice(ult+1); }
+  }
+  const n=Number(inteiro.replace(/[.,]/g,'')+(decimal?('.'+decimal.replace(/[.,]/g,'')):''));
+  if(!isFinite(n)) return NaN;
+  return neg?-n:n;
+}
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function round2(v){ return Math.round(v*100)/100; }
 
@@ -916,7 +939,7 @@ function removerExercicio(idTreino,idEx){
 function registrarCarga(idTreino,idEx,series,reps,carga,descanso){
   const t=treinoPorId(idTreino); if(!t) return;
   const ex=t.exercicios.find(e=>e.id===idEx); if(!ex) return;
-  const reg={id:uid(),data:hojeISO(),series:Number(series)||0,reps:Number(reps)||0,carga:round2(Number(String(carga).replace(',','.'))||0)};
+  const reg={id:uid(),data:hojeISO(),series:Number(series)||0,reps:Number(reps)||0,carga:round2(numeroBR(carga)||0)};
   const dsc=String(descanso||'').trim(); if(dsc) reg.descanso=dsc.slice(0,20);
   ex.registros.push(reg);
   saveState();
@@ -934,7 +957,7 @@ function evolucaoCarga(ex){
 
 function catGasto(id){ return S.gastos.categorias.find(c=>c.id===id)||{nome:'?',icone:'📦',cor:'var(--c-livre)'}; }
 function addGasto(valor,catId,descricao,dataISO,projId){
-  const v=round2(Number(String(valor).replace(',','.'))||0);
+  const v=round2(numeroBR(valor)||0);
   if(v<=0) return;
   const g={id:uid(),valor:v,cat:catId,desc:descricao||'',data:dataISO||hojeISO()};
   // campo some quando não é usado: nada de "proj:''" sujando o backup de quem não usa

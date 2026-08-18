@@ -139,7 +139,11 @@ function viewHoje(){
   if(ehHoje&&UI.recomecoLeve){
     html+='<section class="card" style="border-left:3px solid var(--good)"><h2>🌱 Bom te ver de novo</h2>'
       +'<p class="sec small">Ficar uns dias fora acontece — recomeçar também é constância. Começa leve: marca UMA coisa hoje (uma água já conta).</p>'
-      +'<div class="acoes mt"><button class="btn mini" data-action="recomeco-ok">Bora 🌱</button></div></section>';
+      // é aqui que a pessoa precisa saber que o dia difícil existe: voltando depois de sumir.
+      +(d.neutro?'':'<p class="sec small mt">E se hoje também não der, marca como <b>dia difícil</b> — a linha não quebra por isso.</p>')
+      +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap"><button class="btn mini" data-action="recomeco-ok">Bora 🌱</button>'
+      +(d.neutro?'':'<button class="btn mini sec-btn" data-action="dia-neutro">🌙 Hoje tá difícil</button>')
+      +'</div></section>';
   }
 
   const onbV=(ehHoje&&typeof onbEstado==='function')?onbEstado():null;
@@ -180,10 +184,16 @@ function viewHoje(){
   }
 
 
+  // Estava escondido como botãozinho no título do card e ninguém achou (0 usos em 6 dias).
+  // Vira cartão próprio, e só aparece na hora exata: hoje ainda vazio, ontem com movimento.
   const podeRepetir=ehHoje&&(xpHoje===0)&&(typeof repetirOntem==='function')&&repetirOntem(true)>0;
-  html+='<section class="card"><h2>'+(ehHoje?'Seu dia':'Esse dia')
-    +(podeRepetir?'<button class="btn mini sec-btn dir" data-action="repetir-ontem">↩️ Repetir ontem</button>':'')
-    +'</h2>'
+  if(podeRepetir){
+    html+='<section class="card" style="border-left:3px solid var(--brand)">'
+      +'<div class="linha"><div class="esq"><b>↩️ Repetir o dia de ontem</b>'
+      +'<div class="muted small">Se hoje for parecido, copia tudo de uma vez — depois você tira o que não rolou.</div></div>'
+      +'<button class="btn mini" data-action="repetir-ontem">Repetir</button></div></section>';
+  }
+  html+='<section class="card"><h2>'+(ehHoje?'Seu dia':'Esse dia')+'</h2>'
     +(d.neutro
       ? '<div class="linha" style="padding-bottom:0.4rem"><span class="esq sec small">🌙 '+esc(NEUTRO_LABEL[d.neutro]||'Dia difícil')+' — a linha continua de pé, esse dia não conta como falha.</span>'
         +'<button class="deslize-btn" data-action="dia-neutro-desfazer">desfazer</button></div>'
@@ -215,6 +225,25 @@ function viewHoje(){
           +'<button class="btn sec-btn" data-nav="rotina">Montar minha rotina</button>'
           +'</div>')
       +'</section>';
+  }
+
+  // "Fotografe seu plano" só existia no cartão de boas-vindas acima — que SOME assim que a
+  // pessoa cria o primeiro hábito. Zero usos em 6 dias. Agora reaparece enquanto dieta ou
+  // treino estiverem vazios, que é exatamente quando ele resolve alguma coisa.
+  if(ehHoje && typeof assistenteDisponivel==='function' && assistenteDisponivel()
+     && (S.habits.length||S.routine.length)
+     && !S.settings.fotoPlanoVisto){
+    const semDieta=!S.diet.refeicoes.length;
+    const semTreino=!S.treinos.split.some(t=>t.exercicios&&t.exercicios.length);
+    if(semDieta||semTreino){
+      const oQue=(semDieta&&semTreino)?'a dieta e o treino':(semDieta?'a dieta':'o treino');
+      html+='<section class="card" style="border-left:3px solid var(--brand)">'
+        +'<h2>📸 Tem '+oQue+' no papel?</h2>'
+        +'<p class="sec small">Fotografa a folha do nutri, a ficha do personal ou o print do zap — o app lê e monta aqui dentro. Você confere tudo antes de aplicar, e ele não inventa nada.</p>'
+        +'<button class="btn bloco mt" data-action="foto-plano">Fotografar</button>'
+        +'<p class="centro mt"><button class="deslize-btn" data-action="foto-plano-depois">agora não</button></p>'
+        +'</section>';
+    }
   }
 
   // Daqui pra baixo cada bloco é recortado pra poder ser reordenado no fim.
@@ -254,7 +283,8 @@ function viewHoje(){
       html+='<p class="muted small mt">⏭ Veio de '+(treinoHoje.diaSemana!=null?DIAS_NOME[treinoHoje.diaSemana]:'outro dia')
         +' — <button class="deslize-btn" data-action="treino-adiar-desfazer" data-id="'+esc(treinoHoje.id)+'">desfazer</button></p>';
     } else if(!d.treino){
-      html+='<p class="muted small mt"><button class="deslize-btn" data-action="treino-adiar" data-id="'+esc(treinoHoje.id)+'">⏭ Não vai rolar hoje — empurrar pra amanhã</button></p>';
+      // era link sublinhado no rodapé (0 usos); vira botão de verdade
+      html+='<button class="btn mini sec-btn mt" data-action="treino-adiar" data-id="'+esc(treinoHoje.id)+'">⏭ Não vai rolar hoje — empurrar pra amanhã</button>';
     }
   } else {
     const fugiu=(typeof treinoAdiadoDeHoje==='function')?treinoAdiadoDeHoje():null;

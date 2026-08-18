@@ -225,6 +225,20 @@ function viewHoje(){
           +'<button class="btn sec-btn" data-nav="rotina">Montar minha rotina</button>'
           +'</div>')
       +'</section>';
+
+    // O app não pode abrir sem nada pra tocar. Um toque aqui cria o hábito E marca ele
+    // como feito hoje: a pessoa sai da primeira sessão com o dia começado, não com uma
+    // lista de tarefas de configuração.
+    const sug=(typeof sugestoesIniciais==='function')?sugestoesIniciais():[];
+    if(ehHoje&&sug.length){
+      html+='<section class="card" style="border-left:3px solid var(--good)">'
+        +'<h2>Comece com um toque</h2>'
+        +'<p class="sec small">Já fez alguma dessas hoje? Toca — ela vira um hábito seu e o dia já começa marcado. Dá pra trocar ou apagar depois.</p>'
+        +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+        +sug.map(s=>'<button class="btn sec-btn" data-action="comecar-habito" data-nome="'+esc(s.nome)+'" data-icone="'+esc(s.icone)+'">'
+          +esc(s.icone)+' '+esc(s.nome)+'</button>').join('')
+        +'</div></section>';
+    }
   }
 
   // "Fotografe seu plano" só existia no cartão de boas-vindas acima — que SOME assim que a
@@ -326,13 +340,19 @@ function viewHoje(){
 
   const metaAgua=Number(S.profile.aguaAlvoMl)||0;
   const pctAgua=metaAgua>0?Math.min(100,Math.round(100*(d.agua||0)/metaAgua)):0;
-  html+='<section class="card"><h2>Água</h2>'
-    +'<div class="linha"><div class="esq"><span class="hero-num num">'+fmtQtd((d.agua||0)/1000)+'</span> <span class="muted">'+(metaAgua>0?'/ '+fmtQtd(metaAgua/1000)+' L':'L registrados'+(ehHoje?' hoje':' nesse dia'))+'</span></div>'
+  const recs=(typeof aguaRecipientes==='function')?aguaRecipientes():[{icone:'🥤',nome:'Copo',ml:250}];
+  const unA=(typeof aguaUnidade==='function')?aguaUnidade():'L';
+  const menorRec=recs.reduce((a,r)=>Math.min(a,r.ml),99999);
+  html+='<section class="card"><h2>Água <button class="btn mini sec-btn dir" data-action="agua-editar" aria-label="Personalizar copos e garrafas">✎</button></h2>'
+    +'<div class="linha"><div class="esq"><span class="hero-num num">'+aguaNum(d.agua||0)+'</span> <span class="muted">'
+    +(metaAgua>0?'/ '+aguaNum(metaAgua)+' '+unA:unA+' registrados'+(ehHoje?' hoje':' nesse dia'))+'</span></div>'
     +(metaAgua>0&&pctAgua>=100?'<span class="chip">💧 meta batida</span>':'')+'</div>'
     +(metaAgua>0?'<div class="progress azul mt"><span style="width:'+pctAgua+'%"></span></div>':'<p class="muted small mt"><button class="deslize-btn" data-action="meta-agua">Definir minha meta de água</button></p>')
-    +'<div class="agua-controles mt"><button class="btn mini sec-btn" data-action="agua" data-ml="250">+250ml</button>'
-    +'<button class="btn mini sec-btn" data-action="agua" data-ml="500">+500ml</button>'
-    +'<button class="btn mini sec-btn" data-action="agua" data-ml="-250">−250ml</button></div></section>';
+    +'<div class="agua-controles mt">'
+    +recs.map(r=>'<button class="btn mini sec-btn" data-action="agua" data-ml="'+r.ml+'" aria-label="Somar '+esc(r.nome)+' de '+r.ml+' mililitros">'
+      +esc(r.icone)+' '+esc(r.nome)+' <span class="muted">'+r.ml+'</span></button>').join('')
+    +'<button class="btn mini sec-btn" data-action="agua-desfazer" data-ml="'+menorRec+'" aria-label="Tirar o último registro">↩︎</button>'
+    +'</div></section>';
 
   fecha('agua');
 

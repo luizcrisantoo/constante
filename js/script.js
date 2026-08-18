@@ -97,7 +97,47 @@ const ACOES={
 
   'ref':el=>{ const d=getDia(); const id=el.dataset.id; const marcou=!d.refeicoes[id]; if(d.refeicoes[id]) delete d.refeicoes[id]; else d.refeicoes[id]=true; recalcXP(diaFoco()); saveState(); render(); if(marcou){ vibrar(); animaCheck('[data-action="ref"][data-id="'+id+'"]'); } },
   'med':el=>{ const d=getDia(); const id=el.dataset.id; const marcou=!d.meds[id]; if(d.meds[id]) delete d.meds[id]; else d.meds[id]=true; recalcXP(diaFoco()); saveState(); render(); if(marcou){ vibrar(); animaCheck('[data-action="med"][data-id="'+id+'"]'); } },
-  'agua':el=>{ const d=getDia(); d.agua=Math.max(0,(d.agua||0)+Number(el.dataset.ml)); recalcXP(diaFoco()); saveState(); render(); if(Number(el.dataset.ml)>0) vibrar(8); },
+  'agua':el=>{
+    const ml=Number(el.dataset.ml)||0;
+    const d=getDia(); d.agua=Math.max(0,(d.agua||0)+ml);
+    if(ml>0) _aguaUltimo=ml;                       // pro ↩︎ tirar exatamente o que entrou
+    recalcXP(diaFoco()); saveState(); render();
+    if(ml>0) vibrar(8);
+  },
+  // Desfazer tira o último volume registrado. Recarregou a página e perdeu a memória?
+  // Cai no menor recipiente, que é o palpite menos arriscado.
+  'agua-desfazer':el=>{
+    const ml=_aguaUltimo||Number(el.dataset.ml)||250;
+    const d=getDia(); d.agua=Math.max(0,(d.agua||0)-ml);
+    _aguaUltimo=0;
+    recalcXP(diaFoco()); saveState(); render();
+    toast('Tirei '+ml+' ml');
+  },
+  'agua-editar':()=>abrirModalAgua(),
+  'agua-preset':el=>{
+    const c=document.getElementById('ag-novo-ml');
+    if(c){ c.value=el.dataset.ml; c.focus(); }
+  },
+  'agua-rec-add':()=>{
+    const recs=aguaRecipientes();
+    if(recs.length>=AGUA_MAX_REC){ toast('Cabem '+AGUA_MAX_REC+' — apaga um pra pôr outro'); return; }
+    const ml=numeroBR(val('ag-novo-ml'));
+    if(!isFinite(ml)||ml<10||ml>5000){ toast('Escreve o tamanho em ml, tipo 473'); return; }
+    const nome=val('ag-novo-nome')||'Água';
+    recs.push({id:'ag'+uid(), icone:val('ag-novo-icone')||'💧', nome:nome, ml:Math.round(ml)});
+    salvarRecipientes(recs); abrirModalAgua();
+    toast('Pronto — '+esc(nome)+' de '+Math.round(ml)+' ml ✓');
+  },
+  'agua-rec-del':el=>{
+    const recs=aguaRecipientes().filter(r=>r.id!==el.dataset.id);
+    if(!recs.length){ toast('Deixa pelo menos um'); return; }
+    salvarRecipientes(recs); abrirModalAgua();
+  },
+  'agua-unidade':el=>{
+    S.profile.aguaUnidade=(el.dataset.u==='ml')?'ml':'L';
+    saveState(); abrirModalAgua();
+  },
+  'agua-fechar':()=>{ fecharModal(); render(); },
   'humor':el=>{ const d=getDia(); d.humor=Number(el.dataset.v); recalcXP(diaFoco()); saveState(); render(); },
   'energia':el=>{ const d=getDia(); d.energia=Number(el.dataset.v); recalcXP(diaFoco()); saveState(); render(); },
 
@@ -124,6 +164,16 @@ const ACOES={
   },
   'treino-check':()=>{ const d=getDia(); d.treino=!d.treino; recalcXP(diaFoco()); saveState(); if(d.treino) toast('💪 Treino contou! (+10 XP de bônus)'); render(); if(d.treino){ vibrar(); animaCheck('[data-action="treino-check"]'); } },
   'recomeco-ok':()=>{ UI.recomecoLeve=false; render(); toast('Um passo de cada vez 💜'); },
+  // cria o hábito E marca como feito hoje, num toque só
+  'comecar-habito':el=>{
+    const h=addHabitoSimples(el.dataset.nome,el.dataset.icone,'fazer');
+    if(!h){ toast('Esse você já tem ✓'); return; }
+    const d=getDia(hojeISO());
+    d.habitos[h.id]=true;
+    recalcXP(hojeISO()); saveState(); render();
+    vibrar(12);
+    toast('🎉 '+el.dataset.icone+' '+el.dataset.nome+' — teu dia começou');
+  },
   'foto-plano-depois':()=>{
     S.settings.fotoPlanoVisto=true; saveState({skipSync:true}); render();
     toast('Sem problema — fica no assistente 🤖 quando você quiser');

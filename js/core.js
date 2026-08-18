@@ -283,11 +283,59 @@ function precisaOnboarding(){
   if((S.pesos||[]).length||(S.gastos&&S.gastos.lancamentos||[]).length) return false;
   return true;
 }
+// ---- v53: água do jeito de cada um ----
+// A pessoa bebe em copo, em garrafa, na garrafinha de 473ml — o app não tem que decidir isso.
+// Guardar sempre em ML mantém meta, XP e conquistas funcionando sem migração nenhuma.
+const AGUA_PADRAO=[
+  {id:'copo',    icone:'🥤', nome:'Copo',    ml:250},
+  {id:'garrafa', icone:'🍶', nome:'Garrafa', ml:500}
+];
+const AGUA_MAX_REC=4;   // mais que isso a fileira de botões deixa de caber no celular
+function aguaRecipientes(){
+  if(!S.profile) return AGUA_PADRAO.slice();
+  let r=S.profile.aguaRecipientes;
+  if(!Array.isArray(r)||!r.length) return AGUA_PADRAO.map(x=>Object.assign({},x));
+  r=r.filter(x=>x&&typeof x==='object'&&Number(x.ml)>0)
+     .map(x=>({ id:x.id||('ag'+uid()),
+                icone:String(x.icone||'💧').slice(0,4),
+                nome:String(x.nome||'Água').slice(0,20),
+                ml:Math.min(5000,Math.max(10,Math.round(Number(x.ml)))) }))
+     .slice(0,AGUA_MAX_REC);
+  return r.length?r:AGUA_PADRAO.map(x=>Object.assign({},x));
+}
+function salvarRecipientes(lista){
+  S.profile.aguaRecipientes=(Array.isArray(lista)?lista:[]).slice(0,AGUA_MAX_REC);
+  saveState();
+}
+function aguaUnidade(){ return (S.profile&&S.profile.aguaUnidade==='ml')?'ml':'L'; }
+// número sem sufixo, pra caber no destaque grande da tela
+function aguaNum(ml){
+  ml=Math.max(0,Math.round(Number(ml)||0));
+  return (aguaUnidade()==='ml') ? fmtQtd(ml) : fmtQtd(Math.round(ml/10)/100);
+}
+function fmtAgua(ml){ return aguaNum(ml)+' '+aguaUnidade(); }
+
 function addHabitoSimples(nome,icone,tipo){
   if(!nome) return null;
   if(S.habits.some(h=>(h.nome||'').toLowerCase()===nome.toLowerCase())) return null;
   const h={id:'hb'+uid(),nome:nome,icone:icone||'⭐',tipo:(tipo==='evitar'?'evitar':'fazer'),dias:[0,1,2,3,4,5,6],xp:10};
   S.habits.push(h); return h;
+}
+// Três sugestões pra quem chega em branco, tiradas da intenção que a pessoa escolheu.
+// Só do tipo "fazer": a primeira vitória tem que ser algo que dá pra MARCAR hoje.
+function sugestoesIniciais(){
+  const its=onbEstado().intencoes||[];
+  const out=[], visto={};
+  const poe=s=>{
+    if(!s||s.tipo==='evitar'||out.length>=3) return;
+    const k=(s.nome||'').toLowerCase();
+    if(visto[k]||S.habits.some(h=>(h.nome||'').toLowerCase()===k)) return;
+    visto[k]=1; out.push(s);
+  };
+  its.forEach(id=>(SUGESTOES_HABITO[id]||[]).forEach(poe));
+  // sem intenção nenhuma, um trio que serve pra qualquer pessoa
+  [['agua',0],['treino',1],['cabeca',1]].forEach(([id,ix])=>poe((SUGESTOES_HABITO[id]||[])[ix]));
+  return out;
 }
 // Prepara só o que a intenção pede — e nunca por cima do que a pessoa já tem.
 function aplicarIntencoes(lista){

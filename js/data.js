@@ -71,6 +71,8 @@ function defaultState(){
     profile: {
       nome:'', foto:null, peso:null, altura:null, nascimento:'',
       kcalAlvo:null, protMin:null, aguaAlvoMl:null,
+      aguaRecipientes:[],          // vazio = usa o padrão (copo 250 + garrafa 500)
+      aguaUnidade:'L',             // como o total aparece: 'L' ou 'ml'
       tmbMedida:null, obsCalorimetria:''
     },
     settings: {
@@ -186,6 +188,12 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:53, data:'2026-08-18', titulo:'Água do teu jeito (e um começo mais fácil)', itens:[
+    '💧 A ÁGUA AGORA É SUA: dá pra criar os botões do tamanho que você bebe de verdade — copo de 200, garrafa de 600, garrafinha de 473. Toca no ✎ do card de Água, escolhe um tamanho pronto ou digita o teu, e dá um nome. Cabem 4 botões.',
+    '↩︎ E tem um botão de desfazer que tira exatamente o último volume que você somou, em vez do valor fixo de antes.',
+    '🔢 Se você pensa em mililitros e não em litros, dá pra trocar como o total aparece. Por dentro o app sempre guardou em ml, então a sua meta e o que já foi registrado continuam iguais.',
+    '👋 QUEM ESTÁ CHEGANDO não abre mais o app numa tela vazia: aparecem três sugestões e um toque já cria o hábito e marca o dia. O primeiro dia começa feito, não em branco.'
+  ]},
   { v:52, data:'2026-08-18', titulo:'O que já existia, agora aparece', itens:[
     '↩️ REPETIR ONTEM virou cartão de verdade na tela Hoje, e aparece na hora certa: quando o dia ainda está vazio e ontem teve movimento. Antes era um botãozinho no canto do título que ninguém via.',
     '🌙 DIA DIFÍCIL agora é oferecido quando você volta depois de uns dias fora — que é justamente quando ele serve. Marcar o dia como difícil não quebra sua linha, e ninguém precisava descobrir isso sozinho.',

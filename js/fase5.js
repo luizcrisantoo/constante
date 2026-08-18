@@ -184,6 +184,38 @@ function abrirMarcarGastos(idProj){
 }
 
 // ------------------------------------------------------------
+// v53: ÁGUA DO JEITO DE CADA UM
+// ------------------------------------------------------------
+let _aguaUltimo=0;   // último volume somado nesta sessão (pro botão de desfazer)
+const AGUA_PRESETS=[200,250,300,330,473,500,600,750,1000];
+
+function abrirModalAgua(){
+  const recs=aguaRecipientes();
+  const un=aguaUnidade();
+  abrirModal('<h3>💧 Como você bebe</h3>'
+    +'<p class="sec small">Cada um desses vira um botão na tela Hoje. Copo, garrafa, garrafinha de 473 — do tamanho que for o seu.</p>'
+    +'<div class="lista-edit">'
+    +recs.map(r=>'<div class="item-edit"><span>'+esc(r.icone)+'</span>'
+      +'<span class="nome">'+esc(r.nome)+' <span class="muted small">'+r.ml+' ml</span></span>'
+      +'<button class="btn mini perigo" data-action="agua-rec-del" data-id="'+esc(r.id||'')+'" aria-label="Apagar '+esc(r.nome)+'">✕</button></div>').join('')
+    +'</div>'
+    +(recs.length<AGUA_MAX_REC
+      ? '<div class="grupo-titulo">Adicionar</div>'
+        +'<div class="chips-onb">'+AGUA_PRESETS.map(m=>'<button class="chip-onb" data-action="agua-preset" data-ml="'+m+'">'+m+' ml</button>').join('')+'</div>'
+        +'<div class="grid-2">'+campo('ag-novo-icone','Ícone','text','💧')+campo('ag-novo-nome','Nome (ex.: Garrafinha)','text','')+'</div>'
+        +campo('ag-novo-ml','Tamanho em ml','number','')
+        +'<button class="btn sec-btn bloco" data-action="agua-rec-add">+ Adicionar</button>'
+      : '<p class="muted small mt">Cabem '+AGUA_MAX_REC+' botões. Apaga um pra pôr outro.</p>')
+    +'<div class="grupo-titulo">Mostrar o total em</div>'
+    +'<div class="linha" style="gap:0.4rem">'
+    +'<button class="btn mini '+(un==='L'?'':'sec-btn')+'" data-action="agua-unidade" data-u="L">Litros</button>'
+    +'<button class="btn mini '+(un==='ml'?'':'sec-btn')+'" data-action="agua-unidade" data-u="ml">Mililitros</button>'
+    +'</div>'
+    +'<p class="muted small mt">O app sempre guarda em ml por dentro, então mudar isso não mexe na sua meta nem no que você já registrou.</p>'
+    +'<div class="acoes"><button class="btn" data-action="agua-fechar">Pronto</button></div>');
+}
+
+// ------------------------------------------------------------
 // 3) REVISÃO DA SEMANA
 // ------------------------------------------------------------
 function cardRevisaoHoje(){

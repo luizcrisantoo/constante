@@ -1515,6 +1515,19 @@ function ligarEventos(){
       return;
     }
     if(t.dataset.campo==='nota'){ getDia().nota=t.value; saveState(); toast('📝 Anotado ✓'); return; }
+    if(t.dataset.avisosCheck){
+      const a=cfgAvisos();
+      a[t.dataset.avisosCheck]=!!t.checked;
+      saveState();
+      const sec=document.getElementById('sec-avisos');
+      if(sec&&typeof secaoAvisos==='function'){
+        const tmp=document.createElement('div');
+        tmp.innerHTML=secaoAvisos();
+        if(tmp.firstElementChild) sec.replaceWith(tmp.firstElementChild);
+      }
+      toast(t.checked?'Combinado — te chamo se você sumir 💜':'Beleza, não te chamo mais');
+      return;
+    }
     if(t.dataset.avisos){
       const a=cfgAvisos();
       if(t.dataset.avisos==='antecedencia') a.antecedencia=Number(t.value)||0;

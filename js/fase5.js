@@ -292,6 +292,8 @@ function linhaHabitoSemana(x){
 // ------------------------------------------------------------
 // 4) AVISOS QUE AJUDAM
 // ------------------------------------------------------------
+// Precisa bater com o HORA_VOLTA da edge function "enviar-lembretes".
+const HORA_CONVITE_VOLTA='19:00';
 function secaoAvisos(){
   if(typeof produtoAtivo!=='function'||!produtoAtivo()) return '';
   const a=cfgAvisos();
@@ -326,7 +328,13 @@ function secaoAvisos(){
       +'</details>';
   }
 
-  html+='<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+  html+='<div class="grupo-titulo">Se você sumir</div>'
+    +'<div class="linha"><label class="esq small sec">'
+    +'<input type="checkbox" style="width:auto" data-avisos-check="volta" '+(a.volta!==false?'checked':'')+'> '
+    +'me chamar de volta depois de 2 e de 7 dias sem abrir</label></div>'
+    +'<p class="muted small">Um convite, não uma cobrança — e no máximo dois, nunca todo dia. Chega às '
+    +HORA_CONVITE_VOLTA+', e nunca dentro do teu silêncio.</p>'
+    +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
     +'<button class="btn sec-btn" data-action="avisos-pausar">'+(pausado?'Religar todos os avisos':'Pausar todos os avisos')+'</button>'
     +'</div>'
     +(pausado?'<div class="ok-box mt">🔕 Todos os teus avisos estão pausados. Nada vai te incomodar até você religar.</div>':'')

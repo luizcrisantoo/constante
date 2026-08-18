@@ -1201,6 +1201,7 @@ function cfgAvisos(){
   if(!/^\d{1,2}:\d{2}$/.test(a.silencioDe||'')) a.silencioDe='22:30';
   if(!/^\d{1,2}:\d{2}$/.test(a.silencioAte||'')) a.silencioAte='06:00';
   if(![0,10,30].includes(Number(a.antecedencia))) a.antecedencia=0;
+  if(a.volta!==false) a.volta=true;   // quem nunca escolheu recebe (dá pra desligar num toque)
   return a;
 }
 // Silêncio pode atravessar a meia-noite (22:30 → 07:00).

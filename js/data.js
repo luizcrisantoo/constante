@@ -80,7 +80,7 @@ function defaultState(){
       syncUrl:'', syncKey:'', syncCode:'', syncAuto:true, ultimaSync:null,
       onboard:{ feito:false, intencoes:[], vitoria:'' },
       barra:null,                                  // null = o app sugere pela intenção
-      avisos:{ silencioDe:'22:30', silencioAte:'06:00', antecedencia:0 },
+      avisos:{ silencioDe:'22:30', silencioAte:'06:00', antecedencia:0, volta:true },
       revisaoVista:'',                             // semana (segunda ISO) já revisada
       fotoPlanoVisto:false                         // dispensou o convite de fotografar o plano
     },
@@ -188,6 +188,11 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:54, data:'2026-08-19', titulo:'Um convite pra voltar (e nada além disso)', itens:[
+    '💜 Se você passar 2 dias sem abrir o app, ele te manda UM convite às 19h. Se passar uma semana, manda outro. Só isso — nunca todo dia, nunca cobrando, nunca dizendo que você falhou. A ideia é lembrar que dá pra recomeçar, não fazer você se sentir mal.',
+    '🔕 E dá pra desligar num toque: Ajustes → Avisos que ajudam → "me chamar de volta". Ele também respeita o teu horário de silêncio.',
+    '🔒 Pra isso funcionar, o servidor passou a olhar só a hora da tua última sincronização e a tua configuração de avisos — antes ele carregava teu estado inteiro (peso, humor, remédios) a cada minuto sem precisar. Menos dado circulando, mesmo resultado.'
+  ]},
   { v:53, data:'2026-08-18', titulo:'Água do teu jeito (e um começo mais fácil)', itens:[
     '💧 A ÁGUA AGORA É SUA: dá pra criar os botões do tamanho que você bebe de verdade — copo de 200, garrafa de 600, garrafinha de 473. Toca no ✎ do card de Água, escolhe um tamanho pronto ou digita o teu, e dá um nome. Cabem 4 botões.',
     '↩︎ E tem um botão de desfazer que tira exatamente o último volume que você somou, em vez do valor fixo de antes.',

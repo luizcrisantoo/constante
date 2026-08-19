@@ -6,6 +6,10 @@ function viewGrana(){
     +'<button class="btn mini sec-btn" data-action="grana-olho" aria-label="'+(granaOculta()?'Mostrar os valores':'Esconder os valores')+'">'
     +(granaOculta()?'👁️ mostrar':'🙈 esconder')+'</button></div>';
   html+=secaoGastos();
+  if(typeof secaoComprometido==='function'){
+    const _mesG=(UI.granaMes&&/^\d{4}-\d{2}$/.test(UI.granaMes))?UI.granaMes:hojeISO().slice(0,7);
+    html+=secaoComprometido(_mesG);
+  }
   if(typeof secaoProjetos==='function') html+=secaoProjetos();
 
   const temDividas=S.finance.dividas.length>0;

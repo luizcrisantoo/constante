@@ -341,3 +341,99 @@ function secaoAvisos(){
     +'<p class="muted small mt">Nenhum aviso daqui cobra nada de você: é convite, não cobrança. Dá pra editar ou apagar um por um logo abaixo — e aviso que você editar na mão vira seu: refazer os da rotina não mexe mais nele. O silêncio e a antecedência valem só neste aparelho.</p>';
   return html+'</section>';
 }
+
+// ------------------------------------------------------------
+// v57: COMPROMETIDO — cartão e contas do mês
+// O que já tem dono. Fica separado da "sobra" de propósito: sobra é o que está
+// na sua mão, comprometido é o que ainda vai sair. Misturar os dois é o que faz
+// app de finança dar número bonito e a conta não fechar.
+// ------------------------------------------------------------
+// Etiqueta do cartão (e da parcela) ao lado do lançamento
+function chipCartao(g){
+  if(!g||!g.cartao) return '';
+  const c=cartaoPorId(g.cartao); if(!c) return '';
+  return ' <span class="chip-proj">'+esc(c.icone)+' '+esc(c.nome)+(g.parc?(' '+esc(g.parc)):'')+'</span>';
+}
+
+function secaoComprometido(mesSel){
+  const mes=mesSel||hojeISO().slice(0,7);
+  const temCartao=usaCartao(), temConta=contas().length>0;
+  if(!temCartao&&!temConta){
+    return '<section class="card"><h2>Contas e cartão <span class="chip">opcional</span></h2>'
+      +'<p class="muted small">Tem conta que vence todo mês (aluguel, luz, internet) ou compra no cartão? '
+      +'Registrando aqui, o app mostra quanto do teu dinheiro <b>já tem dono</b> — e a sobra deixa de ser uma conta pela metade.</p>'
+      +'<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+      +'<button class="btn sec-btn" data-action="conta-add">+ Conta do mês</button>'
+      +'<button class="btn sec-btn" data-action="cartao-add">+ Cartão</button></div></section>';
+  }
+  const c=comprometido(mes);
+  let html='<section class="card"><h2>Já tem dono em '+esc(fmtMes(mes))+'</h2>'
+    +'<div class="linha"><div class="esq"><span class="hero-num num">'+$$(c.total)+'</span>'
+    +'<div class="hero-sub">entre contas a vencer e fatura</div></div></div>';
+
+  if(temConta){
+    html+='<div class="grupo-titulo">Contas do mês</div>';
+    contas().filter(x=>x&&x.ativa!==false).forEach(ct=>{
+      const paga=contaPaga(ct,mes);
+      html+='<div class="linha" style="padding:0.4rem 0;border-bottom:1px solid var(--grid)'+(paga?';opacity:0.6':'')+'">'
+        +'<span style="width:1.5rem;text-align:center">'+esc(ct.icone)+'</span>'
+        +'<span class="esq small">'+esc(ct.nome)+' <span class="muted">dia '+ct.dia+'</span></span>'
+        +'<span class="num small">'+$$(paga?ct.pagas[mes]:ct.valor)+'</span>'
+        +(paga
+          ? '<button class="deslize-btn" data-action="conta-desfazer" data-id="'+esc(ct.id)+'" data-m="'+mes+'">paga ✓</button>'
+          : '<button class="btn mini" data-action="conta-pagar" data-id="'+esc(ct.id)+'" data-m="'+mes+'">Paguei</button>')
+        +'<button class="edit" data-action="conta-del" data-id="'+esc(ct.id)+'" aria-label="Apagar conta">✕</button></div>';
+    });
+    html+='<p class="muted small mt">Marcar "Paguei" lança o gasto de verdade — não fica só um check aqui.</p>';
+  }
+
+  if(temCartao){
+    html+='<div class="grupo-titulo">Cartões</div>';
+    cartoes().forEach(ct=>{
+      const abertas=faturasEmAberto(ct.id,mes);
+      html+='<div class="linha" style="padding:0.4rem 0">'
+        +'<span style="width:1.5rem;text-align:center">'+esc(ct.icone)+'</span>'
+        +'<span class="esq small">'+esc(ct.nome)+' <span class="muted">fecha '+ct.fechamento+' · vence '+ct.vencimento+'</span></span>'
+        +'<span class="num small">'+$$(totalFatura(ct.id,mes))+'</span>'
+        +'<button class="edit" data-action="cartao-del" data-id="'+esc(ct.id)+'" aria-label="Apagar cartão">✕</button></div>';
+      const futuras=abertas.filter(f=>f.mes>mes);
+      if(futuras.length){
+        html+='<details><summary class="muted small">Próximas faturas ('+futuras.length+')</summary>'
+          +futuras.map(f=>'<div class="linha small" style="padding:0.2rem 0"><span class="esq muted">'+esc(fmtMes(f.mes))+'</span>'
+            +'<span class="num">'+$$(f.total)+'</span></div>').join('')
+          +'<p class="muted small">Inclui o que você parcelou.</p></details>';
+      }
+    });
+  }
+  html+='<div class="acoes mt" style="display:flex;gap:0.5rem;flex-wrap:wrap">'
+    +'<button class="btn mini sec-btn" data-action="conta-add">+ Conta</button>'
+    +'<button class="btn mini sec-btn" data-action="cartao-add">+ Cartão</button></div>';
+  return html+'</section>';
+}
+
+function abrirModalConta(){
+  const modelos=MODELOS_CONTA.map(m=>'<button class="chip-onb" data-action="conta-modelo" data-i="'+esc(m.icone)+'" data-n="'+esc(m.nome)+'">'
+    +m.icone+(m.nome?' '+esc(m.nome):' Outra')+'</button>').join('');
+  const cats=S.gastos.categorias.map(c=>'<option value="'+esc(c.id)+'"'+(c.id==='g_casa'?' selected':'')+'>'+esc(c.icone+' '+c.nome)+'</option>').join('');
+  abrirModal('<h3>Conta do mês</h3>'
+    +'<p class="muted small">Aquilo que vence todo mês. O app conta como "já tem dono" até você marcar que pagou.</p>'
+    +'<div class="chips-onb">'+modelos+'</div>'
+    +'<div class="grid-2">'+campo('cn-icone','Ícone','text','📄')+campo('cn-nome','Nome','text','')+'</div>'
+    +'<div class="grid-2">'+campo('cn-valor','Valor aproximado (R$)','number','')
+    +campo('cn-dia','Vence no dia','number','')+'</div>'
+    +'<div class="campo"><label for="cn-cat">Categoria</label><select id="cn-cat">'+cats+'</select></div>'
+    +'<p class="muted small">Se o valor mudar (luz, água), você ajusta na hora de pagar.</p>'
+    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+    +'<button class="btn" data-action="conta-salvar">Criar</button></div>');
+}
+
+function abrirModalCartao(){
+  abrirModal('<h3>Cartão de crédito</h3>'
+    +'<p class="muted small">Com o cartão cadastrado, a compra vai pra fatura certa em vez de parecer que o dinheiro saiu hoje.</p>'
+    +'<div class="grid-2">'+campo('ca-icone','Ícone','text','💳')+campo('ca-nome','Nome (ex.: Nubank)','text','')+'</div>'
+    +'<div class="grid-2">'+campo('ca-fecha','Fecha no dia','number','')
+    +campo('ca-vence','Vence no dia','number','')+'</div>'
+    +'<p class="muted small">Está no app do banco ou na fatura. Se errar, dá pra apagar e criar de novo.</p>'
+    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+    +'<button class="btn" data-action="cartao-salvar">Criar</button></div>');
+}

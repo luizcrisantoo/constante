@@ -336,7 +336,9 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
   border:1px solid var(--border); border-radius:999px;
   padding:0.4rem 0.7rem; font-size:0.82rem; line-height:1.15;
   background:var(--surface-2); color:var(--ink-2); text-align:left;
-  opacity:0.62; transition:opacity 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  /* v57: 0.62 dava contraste 4,2:1 — abaixo do mínimo. 0.75 continua lendo como
+     "não escolhido" e passa no WCAG AA. */
+  opacity:0.75; transition:opacity 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 .chip-onb.sel{
   opacity:1; border-color:var(--brand); background:var(--surface-3); color:var(--ink);

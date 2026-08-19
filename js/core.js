@@ -139,6 +139,9 @@ function sanearEstado(){
   if(!Array.isArray(S.gastos.lancamentos)) S.gastos.lancamentos=[];
   if(!Array.isArray(S.gastos.projetos)) S.gastos.projetos=[];
   if(!Array.isArray(S.gastos.receitas)) S.gastos.receitas=[];
+  if(!Array.isArray(S.gastos.contas)) S.gastos.contas=[];
+  if(!Array.isArray(S.gastos.cartoes)) S.gastos.cartoes=[];
+  S.gastos.contas.forEach(c=>{ if(c&&(!c.pagas||typeof c.pagas!=='object')) c.pagas={}; });
   // backup importado / blob da nuvem não são confiáveis: corta tamanho na LEITURA
   S.gastos.projetos.forEach(p=>{
     if(!p||typeof p!=='object') return;
@@ -793,6 +796,19 @@ function mesclarEstado(remoto){
   if(outro.gastos&&Array.isArray(outro.gastos.receitas)){
     S.gastos.receitas=uniaoLanc(S.gastos.receitas,outro.gastos.receitas);
   }
+  // cartões e contas ANTES dos lançamentos, pelo mesmo motivo dos projetos
+  if(outro.gastos&&Array.isArray(outro.gastos.cartoes)){
+    S.gastos.cartoes=uniaoLanc(S.gastos.cartoes,outro.gastos.cartoes);
+  }
+  if(outro.gastos&&Array.isArray(outro.gastos.contas)){
+    S.gastos.contas=uniaoLanc(S.gastos.contas,outro.gastos.contas);
+    // conta paga em QUALQUER aparelho continua paga: junta os dois calendários
+    (outro.gastos.contas||[]).forEach(oc=>{
+      const c=contaPorId(oc&&oc.id); if(!c||!oc.pagas) return;
+      if(!c.pagas||typeof c.pagas!=='object') c.pagas={};
+      Object.keys(oc.pagas).forEach(m=>{ if(c.pagas[m]===undefined) c.pagas[m]=oc.pagas[m]; });
+    });
+  }
   if(outro.treinos&&Array.isArray(outro.treinos.split)){
     outro.treinos.split.forEach(ot=>{
       const t=S.treinos.split.find(x=>x.id===ot.id); if(!t) return;
@@ -1046,6 +1062,127 @@ function saldoDoMes(anoMes){
   return { entrou:ent, saiu:sai, sobra:round2(ent-sai) };
 }
 
+// ---------- v57: cartão de crédito e contas do mês ----------
+// O problema que isto resolve: sem cartão, um gasto de R$ 500 aparecia como se o
+// dinheiro tivesse saído hoje — e não saiu, sai na fatura. E a "sobra" ignorava o
+// aluguel vencendo semana que vem. Os dois números mentiam.
+function cartoes(){
+  if(!S.gastos) S.gastos=defaultState().gastos;
+  if(!Array.isArray(S.gastos.cartoes)) S.gastos.cartoes=[];
+  return S.gastos.cartoes;
+}
+function cartaoPorId(id){ return id?(cartoes().find(c=>c&&c.id===id)||null):null; }
+function usaCartao(){ return cartoes().length>0; }
+function addCartao(nome,icone,fechamento,vencimento){
+  nome=String(nome||'').trim().slice(0,24);
+  if(!nome) return null;
+  const dia=v=>Math.min(28,Math.max(1,Math.round(numeroBR(v)||1)));   // 28 evita fevereiro
+  const c={ id:'ct'+uid(), nome:nome, icone:String(icone||'💳').slice(0,4),
+            fechamento:dia(fechamento), vencimento:dia(vencimento) };
+  cartoes().push(c); saveState();
+  return c;
+}
+function removerCartao(id){
+  apagarItem(id);
+  S.gastos.lancamentos.forEach(g=>{ if(g&&g.cartao===id){ delete g.cartao; delete g.parc; } });
+  S.gastos.cartoes=cartoes().filter(c=>c&&c.id!==id);
+  saveState();
+}
+// Em qual fatura cai uma compra: se comprou DEPOIS do fechamento, entra na próxima.
+// Devolve o mês de VENCIMENTO da fatura (AAAA-MM), que é quando o dinheiro sai.
+function faturaDaCompra(cartaoId,dataISO){
+  const c=cartaoPorId(cartaoId); if(!c) return null;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(dataISO))) return null;
+  const dia=Number(String(dataISO).slice(8,10));
+  const mesCompra=String(dataISO).slice(0,7);
+  // comprou até o dia do fechamento → cai na fatura que fecha neste mês
+  const mesFecha=(dia<=c.fechamento)?mesCompra:mesDeslocado(mesCompra,1);
+  // vencimento depois do fechamento paga no mesmo mês; antes, só no mês seguinte
+  return (c.vencimento>c.fechamento)?mesFecha:mesDeslocado(mesFecha,1);
+}
+function lancamentosDaFatura(cartaoId,anoMes){
+  return S.gastos.lancamentos.filter(g=>g&&g.cartao===cartaoId&&faturaDaCompra(cartaoId,g.data)===anoMes);
+}
+function totalFatura(cartaoId,anoMes){ return totalLista(lancamentosDaFatura(cartaoId,anoMes)); }
+// Meses de fatura em aberto (a atual e as próximas, por causa do parcelamento)
+function faturasEmAberto(cartaoId,doMes){
+  const base=doMes||hojeISO().slice(0,7);
+  const meses={};
+  S.gastos.lancamentos.forEach(g=>{
+    if(!g||g.cartao!==cartaoId) return;
+    const f=faturaDaCompra(cartaoId,g.data);
+    if(f&&f>=base) meses[f]=(meses[f]||0)+(g.valor||0);
+  });
+  return Object.keys(meses).sort().map(m=>({mes:m,total:round2(meses[m])}));
+}
+
+function contas(){
+  if(!S.gastos) S.gastos=defaultState().gastos;
+  if(!Array.isArray(S.gastos.contas)) S.gastos.contas=[];
+  return S.gastos.contas;
+}
+function contaPorId(id){ return id?(contas().find(c=>c&&c.id===id)||null):null; }
+function usaContas(){ return contas().some(c=>c&&c.ativa!==false); }
+function addConta(nome,icone,valor,dia,catId){
+  nome=String(nome||'').trim().slice(0,30);
+  if(!nome) return null;
+  const c={ id:'cn'+uid(), nome:nome, icone:String(icone||'📄').slice(0,4),
+            valor:round2(numeroBR(valor)||0), dia:Math.min(28,Math.max(1,Math.round(numeroBR(dia)||1))),
+            cat:catId||'g_casa', ativa:true, pagas:{} };
+  contas().push(c); saveState();
+  return c;
+}
+function removerConta(id){
+  apagarItem(id);
+  S.gastos.contas=contas().filter(c=>c&&c.id!==id);
+  saveState();
+}
+function contaPaga(c,anoMes){ return !!(c&&c.pagas&&c.pagas[anoMes]); }
+// Pagar uma conta vira um gasto de verdade — não fica só marcado num canto.
+function pagarConta(id,anoMes,valorReal){
+  const c=contaPorId(id); if(!c) return null;
+  const mes=anoMes||hojeISO().slice(0,7);
+  if(contaPaga(c,mes)) return null;
+  const v=round2(numeroBR(valorReal)||c.valor||0);
+  if(v<=0) return null;
+  const dia=Math.min(Number(diasNoMes(mes)),c.dia);
+  const data=mes+'-'+pad2(dia);
+  addGasto(v,c.cat||'g_casa',c.nome,(data<=hojeISO()?data:hojeISO()));
+  if(!c.pagas||typeof c.pagas!=='object') c.pagas={};
+  c.pagas[mes]=v;
+  saveState();
+  return v;
+}
+function desfazerPagamentoConta(id,anoMes){
+  const c=contaPorId(id); if(!c||!c.pagas) return;
+  delete c.pagas[anoMes||hojeISO().slice(0,7)];
+  saveState();
+}
+function diasNoMes(anoMes){
+  const y=Number(anoMes.slice(0,4)), m=Number(anoMes.slice(5,7));
+  return new Date(y,m,0).getDate();
+}
+// Contas ainda não pagas naquele mês
+function contasEmAberto(anoMes){
+  const mes=anoMes||hojeISO().slice(0,7);
+  return contas().filter(c=>c&&c.ativa!==false&&!contaPaga(c,mes));
+}
+// O número que o tester pediu: quanto do dinheiro já tem dono.
+function comprometido(anoMes){
+  const mes=anoMes||hojeISO().slice(0,7);
+  const abertas=contasEmAberto(mes);
+  const contasTot=abertas.reduce((a,c)=>a+(c.valor||0),0);
+  const faturas=[];
+  cartoes().forEach(ct=>{
+    const t=totalFatura(ct.id,mes);
+    if(t>0) faturas.push({cartao:ct,mes:mes,total:t});
+  });
+  const faturaTot=faturas.reduce((a,f)=>a+f.total,0);
+  return { contas:abertas, contasTot:round2(contasTot),
+           faturas:faturas, faturaTot:round2(faturaTot),
+           total:round2(contasTot+faturaTot) };
+}
+
 function catGasto(id){ return S.gastos.categorias.find(c=>c.id===id)||{nome:'?',icone:'📦',cor:'var(--c-livre)'}; }
 function addGasto(valor,catId,descricao,dataISO,projId){
   const v=round2(numeroBR(valor)||0);
@@ -1057,6 +1194,34 @@ function addGasto(valor,catId,descricao,dataISO,projId){
   saveState();
 }
 function removerGasto(id){ apagarItem(id); S.gastos.lancamentos=S.gastos.lancamentos.filter(g=>g.id!==id); saveState(); }
+// Compra no cartão. Parcelada, vira N lançamentos — um em cada mês — porque é assim
+// que ela realmente aparece na fatura. Guardar "1 de 10" num lançamento só obrigaria
+// todo cálculo do app a saber dividir parcela.
+function addGastoCartao(valor,catId,descricao,dataISO,cartaoId,parcelas,projId){
+  const v=round2(numeroBR(valor)||0);
+  if(v<=0||!cartaoPorId(cartaoId)) return 0;
+  const n=Math.min(24,Math.max(1,Math.round(numeroBR(parcelas)||1)));
+  const base=dataISO||hojeISO();
+  const grupo='pc'+uid();
+  const cada=round2(v/n);
+  // a diferença do arredondamento vai toda na primeira parcela, senão o total não fecha
+  const sobra=round2(v-cada*n);
+  for(let i=0;i<n;i++){
+    const g={ id:uid(), valor:(i===0?round2(cada+sobra):cada), cat:catId,
+              desc:descricao||'', data:(i===0?base:mesmoDiaNoMes(base,i)), cartao:cartaoId };
+    if(n>1){ g.parc=(i+1)+'/'+n; g.pgrupo=grupo; }
+    if(projId&&projPorId(projId)) g.proj=projId;
+    S.gastos.lancamentos.push(g);
+  }
+  saveState();
+  return n;
+}
+// mesmo dia, N meses à frente — dia 31 vira o último dia do mês curto
+function mesmoDiaNoMes(iso,n){
+  const mes=mesDeslocado(String(iso).slice(0,7),n);
+  const dia=Math.min(Number(String(iso).slice(8,10))||1,diasNoMes(mes));
+  return mes+'-'+pad2(dia);
+}
 function gastosDoDia(iso){ iso=iso||hojeISO(); return S.gastos.lancamentos.filter(g=>g.data===iso); }
 function gastosDoMes(anoMes){
   anoMes=anoMes||hojeISO().slice(0,7);

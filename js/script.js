@@ -823,12 +823,18 @@ const ACOES={
     // O seletor de projeto só existe pra quem criou algum: quem só quer anotar o uber
     // não pode ver campo a mais.
     const temProj=(typeof projetosAtivos==='function')&&projetosAtivos().length>0;
+    const temCart=(typeof usaCartao==='function')&&usaCartao();
+    const optCart=temCart?('<option value="">💵 À vista / débito / pix</option>'
+      +cartoes().map(c=>'<option value="'+esc(c.id)+'">'+esc(c.icone+' '+c.nome)+'</option>').join('')):'';
     abrirModal('<h3>Registrar gasto'+(dPre!==hojeISO()?' <span class="chip">'+esc(fmtData(dPre))+'</span>':'')+'</h3>'
       +campo('ga-valor','Valor (R$)','number','')
-      +'<div class="campo"><label>Categoria</label><select id="ga-cat">'+cats+'</select></div>'
-      +(temProj?'<div class="campo"><label>Projeto (opcional — pra qual objetivo)</label><select id="ga-proj">'+opcoesProjeto('')+'</select></div>':'')
+      +'<div class="campo"><label for="ga-cat">Categoria</label><select id="ga-cat">'+cats+'</select></div>'
+      +(temProj?'<div class="campo"><label for="ga-proj">Projeto (opcional — pra qual objetivo)</label><select id="ga-proj">'+opcoesProjeto('')+'</select></div>':'')
+      +(temCart?'<div class="grid-2">'
+        +'<div class="campo"><label for="ga-cart">Como pagou</label><select id="ga-cart">'+optCart+'</select></div>'
+        +'<div class="campo"><label for="ga-parc">Parcelas</label><input id="ga-parc" type="text" inputmode="numeric" value="1"></div></div>':'')
       +'<div class="grid-2">'+campo('ga-desc','Descrição (ex.: uber, cantina)','text','')
-      +'<div class="campo"><label>Dia (esqueceu ontem? sem crise)</label><input type="date" id="ga-data" value="'+dPre+'" max="'+hojeISO()+'"></div></div>'
+      +'<div class="campo"><label for="ga-data">Dia (esqueceu ontem? sem crise)</label><input type="date" id="ga-data" value="'+dPre+'" max="'+hojeISO()+'"></div></div>'
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
       +'<button class="btn" data-action="gasto-salvar">Registrar</button></div>'
       +'<p class="muted small mt"><button class="deslize-btn" data-action="gasto-nova-cat">+ Criar categoria</button></p>');
@@ -843,15 +849,84 @@ const ACOES={
     }
     const dtG=val('ga-data');
     const dataFinal=(/^\d{4}-\d{2}-\d{2}$/.test(dtG)&&dtG<=hojeISO())?dtG:hojeISO();
-    addGasto(v,val('ga-cat'),val('ga-desc'),dataFinal,val('ga-proj'));
+    const cartSel=val('ga-cart');
+    if(cartSel&&typeof addGastoCartao==='function'){
+      const n=addGastoCartao(v,val('ga-cat'),val('ga-desc'),dataFinal,cartSel,val('ga-parc'),val('ga-proj'));
+      if(!n){ toast('Não consegui registrar no cartão'); return; }
+    } else {
+      addGasto(v,val('ga-cat'),val('ga-desc'),dataFinal,val('ga-proj'));
+    }
     // deixa o dia do lançamento aberto na tela: a pessoa vê onde caiu
     if(UI.tab==='grana'){
       UI.granaDia=dataFinal;
       UI.granaMes=(dataFinal.slice(0,7)===hojeISO().slice(0,7))?null:dataFinal.slice(0,7);
     }
     fecharModal(); render();
-    toast('Gasto registrado'+(dataFinal===hojeISO()?'':' em '+fmtData(dataFinal)));
+    const _nP=Math.round(numeroBR(val('ga-parc'))||1);
+    toast(cartSel
+      ? ('💳 Na fatura de '+fmtMes(faturaDaCompra(cartSel,dataFinal))+(_nP>1?(' — '+_nP+'x'):''))
+      : ('Gasto registrado'+(dataFinal===hojeISO()?'':' em '+fmtData(dataFinal))));
   },
+  // ---- v57: contas do mês e cartão ----
+  'conta-add':()=>abrirModalConta(),
+  'conta-modelo':el=>{
+    const i=document.getElementById('cn-icone'), n=document.getElementById('cn-nome');
+    if(i) i.value=el.dataset.i||'📄';
+    if(n){ n.value=el.dataset.n||''; n.focus(); }
+  },
+  'conta-salvar':()=>{
+    const nome=val('cn-nome'); if(!nome){ toast('Dá um nome pra conta'); return; }
+    const v=numeroBR(val('cn-valor'));
+    if(!isFinite(v)||v<=0){ toast('Escreve quanto costuma vir, tipo 120,50'); return; }
+    const d=numeroBR(val('cn-dia'));
+    if(!isFinite(d)||d<1||d>28){ toast('O dia do vencimento vai de 1 a 28'); return; }
+    addConta(nome,val('cn-icone'),v,d,val('cn-cat'));
+    fecharModal(); render();
+    toast('📄 '+nome+' entra todo mês agora');
+  },
+  'conta-pagar':el=>{
+    const c=contaPorId(el.dataset.id); if(!c) return;
+    abrirModal('<h3>Pagar '+esc(c.nome)+'</h3>'
+      +'<p class="muted small">Veio o valor de sempre? Se veio diferente, corrige aqui — vira um gasto de verdade.</p>'
+      +campo('cp-valor','Valor pago (R$)','number',String(c.valor||''))
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn" data-action="conta-pagar-ok" data-id="'+esc(c.id)+'" data-m="'+esc(el.dataset.m||'')+'">Paguei</button></div>');
+  },
+  'conta-pagar-ok':el=>{
+    const v=pagarConta(el.dataset.id,el.dataset.m,val('cp-valor'));
+    fecharModal(); render();
+    toast(v?('✓ Pago — '+fmtBRL(v)+' entrou nos gastos'):'Não consegui registrar');
+  },
+  'conta-desfazer':el=>{ desfazerPagamentoConta(el.dataset.id,el.dataset.m); render(); toast('Desmarquei. O gasto que foi lançado continua na Grana — apaga no extrato se quiser'); },
+  'conta-del':el=>{
+    const c=contaPorId(el.dataset.id); if(!c) return;
+    abrirModal('<h3>Apagar “'+esc(c.nome)+'”?</h3>'
+      +'<p class="sec small">Os gastos que você já pagou continuam na Grana. Some só a cobrança que se repete.</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn perigo" data-action="conta-del-ok" data-id="'+esc(c.id)+'">Apagar</button></div>');
+  },
+  'conta-del-ok':el=>{ removerConta(el.dataset.id); fecharModal(); render(); toast('Conta apagada'); },
+
+  'cartao-add':()=>abrirModalCartao(),
+  'cartao-salvar':()=>{
+    const nome=val('ca-nome'); if(!nome){ toast('Dá um nome pro cartão'); return; }
+    const f=numeroBR(val('ca-fecha')), vc=numeroBR(val('ca-vence'));
+    if(!isFinite(f)||f<1||f>28){ toast('O dia do fechamento vai de 1 a 28'); return; }
+    if(!isFinite(vc)||vc<1||vc>28){ toast('O dia do vencimento vai de 1 a 28'); return; }
+    addCartao(nome,val('ca-icone'),f,vc);
+    fecharModal(); render();
+    toast('💳 '+nome+' cadastrado — agora ele aparece ao registrar gasto');
+  },
+  'cartao-del':el=>{
+    const c=cartaoPorId(el.dataset.id); if(!c) return;
+    const n=S.gastos.lancamentos.filter(g=>g&&g.cartao===c.id).length;
+    abrirModal('<h3>Apagar “'+esc(c.nome)+'”?</h3>'
+      +'<p class="sec small">'+(n?('Os '+n+' gasto'+(n===1?'':'s')+' continuam na Grana — deixam só de estar no cartão.'):'Nenhum gasto está nele.')+'</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn perigo" data-action="cartao-del-ok" data-id="'+esc(c.id)+'">Apagar</button></div>');
+  },
+  'cartao-del-ok':el=>{ removerCartao(el.dataset.id); fecharModal(); render(); toast('Cartão apagado'); },
+
   // ---- v56: entradas (receitas) ----
   'receita-add':el=>{
     const dPre=(el&&el.dataset&&/^\d{4}-\d{2}-\d{2}$/.test(el.dataset.d||''))?el.dataset.d:dataPadraoGasto();

@@ -58,6 +58,14 @@ const FONTES_RECEITA = [
   {id:'outros',  icone:'📥', nome:'Outros'}
 ];
 
+// ---- v57: contas que se repetem todo mês ----
+const MODELOS_CONTA = [
+  {icone:'🏠', nome:'Aluguel'},   {icone:'💡', nome:'Luz'},
+  {icone:'💧', nome:'Água'},      {icone:'📶', nome:'Internet'},
+  {icone:'📱', nome:'Celular'},   {icone:'🎬', nome:'Streaming'},
+  {icone:'🏋️', nome:'Academia'},  {icone:'📄', nome:''}
+];
+
 const MODELOS_PROJETO = [
   {icone:'💍', nome:'Casamento'},
   {icone:'✈️', nome:'Viagem'},
@@ -144,8 +152,10 @@ function defaultState(){
       ],
       lancamentos:[],
       projetos:[],
-      receitas:[]              // v56: o que ENTRA. Lista separada de propósito —
+      receitas:[],             // v56: o que ENTRA. Lista separada de propósito —
                                // gastosDoMes, calendário e projetos só olham lancamentos.
+      contas:[],               // v57: contas fixas do mês (aluguel, luz, assinatura)
+      cartoes:[]               // v57: cartões de crédito (fechamento e vencimento)
 
     },
     estudo: {
@@ -201,6 +211,13 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:57, data:'2026-08-19', destaque:true, titulo:'Contas e cartão — a sobra virou verdade', itens:[
+    '💳 CARTÃO DE CRÉDITO: cadastre o cartão com o dia que fecha e o dia que vence, e a compra vai pra fatura CERTA em vez de parecer que o dinheiro saiu hoje. Na hora de registrar o gasto aparece "Como pagou": à vista/débito/pix ou o cartão.',
+    '🔟 PARCELOU? Escreve em quantas vezes e o app espalha nas faturas dos próximos meses sozinho. Cada parcela aparece com "3/10" do lado.',
+    '📄 CONTAS DO MÊS: aluguel, luz, internet, academia — o que vence todo mês. Você cadastra uma vez com o dia do vencimento. Quando pagar, toca em "Paguei" e vira um gasto de verdade (dá pra corrigir o valor, porque luz nunca vem igual).',
+    '⚖️ E aí aparece o número que faltava: QUANTO JÁ TEM DONO. Contas a vencer + fatura do mês, somados e separados da sobra. Sobra é o que está na tua mão; comprometido é o que ainda vai sair. Misturar os dois é o que faz app de finança dar número bonito e a conta não fechar.',
+    '🙏 Tudo isso veio de dois testers no zap, no mesmo dia — um perguntou de receita, o outro emendou contas, cartão e saldo comprometido. É opcional: quem só anota gasto não vê nada disso até cadastrar a primeira conta ou o primeiro cartão.'
+  ]},
   { v:56, data:'2026-08-19', titulo:'A Grana passou a contar o que ENTRA', itens:[
     '📥 Agora dá pra registrar entrada, não só gasto: salário, freela, venda, presente. O botão fica ao lado do "+ Gasto", na aba Grana.',
     '⚖️ Assim que você registra a primeira entrada, o topo da Grana vira o retrato do mês: quanto entrou, quanto saiu e o que sobrou. Quem só quer anotar gasto não vê nada disso mudar — continua igual até registrar a primeira entrada.',

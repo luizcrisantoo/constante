@@ -152,7 +152,7 @@ function secaoGastos(){
       const c=catGasto(g.cat);
       html+='<div class="linha" style="padding:0.35rem 0;border-bottom:1px solid var(--grid)">'
         +'<span style="width:1.4rem;text-align:center">'+esc(c.icone)+'</span>'
-        +'<span class="esq small">'+esc(g.desc||c.nome)+(typeof chipProjeto==='function'?chipProjeto(g):'')+'</span>'
+        +'<span class="esq small">'+esc(g.desc||c.nome)+(typeof chipProjeto==='function'?chipProjeto(g):'')+(typeof chipCartao==='function'?chipCartao(g):'')+'</span>'
         +'<span class="num small">'+$$(g.valor)+'</span>'
         +'<button class="edit" data-action="gasto-remover" data-id="'+esc(g.id)+'" aria-label="Remover">✕</button></div>';
     });
@@ -186,7 +186,7 @@ function secaoGastos(){
       const c=catGasto(g.cat);
       html+='<div class="linha" style="padding:0.35rem 0;border-bottom:1px solid var(--grid)">'
         +'<span style="width:1.4rem;text-align:center">'+esc(c.icone)+'</span>'
-        +'<span class="esq small">'+esc(g.desc||c.nome)+(typeof chipProjeto==='function'?chipProjeto(g):'')+'</span>'
+        +'<span class="esq small">'+esc(g.desc||c.nome)+(typeof chipProjeto==='function'?chipProjeto(g):'')+(typeof chipCartao==='function'?chipCartao(g):'')+'</span>'
         +'<span class="num small">'+$$(g.valor)+'</span>'
         +'<button class="edit" data-action="gasto-remover" data-id="'+esc(g.id)+'" aria-label="Remover">✕</button></div>';
     });

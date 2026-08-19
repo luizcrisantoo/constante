@@ -249,7 +249,7 @@ function viewConfig(){
   categorias().forEach(c=>{
     html+='<div class="item-edit">'
       +'<input type="color" value="'+esc(c.cor)+'" data-cat-cor="'+esc(c.id)+'" aria-label="cor" style="width:32px;height:28px;padding:0;border:none;background:none;flex:none">'
-      +'<input type="text" class="nome" value="'+esc(c.nome)+'" data-cat-nome="'+esc(c.id)+'" maxlength="24" style="flex:1;min-width:0">'
+      +'<input type="text" class="nome" value="'+esc(c.nome)+'" data-cat-nome="'+esc(c.id)+'" maxlength="24" aria-label="Nome da categoria" style="flex:1;min-width:0">'
       +'<button class="btn mini perigo" data-action="cat-del" data-id="'+esc(c.id)+'" aria-label="Excluir categoria">✕</button></div>';
   });
   html+='</div></section>';
@@ -331,5 +331,8 @@ function viewConfig(){
 
 function cfgCampo(rotulo,caminho,tipo,valor,ph){
   const v=(valor==null?'':valor);
-  return '<div class="campo"><label>'+esc(rotulo)+'</label><input type="'+tipo+'" data-cfg="'+caminho+'" value="'+esc(v)+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+(tipo==='number'?' step="any"':'')+'></div>';
+  // o rótulo precisa APONTAR pro campo: sem isso o leitor de tela anuncia
+  // "caixa de edição" e a pessoa não sabe o que está preenchendo
+  const id='cfg-'+String(caminho).replace(/[^a-zA-Z0-9]+/g,'-');
+  return '<div class="campo"><label for="'+id+'">'+esc(rotulo)+'</label><input id="'+id+'" type="'+tipo+'" data-cfg="'+caminho+'" value="'+esc(v)+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+(tipo==='number'?' step="any"':'')+'></div>';
 }

@@ -1334,9 +1334,9 @@ function campo(id,rotulo,tipo,valor){
 
   const t=tipo==='number'?'text':tipo;
   if(tipo==='password'){
-    return '<div class="campo"><label>'+esc(rotulo)+'</label>'+senhaInput(id,'new-password')+'</div>';
+    return '<div class="campo"><label for="'+id+'">'+esc(rotulo)+'</label>'+senhaInput(id,'new-password')+'</div>';
   }
-  return '<div class="campo"><label>'+esc(rotulo)+'</label><input id="'+id+'" type="'+t+'" value="'+esc(valor)+'"'+(tipo==='number'?' inputmode="decimal"':'')+'></div>';
+  return '<div class="campo"><label for="'+id+'">'+esc(rotulo)+'</label><input id="'+id+'" type="'+t+'" value="'+esc(valor)+'"'+(tipo==='number'?' inputmode="decimal"':'')+'></div>';
 }
 
 function abrirModalBloco(d,ix){

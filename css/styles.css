@@ -1,4 +1,5 @@
-@import url('variables.css');
+/* variables.css entra por <link> no index.html — @import aqui obrigava
+   o navegador a baixar em série, atrasando a primeira pintura. */
 
 *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
 html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
@@ -362,7 +363,8 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
 .cal-dia.hoje .cal-n{ color:var(--brand-strong); }
 .cal-dia.sel{ border-color:var(--brand); background:var(--surface-3); }
 .cal-dia.sel .cal-n{ color:var(--ink); }
-.cal-dia.futuro{ opacity:0.28; background:transparent; }
+/* v55: 0.28 dava contraste 1,9:1 — o número do dia sumia pra quem enxerga menos */
+.cal-dia.futuro{ opacity:0.65; background:transparent; }
 @media (max-width:359px){
   .cal-dia{ min-height:2.2rem; }
   .cal-dia .cal-n{ font-size:0.72rem; }

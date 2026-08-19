@@ -188,6 +188,11 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:55, data:'2026-08-19', titulo:'Mais legível, e abrindo mais rápido', itens:[
+    '👀 Textos secundários (aqueles cinzinhas) e os dias futuros no calendário da Grana estavam claros demais pra quem enxerga menos — reprovavam no padrão de contraste. Foram ajustados sem mudar a cara do app.',
+    '🏷️ Todos os campos de Ajustes e do Sono agora têm o rótulo ligado ao campo. Quem usa leitor de tela ouvia só "caixa de edição" e não sabia o que estava preenchendo.',
+    '⚡ A primeira abertura do app ficou mais rápida: o arquivo de cores era baixado só DEPOIS do arquivo de estilos, um esperando o outro. Agora vão juntos.'
+  ]},
   { v:54, data:'2026-08-19', titulo:'Um convite pra voltar (e nada além disso)', itens:[
     '💜 Se você passar 2 dias sem abrir o app, ele te manda UM convite às 19h. Se passar uma semana, manda outro. Só isso — nunca todo dia, nunca cobrando, nunca dizendo que você falhou. A ideia é lembrar que dá pra recomeçar, não fazer você se sentir mal.',
     '🔕 E dá pra desligar num toque: Ajustes → Avisos que ajudam → "me chamar de volta". Ele também respeita o teu horário de silêncio.',

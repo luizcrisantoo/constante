@@ -415,3 +415,8 @@ details summary{ cursor:pointer; color:var(--ink-mute); font-size:0.8rem; margin
 /* ---- v52: teclado do celular não pode cobrir o botão de salvar ---- */
 :root{ --kb:0px; }
 body.teclado-aberto .modal{ max-height:none; }
+
+/* ---- v56: entradas na Grana. Verde e vermelho aqui são informação, não elogio
+   nem bronca — o texto ao lado sempre diz o que o número significa. ---- */
+.num.pos{ color:var(--good); }
+.num.neg{ color:var(--serious); }

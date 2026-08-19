@@ -96,14 +96,26 @@ function secaoGastos(){
   const totDia=totalLista(doDia), totMes=totalLista(doMes);
   const porCat=gastosPorCategoria(doMes);
 
-  let html='<section class="card"><h2>Gastos</h2>'
-    +'<div class="linha">'
-    +(ehMesAtual
-      ? '<div class="esq"><span class="hero-num num">'+$$(totDia)+'</span><div class="hero-sub">gasto hoje</div></div>'
-        +'<div style="text-align:right"><b class="num">'+$$(totMes)+'</b><div class="hero-sub">no mês</div></div>'
-      : '<div class="esq"><span class="hero-num num">'+$$(totMes)+'</span><div class="hero-sub">em '+esc(fmtMes(mesSel))+'</div></div>'
-        +'<div style="text-align:right"><b class="num">'+doMes.length+'</b><div class="hero-sub">lançamentos</div></div>')
-    +'</div>'
+  // Quem só quer anotar gasto continua vendo a tela de sempre. O retrato de
+  // entrou/saiu só aparece pra quem registrou alguma entrada.
+  const temRec=(typeof usaReceitas==='function')&&usaReceitas();
+  const sal=temRec?saldoDoMes(mesSel):null;
+
+  let html='<section class="card"><h2>'+(temRec?'Grana do mês':'Gastos')+'</h2>'
+    +(temRec
+      ? '<div class="linha">'
+        +'<div class="esq"><span class="hero-num num '+(sal.sobra<0?'neg':'pos')+'">'+$$(sal.sobra)+'</span>'
+        +'<div class="hero-sub">'+(sal.sobra<0?'saiu mais do que entrou em ':'sobrou em ')+esc(fmtMes(mesSel))+'</div></div></div>'
+        +'<div class="linha mt">'
+        +'<span class="esq small sec">📥 entrou <b class="num">'+$$(sal.entrou)+'</b></span>'
+        +'<span class="small sec">📤 saiu <b class="num">'+$$(sal.saiu)+'</b></span></div>'
+      : '<div class="linha">'
+        +(ehMesAtual
+          ? '<div class="esq"><span class="hero-num num">'+$$(totDia)+'</span><div class="hero-sub">gasto hoje</div></div>'
+            +'<div style="text-align:right"><b class="num">'+$$(totMes)+'</b><div class="hero-sub">no mês</div></div>'
+          : '<div class="esq"><span class="hero-num num">'+$$(totMes)+'</span><div class="hero-sub">em '+esc(fmtMes(mesSel))+'</div></div>'
+            +'<div style="text-align:right"><b class="num">'+doMes.length+'</b><div class="hero-sub">lançamentos</div></div>')
+        +'</div>')
     +'<div class="linha mt" style="gap:0.4rem">'
     +'<button class="btn mini sec-btn" data-action="grana-mes" data-m="'+mesDeslocado(mesSel,-1)+'" aria-label="Mês anterior">‹</button>'
     +'<span class="esq small" style="text-align:center">'+esc(fmtMes(mesSel))+'</span>'
@@ -113,7 +125,24 @@ function secaoGastos(){
     +'</div>'
     +calendarioGastos(mesSel,hoje)
     +'<p class="muted small">Toca num dia pra ver e lançar o gasto <b>daquele dia</b> — dá pra fechar a semana toda de uma vez.</p>'
-    +(diaAberto?'':'<button class="btn bloco mt" data-action="gasto-add">+ Registrar gasto</button>');
+    +(diaAberto?'':'<div class="linha mt" style="gap:0.5rem">'
+        +'<button class="btn" style="flex:1" data-action="gasto-add">+ Gasto</button>'
+        +'<button class="btn sec-btn" style="flex:1" data-action="receita-add">+ Entrada</button></div>');
+
+  // Extrato das entradas do mês — separado do de gastos pra ninguém confundir sinal.
+  const recMes=temRec?receitasDoMes(mesSel).slice().sort((a,b)=>a.data<b.data?1:(a.data>b.data?-1:(a.id<b.id?1:-1))):[];
+  if(recMes.length){
+    html+='<details class="mt"><summary class="muted small">📥 Entradas de '+esc(fmtMes(mesSel))+' ('+recMes.length+')</summary>';
+    recMes.forEach(r=>{
+      const f=fonteReceita(r.fonte);
+      html+='<div class="linha" style="padding:0.35rem 0;border-bottom:1px solid var(--grid)">'
+        +'<span style="width:1.4rem;text-align:center">'+esc(f.icone)+'</span>'
+        +'<span class="esq small">'+esc(r.desc||f.nome)+' <span class="muted">'+fmtData(r.data)+'</span></span>'
+        +'<span class="num small pos">+'+$$(r.valor)+'</span>'
+        +'<button class="edit" data-action="receita-remover" data-id="'+esc(r.id)+'" aria-label="Remover entrada">✕</button></div>';
+    });
+    html+='</details>';
+  }
 
   if(diaAberto){
     const doSel=gastosDoDia(UI.granaDia).slice().sort((a,b)=>a.id<b.id?1:-1);

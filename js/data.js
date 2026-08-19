@@ -48,6 +48,16 @@ const BARRA_POR_INTENCAO = {
 // ---- v51: projetos financeiros (gasto por objetivo) ----
 // CATEGORIA = com o QUE você gastou · PROJETO = pra QUAL objetivo.
 // São dimensões diferentes: o mesmo gasto pode ter as duas.
+// ---- v56: de onde vem o dinheiro que entra ----
+const FONTES_RECEITA = [
+  {id:'salario', icone:'💼', nome:'Salário'},
+  {id:'freela',  icone:'💻', nome:'Freela'},
+  {id:'venda',   icone:'🏷️', nome:'Venda'},
+  {id:'presente',icone:'🎁', nome:'Presente'},
+  {id:'extra',   icone:'✨', nome:'Extra'},
+  {id:'outros',  icone:'📥', nome:'Outros'}
+];
+
 const MODELOS_PROJETO = [
   {icone:'💍', nome:'Casamento'},
   {icone:'✈️', nome:'Viagem'},
@@ -133,7 +143,10 @@ function defaultState(){
         {id:'g_outros', nome:'Outros', icone:'📦', cor:'var(--c-livre)'}
       ],
       lancamentos:[],
-      projetos:[]
+      projetos:[],
+      receitas:[]              // v56: o que ENTRA. Lista separada de propósito —
+                               // gastosDoMes, calendário e projetos só olham lancamentos.
+
     },
     estudo: {
       cadernos:[]
@@ -188,6 +201,12 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:56, data:'2026-08-19', titulo:'A Grana passou a contar o que ENTRA', itens:[
+    '📥 Agora dá pra registrar entrada, não só gasto: salário, freela, venda, presente. O botão fica ao lado do "+ Gasto", na aba Grana.',
+    '⚖️ Assim que você registra a primeira entrada, o topo da Grana vira o retrato do mês: quanto entrou, quanto saiu e o que sobrou. Quem só quer anotar gasto não vê nada disso mudar — continua igual até registrar a primeira entrada.',
+    '🧾 As entradas ficam num extrato próprio, separadas dos gastos, e não entram no calendário nem nos projetos: lá continua sendo só o que sai.',
+    '💬 Pedido do tester que perguntou "tu vai colocar receita na parte da grana?". Vai. 😄'
+  ]},
   { v:55, data:'2026-08-19', titulo:'Mais legível, e abrindo mais rápido', itens:[
     '👀 Textos secundários (aqueles cinzinhas) e os dias futuros no calendário da Grana estavam claros demais pra quem enxerga menos — reprovavam no padrão de contraste. Foram ajustados sem mudar a cara do app.',
     '🏷️ Todos os campos de Ajustes e do Sono agora têm o rótulo ligado ao campo. Quem usa leitor de tela ouvia só "caixa de edição" e não sabia o que estava preenchendo.',

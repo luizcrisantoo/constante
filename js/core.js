@@ -138,6 +138,7 @@ function sanearEstado(){
   if(!Array.isArray(S.gastos.categorias)) S.gastos.categorias=defaultState().gastos.categorias;
   if(!Array.isArray(S.gastos.lancamentos)) S.gastos.lancamentos=[];
   if(!Array.isArray(S.gastos.projetos)) S.gastos.projetos=[];
+  if(!Array.isArray(S.gastos.receitas)) S.gastos.receitas=[];
   // backup importado / blob da nuvem não são confiáveis: corta tamanho na LEITURA
   S.gastos.projetos.forEach(p=>{
     if(!p||typeof p!=='object') return;
@@ -788,6 +789,10 @@ function mesclarEstado(remoto){
   if(outro.gastos&&Array.isArray(outro.gastos.lancamentos)){
     S.gastos.lancamentos=uniaoLanc(S.gastos.lancamentos,outro.gastos.lancamentos);
   }
+  // sem isto, a entrada lançada no celular sumia ao abrir no note
+  if(outro.gastos&&Array.isArray(outro.gastos.receitas)){
+    S.gastos.receitas=uniaoLanc(S.gastos.receitas,outro.gastos.receitas);
+  }
   if(outro.treinos&&Array.isArray(outro.treinos.split)){
     outro.treinos.split.forEach(ot=>{
       const t=S.treinos.split.find(x=>x.id===ot.id); if(!t) return;
@@ -1001,6 +1006,44 @@ function evolucaoCarga(ex){
   const porData={};
   (ex.registros||[]).forEach(r=>{ porData[r.data]=Math.max(porData[r.data]||0, r.carga); });
   return Object.keys(porData).sort().map(d=>({data:d, carga:porData[d]}));
+}
+
+// ---------- v56: receitas (o que entra) ----------
+// Ficam num array PRÓPRIO, não misturadas em lancamentos. Se entrassem lá, todo
+// cálculo que já existe (total do mês, calendário, categorias, projetos) passaria a
+// somar entrada com saída — e um esquecimento em qualquer um deles vira número errado
+// na cara da pessoa.
+function receitas(){
+  if(!S.gastos) S.gastos=defaultState().gastos;
+  if(!Array.isArray(S.gastos.receitas)) S.gastos.receitas=[];
+  return S.gastos.receitas;
+}
+function fonteReceita(id){
+  return (typeof FONTES_RECEITA!=='undefined' ? FONTES_RECEITA.find(f=>f.id===id) : null)
+      || {id:'outros', icone:'📥', nome:'Entrada'};
+}
+function addReceita(valor,fonteId,descricao,dataISO){
+  const v=round2(numeroBR(valor)||0);
+  if(!isFinite(v)||v<=0) return null;
+  const r={id:uid(), valor:v, fonte:fonteId||'outros', desc:descricao||'', data:dataISO||hojeISO()};
+  receitas().push(r); saveState();
+  return r;
+}
+function removerReceita(id){
+  apagarItem(id);
+  S.gastos.receitas=receitas().filter(r=>r&&r.id!==id);
+  saveState();
+}
+function receitasDoMes(anoMes){
+  anoMes=anoMes||hojeISO().slice(0,7);
+  return receitas().filter(r=>r&&r.data&&r.data.slice(0,7)===anoMes);
+}
+function usaReceitas(){ return receitas().length>0; }
+// Retrato do mês: entrou, saiu, e a diferença. Sem meta, sem elogio, sem bronca.
+function saldoDoMes(anoMes){
+  const ent=totalLista(receitasDoMes(anoMes));
+  const sai=totalLista(gastosDoMes(anoMes));
+  return { entrou:ent, saiu:sai, sobra:round2(ent-sai) };
 }
 
 function catGasto(id){ return S.gastos.categorias.find(c=>c.id===id)||{nome:'?',icone:'📦',cor:'var(--c-livre)'}; }

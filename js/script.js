@@ -852,6 +852,43 @@ const ACOES={
     fecharModal(); render();
     toast('Gasto registrado'+(dataFinal===hojeISO()?'':' em '+fmtData(dataFinal)));
   },
+  // ---- v56: entradas (receitas) ----
+  'receita-add':el=>{
+    const dPre=(el&&el.dataset&&/^\d{4}-\d{2}-\d{2}$/.test(el.dataset.d||''))?el.dataset.d:dataPadraoGasto();
+    const fs=FONTES_RECEITA.map(f=>'<option value="'+esc(f.id)+'">'+esc(f.icone+' '+f.nome)+'</option>').join('');
+    abrirModal('<h3>Registrar entrada'+(dPre!==hojeISO()?' <span class="chip">'+esc(fmtData(dPre))+'</span>':'')+'</h3>'
+      +'<p class="muted small">Salário, freela, venda, presente — o que entrou. Fica separado dos gastos.</p>'
+      +campo('re-valor','Valor (R$)','number','')
+      +'<div class="campo"><label for="re-fonte">De onde veio</label><select id="re-fonte">'+fs+'</select></div>'
+      +'<div class="grid-2">'+campo('re-desc','Descrição (opcional)','text','')
+      +'<div class="campo"><label for="re-data">Dia</label><input type="date" id="re-data" value="'+dPre+'" max="'+hojeISO()+'"></div></div>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn" data-action="receita-salvar">Registrar</button></div>');
+  },
+  'receita-salvar':()=>{
+    const v=numeroBR(val('re-valor'));
+    if(!isFinite(v)||v<=0){
+      toast('Escreve só o valor, tipo 1200 — pode pôr R$ que eu entendo');
+      const c=document.getElementById('re-valor'); if(c){ c.focus(); c.select&&c.select(); }
+      return;
+    }
+    const dt=val('re-data');
+    const dataFinal=(/^\d{4}-\d{2}-\d{2}$/.test(dt)&&dt<=hojeISO())?dt:hojeISO();
+    addReceita(v,val('re-fonte'),val('re-desc'),dataFinal);
+    if(UI.tab==='grana'){
+      UI.granaMes=(dataFinal.slice(0,7)===hojeISO().slice(0,7))?null:dataFinal.slice(0,7);
+    }
+    fecharModal(); render();
+    toast('📥 Entrada registrada'+(dataFinal===hojeISO()?'':' em '+fmtData(dataFinal)));
+  },
+  'receita-remover':el=>{
+    const r=receitas().find(x=>x.id===el.dataset.id);
+    abrirModal('<h3>Remover entrada?</h3><p class="sec small">'+esc(r?(fmtBRL(r.valor)+(r.desc?' — '+r.desc:'')):'')+'</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn perigo" data-action="receita-remover-ok" data-id="'+esc(el.dataset.id)+'">Remover</button></div>');
+  },
+  'receita-remover-ok':el=>{ removerReceita(el.dataset.id); fecharModal(); render(); toast('Entrada removida'); },
+
   'gasto-nova-cat':()=>{
     abrirModal('<h3>Nova categoria</h3>'
       +'<div class="grid-2">'+campo('nc-icone','Ícone (emoji)','text','📦')+campo('nc-nome','Nome','text','')+'</div>'

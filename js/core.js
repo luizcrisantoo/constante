@@ -1193,6 +1193,35 @@ function addGasto(valor,catId,descricao,dataISO,projId){
   S.gastos.lancamentos.push(g);
   saveState();
 }
+function gastoPorId(id){ return id?(S.gastos.lancamentos.find(g=>g&&g.id===id)||null):null; }
+// Alterar em vez de apagar e lançar de novo: quem errou o valor não devia precisar
+// refazer tudo. Mexe SÓ neste lançamento — parcela irmã continua como está.
+function editarGasto(id,dados){
+  const g=gastoPorId(id); if(!g||!dados) return false;
+  if(dados.valor!==undefined){
+    const v=round2(numeroBR(dados.valor)||0);
+    if(!isFinite(v)||v<=0) return false;
+    g.valor=v;
+  }
+  if(dados.cat!==undefined&&dados.cat) g.cat=dados.cat;
+  if(dados.desc!==undefined) g.desc=String(dados.desc||'').slice(0,120);
+  if(dados.data!==undefined&&/^\d{4}-\d{2}-\d{2}$/.test(dados.data)&&dados.data<=hojeISO()) g.data=dados.data;
+  if(dados.proj!==undefined){
+    if(dados.proj&&projPorId(dados.proj)) g.proj=dados.proj; else delete g.proj;
+  }
+  saveState();
+  return true;
+}
+// Apagar a compra parcelada inteira (todas as parcelas de uma vez)
+function removerGrupoParcelas(pgrupo){
+  if(!pgrupo) return 0;
+  const alvos=S.gastos.lancamentos.filter(g=>g&&g.pgrupo===pgrupo);
+  alvos.forEach(g=>apagarItem(g.id));
+  S.gastos.lancamentos=S.gastos.lancamentos.filter(g=>!(g&&g.pgrupo===pgrupo));
+  if(alvos.length) saveState();
+  return alvos.length;
+}
+
 function removerGasto(id){ apagarItem(id); S.gastos.lancamentos=S.gastos.lancamentos.filter(g=>g.id!==id); saveState(); }
 // Compra no cartão. Parcelada, vira N lançamentos — um em cada mês — porque é assim
 // que ela realmente aparece na fatura. Guardar "1 de 10" num lançamento só obrigaria

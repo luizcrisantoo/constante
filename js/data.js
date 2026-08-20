@@ -211,6 +211,12 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:58, data:'2026-08-20', titulo:'Dá pra alterar o gasto (e o cartão ficou claro)', itens:[
+    '✎ ALTERAR GASTO: apareceu um lápis do lado de cada lançamento. Dá pra corrigir valor, categoria, descrição, dia e projeto sem precisar apagar e lançar de novo.',
+    '💳 NO CARTÃO, o campo de valor agora diz na sua frente o que vai acontecer: você digita o TOTAL da compra e o app mostra "vira 3x de R$ 400,00, começando na fatura de Setembro". Antes dava pra achar que o campo pedia o valor da parcela.',
+    '🧾 Alterando uma parcela, o app avisa que a mudança vale só pra ela. E tem um atalho pra apagar a compra parcelada inteira, de todas as faturas de uma vez.',
+    '💬 Os dois vieram do mesmo tester, no mesmo dia. Continuem mandando.'
+  ]},
   { v:57, data:'2026-08-19', destaque:true, titulo:'Contas e cartão — a sobra virou verdade', itens:[
     '💳 CARTÃO DE CRÉDITO: cadastre o cartão com o dia que fecha e o dia que vence, e a compra vai pra fatura CERTA em vez de parecer que o dinheiro saiu hoje. Na hora de registrar o gasto aparece "Como pagou": à vista/débito/pix ou o cartão.',
     '🔟 PARCELOU? Escreve em quantas vezes e o app espalha nas faturas dos próximos meses sozinho. Cada parcela aparece com "3/10" do lado.',

@@ -828,11 +828,12 @@ const ACOES={
       +cartoes().map(c=>'<option value="'+esc(c.id)+'">'+esc(c.icone+' '+c.nome)+'</option>').join('')):'';
     abrirModal('<h3>Registrar gasto'+(dPre!==hojeISO()?' <span class="chip">'+esc(fmtData(dPre))+'</span>':'')+'</h3>'
       +campo('ga-valor','Valor (R$)','number','')
+      +'<p class="muted small" id="ga-dica" style="margin:-0.3rem 0 0.5rem"></p>'
       +'<div class="campo"><label for="ga-cat">Categoria</label><select id="ga-cat">'+cats+'</select></div>'
       +(temProj?'<div class="campo"><label for="ga-proj">Projeto (opcional — pra qual objetivo)</label><select id="ga-proj">'+opcoesProjeto('')+'</select></div>':'')
       +(temCart?'<div class="grid-2">'
         +'<div class="campo"><label for="ga-cart">Como pagou</label><select id="ga-cart">'+optCart+'</select></div>'
-        +'<div class="campo"><label for="ga-parc">Parcelas</label><input id="ga-parc" type="text" inputmode="numeric" value="1"></div></div>':'')
+        +'<div class="campo"><label for="ga-parc">Em quantas vezes</label><input id="ga-parc" type="text" inputmode="numeric" value="1"></div></div>':'')
       +'<div class="grid-2">'+campo('ga-desc','Descrição (ex.: uber, cantina)','text','')
       +'<div class="campo"><label for="ga-data">Dia (esqueceu ontem? sem crise)</label><input type="date" id="ga-data" value="'+dPre+'" max="'+hojeISO()+'"></div></div>'
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
@@ -973,6 +974,48 @@ const ACOES={
   'gasto-nova-cat-ok':()=>{
     const nome=val('nc-nome'); if(!nome){ toast('Dá um nome'); return; }
     addCategoriaGasto(nome,val('nc-icone')); ACOES['gasto-add']();
+  },
+  'gasto-editar':el=>{
+    const g=gastoPorId(el.dataset.id); if(!g) return;
+    const cats=S.gastos.categorias.map(c=>'<option value="'+esc(c.id)+'"'+(c.id===g.cat?' selected':'')+'>'+esc(c.icone+' '+c.nome)+'</option>').join('');
+    const temProj=(typeof projetosAtivos==='function')&&projetosAtivos().length>0;
+    const ct=g.cartao?cartaoPorId(g.cartao):null;
+    abrirModal('<h3>Alterar gasto</h3>'
+      +(g.parc
+        ? '<div class="aviso">Esta é a parcela <b>'+esc(g.parc)+'</b>'+(ct?(' do '+esc(ct.nome)):'')+'. O que você mudar aqui vale só pra ela — as outras parcelas continuam como estão.</div>'
+        : (ct?'<p class="muted small">No '+esc(ct.icone)+' '+esc(ct.nome)+' — fatura de '+esc(fmtMes(faturaDaCompra(ct.id,g.data)||g.data.slice(0,7)))+'.</p>':''))
+      +campo('ge-valor','Valor (R$)','number',String(g.valor))
+      +'<div class="campo"><label for="ge-cat">Categoria</label><select id="ge-cat">'+cats+'</select></div>'
+      +'<div class="grid-2">'+campo('ge-desc','Descrição','text',g.desc||'')
+      +'<div class="campo"><label for="ge-data">Dia</label><input type="date" id="ge-data" value="'+esc(g.data)+'" max="'+hojeISO()+'"></div></div>'
+      +(temProj?'<div class="campo"><label for="ge-proj">Projeto</label><select id="ge-proj">'+opcoesProjeto(g.proj||'')+'</select></div>':'')
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn" data-action="gasto-editar-ok" data-id="'+esc(g.id)+'">Salvar</button></div>'
+      +(g.pgrupo?'<p class="centro mt"><button class="deslize-btn" data-action="gasto-del-grupo" data-g="'+esc(g.pgrupo)+'">Apagar a compra inteira (todas as parcelas)</button></p>':''));
+  },
+  'gasto-editar-ok':el=>{
+    const okEd=editarGasto(el.dataset.id,{
+      valor:val('ge-valor'), cat:val('ge-cat'), desc:val('ge-desc'),
+      data:val('ge-data'), proj:val('ge-proj')
+    });
+    if(!okEd){
+      toast('Escreve só o valor, tipo 12,50 — pode pôr R$ que eu entendo');
+      const c=document.getElementById('ge-valor'); if(c){ c.focus(); c.select&&c.select(); }
+      return;
+    }
+    fecharModal(); render(); toast('Gasto alterado ✓');
+  },
+  'gasto-del-grupo':el=>{
+    const g=el.dataset.g;
+    const n=S.gastos.lancamentos.filter(x=>x&&x.pgrupo===g).length;
+    abrirModal('<h3>Apagar a compra inteira?</h3>'
+      +'<p class="sec small">Vai sair das '+n+' faturas de uma vez.</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn perigo" data-action="gasto-del-grupo-ok" data-g="'+esc(g)+'">Apagar tudo</button></div>');
+  },
+  'gasto-del-grupo-ok':el=>{
+    const n=removerGrupoParcelas(el.dataset.g);
+    fecharModal(); render(); toast(n+' parcela'+(n===1?'':'s')+' removida'+(n===1?'':'s'));
   },
   'gasto-remover':el=>{
     const g=S.gastos.lancamentos.find(x=>x.id===el.dataset.id);
@@ -1577,6 +1620,12 @@ function ligarEventos(){
   },100); });
 
   ligarToqueLongoBarra();
+  // prévia ao vivo do parcelamento — o tester achou que o campo pedia o valor da
+  // parcela, não o da compra. Mostrar a conta feita acaba com a dúvida.
+  document.body.addEventListener('input',ev=>{
+    const t=ev.target;
+    if(t&&(t.id==='ga-valor'||t.id==='ga-parc')&&typeof atualizarDicaParcela==='function') atualizarDicaParcela();
+  });
 
   document.body.addEventListener('click',ev=>{
     const nav=ev.target.closest('[data-nav]');
@@ -1627,6 +1676,7 @@ function ligarEventos(){
       return;
     }
     if(t.dataset.campo==='nota'){ getDia().nota=t.value; saveState(); toast('📝 Anotado ✓'); return; }
+    if(t.id==='ga-cart'&&typeof atualizarDicaParcela==='function'){ atualizarDicaParcela(); return; }
     if(t.dataset.avisosCheck){
       const a=cfgAvisos();
       a[t.dataset.avisosCheck]=!!t.checked;

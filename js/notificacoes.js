@@ -138,8 +138,9 @@ function secaoLembretes(){
     html+='<div class="lista-edit">';
     ls.forEach(l=>{
       const dias=(Array.isArray(l.dias)&&l.dias.length&&l.dias.length<7)?l.dias.map(d=>DIAS_ABREV[d]).join(','):'todo dia';
-      html+='<div class="item-edit"'+(l.ativo===false?' style="opacity:0.55"':'')+'><span class="num">'+esc(l.hora||'--:--')+'</span>'
-        +'<span class="nome">'+esc(l.texto||'')+' <span class="muted small">('+esc(dias)+')</span></span>'
+      html+='<div class="item-edit"><span class="num">'+esc(l.hora||'--:--')+'</span>'
+        +'<span class="nome">'+esc(l.texto||'')+' <span class="muted small">('+esc(dias)+')</span>'
+        +(l.ativo===false?' <span class="chip">pausado</span>':'')+'</span>'
         +'<button class="btn mini sec-btn" data-action="lembrete-toggle" data-id="'+esc(l.id)+'">'+(l.ativo===false?'Ligar':'Pausar')+'</button>'
         +'<button class="btn mini sec-btn" data-action="lembrete-edit" data-id="'+esc(l.id)+'" aria-label="Editar lembrete">✎</button>'
         +'<button class="btn mini perigo" data-action="lembrete-del" data-id="'+esc(l.id)+'" aria-label="Excluir lembrete">✕</button></div>';

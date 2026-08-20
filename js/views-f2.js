@@ -154,6 +154,7 @@ function secaoGastos(){
         +'<span style="width:1.4rem;text-align:center">'+esc(c.icone)+'</span>'
         +'<span class="esq small">'+esc(g.desc||c.nome)+(typeof chipProjeto==='function'?chipProjeto(g):'')+(typeof chipCartao==='function'?chipCartao(g):'')+'</span>'
         +'<span class="num small">'+$$(g.valor)+'</span>'
+        +'<button class="edit" data-action="gasto-editar" data-id="'+esc(g.id)+'" aria-label="Alterar gasto">✎</button>'
         +'<button class="edit" data-action="gasto-remover" data-id="'+esc(g.id)+'" aria-label="Remover">✕</button></div>';
     });
     html+='<button class="btn bloco mt" data-action="gasto-add" data-d="'+esc(UI.granaDia)+'">+ Registrar gasto em '+esc(fmtData(UI.granaDia))+'</button>';
@@ -188,6 +189,7 @@ function secaoGastos(){
         +'<span style="width:1.4rem;text-align:center">'+esc(c.icone)+'</span>'
         +'<span class="esq small">'+esc(g.desc||c.nome)+(typeof chipProjeto==='function'?chipProjeto(g):'')+(typeof chipCartao==='function'?chipCartao(g):'')+'</span>'
         +'<span class="num small">'+$$(g.valor)+'</span>'
+        +'<button class="edit" data-action="gasto-editar" data-id="'+esc(g.id)+'" aria-label="Alterar gasto">✎</button>'
         +'<button class="edit" data-action="gasto-remover" data-id="'+esc(g.id)+'" aria-label="Remover">✕</button></div>';
     });
     html+='</details>';

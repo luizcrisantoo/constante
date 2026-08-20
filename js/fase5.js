@@ -321,7 +321,7 @@ function secaoAvisos(){
       +(calados?' — '+calados+' cai'+(calados===1?'':'em')+' no silêncio e fica'+(calados===1?'':'m')+' de fora.':'.')+'</p>'
       +'<button class="btn mt" data-action="avisos-criar">Criar os avisos da minha rotina</button>'
       +'<details class="mt"><summary class="muted small">Ver o que seria criado</summary>'
-      +props.map(x=>'<div class="linha small" style="padding:0.25rem 0;border-bottom:1px solid var(--grid)'+(x.calado?';opacity:0.5':'')+'">'
+      +props.map(x=>'<div class="linha small" style="padding:0.25rem 0;border-bottom:1px solid var(--grid)'+''+'">'
         +'<span class="num" style="width:3.2rem">'+esc(x.hora)+'</span>'
         +'<span class="esq">'+esc(textoAviso(x))+'</span>'
         +'<span class="muted">'+(x.calado?'🌙 silêncio':(x.dias.length===7?'todo dia':x.dias.map(d=>DIAS_ABREV[d]).join(',')))+'</span></div>').join('')
@@ -375,12 +375,14 @@ function secaoComprometido(mesSel){
     html+='<div class="grupo-titulo">Contas do mês</div>';
     contas().filter(x=>x&&x.ativa!==false).forEach(ct=>{
       const paga=contaPaga(ct,mes);
-      html+='<div class="linha" style="padding:0.4rem 0;border-bottom:1px solid var(--grid)'+(paga?';opacity:0.6':'')+'">'
+      // nada de opacity pra "apagar" a linha: derruba o contraste abaixo do mínimo.
+      // Quem foi pago é marcado com selo, que é mais claro e continua legível.
+      html+='<div class="linha" style="padding:0.4rem 0;border-bottom:1px solid var(--grid)">'
         +'<span style="width:1.5rem;text-align:center">'+esc(ct.icone)+'</span>'
         +'<span class="esq small">'+esc(ct.nome)+' <span class="muted">dia '+ct.dia+'</span></span>'
         +'<span class="num small">'+$$(paga?ct.pagas[mes]:ct.valor)+'</span>'
         +(paga
-          ? '<button class="deslize-btn" data-action="conta-desfazer" data-id="'+esc(ct.id)+'" data-m="'+mes+'">paga ✓</button>'
+          ? '<button class="chip" data-action="conta-desfazer" data-id="'+esc(ct.id)+'" data-m="'+mes+'" aria-label="Desmarcar '+esc(ct.nome)+' como paga">✓ paga</button>'
           : '<button class="btn mini" data-action="conta-pagar" data-id="'+esc(ct.id)+'" data-m="'+mes+'">Paguei</button>')
         +'<button class="edit" data-action="conta-del" data-id="'+esc(ct.id)+'" aria-label="Apagar conta">✕</button></div>';
     });
@@ -436,4 +438,19 @@ function abrirModalCartao(){
     +'<p class="muted small">Está no app do banco ou na fatura. Se errar, dá pra apagar e criar de novo.</p>'
     +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
     +'<button class="btn" data-action="cartao-salvar">Criar</button></div>');
+}
+
+// v58: a conta feita na frente da pessoa. Sem isso, "Valor" + "Em quantas vezes"
+// é ambíguo: dá pra achar que se digita o valor da parcela.
+function atualizarDicaParcela(){
+  const el=document.getElementById('ga-dica');
+  if(!el) return;
+  const cart=(document.getElementById('ga-cart')||{}).value||'';
+  const v=numeroBR((document.getElementById('ga-valor')||{}).value||'');
+  const n=Math.round(numeroBR((document.getElementById('ga-parc')||{}).value||'')||1);
+  if(!cart||!isFinite(v)||v<=0||n<=1){ el.textContent=''; return; }
+  const cada=Math.round((v/n)*100)/100;
+  const c=cartaoPorId(cart);
+  el.innerHTML='Total da compra: <b>'+fmtBRL(v)+'</b> — vira <b>'+n+'x de '+fmtBRL(cada)+'</b>'
+    +(c?(', começando na fatura de '+esc(fmtMes(faturaDaCompra(c.id,(document.getElementById("ga-data")||{}).value||hojeISO())||hojeISO().slice(0,7)))):'')+'.';
 }

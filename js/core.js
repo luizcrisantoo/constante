@@ -141,6 +141,7 @@ function sanearEstado(){
   if(!Array.isArray(S.gastos.receitas)) S.gastos.receitas=[];
   if(!Array.isArray(S.gastos.contas)) S.gastos.contas=[];
   if(!Array.isArray(S.gastos.cartoes)) S.gastos.cartoes=[];
+  if(!Array.isArray(S.gastos.carteiras)) S.gastos.carteiras=[];
   S.gastos.contas.forEach(c=>{ if(c&&(!c.pagas||typeof c.pagas!=='object')) c.pagas={}; });
   // backup importado / blob da nuvem não são confiáveis: corta tamanho na LEITURA
   S.gastos.projetos.forEach(p=>{
@@ -797,8 +798,17 @@ function mesclarEstado(remoto){
     S.gastos.receitas=uniaoLanc(S.gastos.receitas,outro.gastos.receitas);
   }
   // cartões e contas ANTES dos lançamentos, pelo mesmo motivo dos projetos
+  if(outro.gastos&&Array.isArray(outro.gastos.carteiras)){
+    S.gastos.carteiras=uniaoLanc(S.gastos.carteiras,outro.gastos.carteiras);
+  }
   if(outro.gastos&&Array.isArray(outro.gastos.cartoes)){
     S.gastos.cartoes=uniaoLanc(S.gastos.cartoes,outro.gastos.cartoes);
+    // fatura paga em QUALQUER aparelho continua paga
+    (outro.gastos.cartoes||[]).forEach(oc=>{
+      const c=cartaoPorId(oc&&oc.id); if(!c||!oc.pagas) return;
+      if(!c.pagas||typeof c.pagas!=='object') c.pagas={};
+      Object.keys(oc.pagas).forEach(m=>{ if(c.pagas[m]===undefined) c.pagas[m]=oc.pagas[m]; });
+    });
   }
   if(outro.gastos&&Array.isArray(outro.gastos.contas)){
     S.gastos.contas=uniaoLanc(S.gastos.contas,outro.gastos.contas);
@@ -1038,10 +1048,11 @@ function fonteReceita(id){
   return (typeof FONTES_RECEITA!=='undefined' ? FONTES_RECEITA.find(f=>f.id===id) : null)
       || {id:'outros', icone:'📥', nome:'Entrada'};
 }
-function addReceita(valor,fonteId,descricao,dataISO){
+function addReceita(valor,fonteId,descricao,dataISO,carteiraId){
   const v=round2(numeroBR(valor)||0);
   if(!isFinite(v)||v<=0) return null;
   const r={id:uid(), valor:v, fonte:fonteId||'outros', desc:descricao||'', data:dataISO||hojeISO()};
+  if(carteiraId&&carteiraPorId(carteiraId)) r.carteira=carteiraId;
   receitas().push(r); saveState();
   return r;
 }
@@ -1139,7 +1150,7 @@ function removerConta(id){
 }
 function contaPaga(c,anoMes){ return !!(c&&c.pagas&&c.pagas[anoMes]); }
 // Pagar uma conta vira um gasto de verdade — não fica só marcado num canto.
-function pagarConta(id,anoMes,valorReal){
+function pagarConta(id,anoMes,valorReal,carteiraId){
   const c=contaPorId(id); if(!c) return null;
   const mes=anoMes||hojeISO().slice(0,7);
   if(contaPaga(c,mes)) return null;
@@ -1147,7 +1158,7 @@ function pagarConta(id,anoMes,valorReal){
   if(v<=0) return null;
   const dia=Math.min(Number(diasNoMes(mes)),c.dia);
   const data=mes+'-'+pad2(dia);
-  addGasto(v,c.cat||'g_casa',c.nome,(data<=hojeISO()?data:hojeISO()));
+  addGasto(v,c.cat||'g_casa',c.nome,(data<=hojeISO()?data:hojeISO()),'',carteiraId);
   if(!c.pagas||typeof c.pagas!=='object') c.pagas={};
   c.pagas[mes]=v;
   saveState();
@@ -1174,6 +1185,7 @@ function comprometido(anoMes){
   const contasTot=abertas.reduce((a,c)=>a+(c.valor||0),0);
   const faturas=[];
   cartoes().forEach(ct=>{
+    if(faturaPaga(ct.id,mes)) return;      // já saiu da conta, não é mais compromisso
     const t=totalFatura(ct.id,mes);
     if(t>0) faturas.push({cartao:ct,mes:mes,total:t});
   });
@@ -1183,13 +1195,104 @@ function comprometido(anoMes){
            total:round2(contasTot+faturaTot) };
 }
 
+// ---------- v59: carteiras (onde o dinheiro fica) ----------
+// Pedido de uma tester com três bancos. A conta é honesta, mas frágil: o saldo aqui é
+// calculado pelo que a pessoa REGISTRA, não lido do banco. Por isso duas regras:
+//   1) a tela diz isso em toda parte que mostra saldo;
+//   2) existe "ajustar saldo", que é a válvula — quando a pessoa esquece uma compra e
+//      o número desanda, ela corrige em dois toques em vez de abandonar o app.
+// Sem a válvula, o saldo erra uma vez e vira lixo pra sempre.
+function carteiras(){
+  if(!S.gastos) S.gastos=defaultState().gastos;
+  if(!Array.isArray(S.gastos.carteiras)) S.gastos.carteiras=[];
+  return S.gastos.carteiras;
+}
+function carteiraPorId(id){ return id?(carteiras().find(c=>c&&c.id===id)||null):null; }
+function carteirasAtivas(){ return carteiras().filter(c=>c&&!c.arquivada); }
+function usaCarteiras(){ return carteirasAtivas().length>0; }
+function carteiraPadrao(){
+  const as=carteirasAtivas();
+  return (as.find(c=>c.tipo==='conta')||as[0]||null);
+}
+function addCarteira(nome,icone,tipo,saldoInicial){
+  nome=String(nome||'').trim().slice(0,24);
+  if(!nome) return null;
+  const c={ id:'cw'+uid(), nome:nome, icone:String(icone||'🏦').slice(0,4),
+            tipo:(TIPOS_CARTEIRA.some(t=>t.id===tipo)?tipo:'conta'),
+            saldoInicial:round2(numeroBR(saldoInicial)||0),
+            desde:hojeISO(), arquivada:false };
+  carteiras().push(c); saveState();
+  return c;
+}
+function removerCarteira(id){
+  apagarItem(id);
+  S.gastos.lancamentos.forEach(g=>{ if(g&&g.carteira===id) delete g.carteira; });
+  (S.gastos.receitas||[]).forEach(r=>{ if(r&&r.carteira===id) delete r.carteira; });
+  cartoes().forEach(ct=>{ if(ct&&ct.pagas) Object.keys(ct.pagas).forEach(m=>{
+    if(ct.pagas[m]&&ct.pagas[m].carteira===id) delete ct.pagas[m].carteira; }); });
+  S.gastos.carteiras=carteiras().filter(c=>c&&c.id!==id);
+  saveState();
+}
+// Fatura paga: aí sim o dinheiro sai da conta. Compra no cartão não mexe no saldo
+// na hora — ela só encosta na conta quando a fatura é paga.
+function faturaPaga(cartaoId,anoMes){
+  const c=cartaoPorId(cartaoId);
+  return !!(c&&c.pagas&&c.pagas[anoMes]);
+}
+function pagarFatura(cartaoId,anoMes,valor,carteiraId){
+  const c=cartaoPorId(cartaoId); if(!c) return null;
+  const mes=anoMes||hojeISO().slice(0,7);
+  if(faturaPaga(cartaoId,mes)) return null;
+  const v=round2(numeroBR(valor)||totalFatura(cartaoId,mes));
+  if(!isFinite(v)||v<=0) return null;
+  if(!c.pagas||typeof c.pagas!=='object') c.pagas={};
+  c.pagas[mes]={ valor:v, data:hojeISO(), carteira:(carteiraPorId(carteiraId)?carteiraId:'') };
+  saveState();
+  return v;
+}
+function desfazerPagamentoFatura(cartaoId,anoMes){
+  const c=cartaoPorId(cartaoId); if(!c||!c.pagas) return;
+  delete c.pagas[anoMes||hojeISO().slice(0,7)];
+  saveState();
+}
+// Saldo = ponto de partida + o que entrou − o que saiu à vista − faturas pagas daqui.
+// Gasto no cartão de crédito NÃO entra: ele sai quando a fatura é paga.
+function saldoCarteira(id){
+  const c=carteiraPorId(id); if(!c) return 0;
+  let s=Number(c.saldoInicial)||0;
+  (S.gastos.receitas||[]).forEach(r=>{ if(r&&r.carteira===id) s+=(r.valor||0); });
+  S.gastos.lancamentos.forEach(g=>{ if(g&&g.carteira===id&&!g.cartao) s-=(g.valor||0); });
+  cartoes().forEach(ct=>{
+    if(!ct||!ct.pagas) return;
+    Object.keys(ct.pagas).forEach(m=>{
+      const p=ct.pagas[m];
+      if(p&&typeof p==='object'&&p.carteira===id) s-=(Number(p.valor)||0);
+    });
+  });
+  return round2(s);
+}
+function saldoTotal(){ return round2(carteirasAtivas().reduce((a,c)=>a+saldoCarteira(c.id),0)); }
+// A válvula: em vez de caçar o gasto esquecido, a pessoa diz quanto tem de verdade
+// e o app move o ponto de partida pra bater. Fica registrado quando foi.
+function ajustarSaldoCarteira(id,saldoReal){
+  const c=carteiraPorId(id); if(!c) return false;
+  const alvo=numeroBR(saldoReal);
+  if(!isFinite(alvo)) return false;
+  const dif=round2(alvo-saldoCarteira(id));
+  c.saldoInicial=round2((Number(c.saldoInicial)||0)+dif);
+  c.ajustadoEm=hojeISO();
+  saveState();
+  return true;
+}
+
 function catGasto(id){ return S.gastos.categorias.find(c=>c.id===id)||{nome:'?',icone:'📦',cor:'var(--c-livre)'}; }
-function addGasto(valor,catId,descricao,dataISO,projId){
+function addGasto(valor,catId,descricao,dataISO,projId,carteiraId){
   const v=round2(numeroBR(valor)||0);
   if(v<=0) return;
   const g={id:uid(),valor:v,cat:catId,desc:descricao||'',data:dataISO||hojeISO()};
   // campo some quando não é usado: nada de "proj:''" sujando o backup de quem não usa
   if(projId&&projPorId(projId)) g.proj=projId;
+  if(carteiraId&&carteiraPorId(carteiraId)) g.carteira=carteiraId;
   S.gastos.lancamentos.push(g);
   saveState();
 }
@@ -1227,6 +1330,7 @@ function removerGasto(id){ apagarItem(id); S.gastos.lancamentos=S.gastos.lancame
 // que ela realmente aparece na fatura. Guardar "1 de 10" num lançamento só obrigaria
 // todo cálculo do app a saber dividir parcela.
 function addGastoCartao(valor,catId,descricao,dataISO,cartaoId,parcelas,projId){
+  // compra no cartão não escolhe carteira: ela encosta na conta quando a fatura é paga
   const v=round2(numeroBR(valor)||0);
   if(v<=0||!cartaoPorId(cartaoId)) return 0;
   const n=Math.min(24,Math.max(1,Math.round(numeroBR(parcelas)||1)));

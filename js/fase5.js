@@ -393,10 +393,17 @@ function secaoComprometido(mesSel){
     html+='<div class="grupo-titulo">Cartões</div>';
     cartoes().forEach(ct=>{
       const abertas=faturasEmAberto(ct.id,mes);
+      const paga=(typeof faturaPaga==='function')&&faturaPaga(ct.id,mes);
+      const tot=totalFatura(ct.id,mes);
       html+='<div class="linha" style="padding:0.4rem 0">'
         +'<span style="width:1.5rem;text-align:center">'+esc(ct.icone)+'</span>'
         +'<span class="esq small">'+esc(ct.nome)+' <span class="muted">fecha '+ct.fechamento+' · vence '+ct.vencimento+'</span></span>'
-        +'<span class="num small">'+$$(totalFatura(ct.id,mes))+'</span>'
+        +'<span class="num small">'+$$(tot)+'</span>'
+        +(tot>0
+          ? (paga
+            ? '<button class="chip" data-action="fatura-desfazer" data-id="'+esc(ct.id)+'" data-m="'+mes+'" aria-label="Desmarcar fatura paga">✓ paga</button>'
+            : '<button class="btn mini" data-action="fatura-pagar" data-id="'+esc(ct.id)+'" data-m="'+mes+'">Pagar</button>')
+          : '')
         +'<button class="edit" data-action="cartao-del" data-id="'+esc(ct.id)+'" aria-label="Apagar cartão">✕</button></div>';
       const futuras=abertas.filter(f=>f.mes>mes);
       if(futuras.length){
@@ -453,4 +460,57 @@ function atualizarDicaParcela(){
   const c=cartaoPorId(cart);
   el.innerHTML='Total da compra: <b>'+fmtBRL(v)+'</b> — vira <b>'+n+'x de '+fmtBRL(cada)+'</b>'
     +(c?(', começando na fatura de '+esc(fmtMes(faturaDaCompra(c.id,(document.getElementById("ga-data")||{}).value||hojeISO())||hojeISO().slice(0,7)))):'')+'.';
+}
+
+// ------------------------------------------------------------
+// v59: CARTEIRAS — onde o dinheiro fica
+// O saldo aqui é CALCULADO pelo que a pessoa registrou, não lido do banco.
+// Isso está escrito na tela, e existe o botão de ajustar — sem ele, o número
+// erra uma vez, a pessoa perde a confiança e não volta.
+// ------------------------------------------------------------
+function secaoCarteiras(){
+  const cs=carteirasAtivas();
+  if(!cs.length){
+    return '<section class="card"><h2>Minhas contas <span class="chip">opcional</span></h2>'
+      +'<p class="muted small">Tem dinheiro em mais de um lugar — banco onde recebe, banco onde gasta, investimento? '
+      +'Cadastrando cada um, o app mostra quanto tem em cada conta e você marca de onde saiu cada gasto.</p>'
+      +'<p class="muted small mt">⚠️ O saldo é calculado <b>pelo que você registrar aqui</b> — o app não lê teu banco. '
+      +'Se esquecer de lançar, o número desanda. Por isso tem um botão pra corrigir quando isso acontecer.</p>'
+      +'<button class="btn sec-btn mt" data-action="carteira-add">+ Adicionar conta</button></section>';
+  }
+  let html='<section class="card"><h2>Minhas contas</h2>'
+    +'<div class="linha"><div class="esq"><span class="hero-num num '+(saldoTotal()<0?'neg':'')+'">'+$$(saldoTotal())+'</span>'
+    +'<div class="hero-sub">somando tudo</div></div></div>';
+  cs.forEach(c=>{
+    const s=saldoCarteira(c.id);
+    html+='<div class="linha" style="padding:0.45rem 0;border-bottom:1px solid var(--grid)">'
+      +'<span style="width:1.5rem;text-align:center">'+esc(c.icone)+'</span>'
+      +'<span class="esq small">'+esc(c.nome)
+      +(c.ajustadoEm?'<div class="muted" style="font-size:0.7rem">ajustado em '+esc(fmtData(c.ajustadoEm))+'</div>':'')+'</span>'
+      +'<span class="num small'+(s<0?' neg':'')+'">'+$$(s)+'</span>'
+      +'<button class="btn mini sec-btn" data-action="carteira-ajustar" data-id="'+esc(c.id)+'">Ajustar</button>'
+      +'<button class="edit" data-action="carteira-del" data-id="'+esc(c.id)+'" aria-label="Apagar conta">✕</button></div>';
+  });
+  html+='<p class="muted small mt">Esse saldo sai do que você registrou aqui — <b>não é o saldo do banco</b>. '
+    +'Se não bater, toca em Ajustar e escreve quanto tem de verdade: o app acerta o ponto de partida em vez de te fazer caçar o gasto esquecido.</p>'
+    +'<button class="btn mini sec-btn mt" data-action="carteira-add">+ Conta</button>';
+  return html+'</section>';
+}
+
+function abrirModalCarteira(){
+  const tipos=TIPOS_CARTEIRA.map(t=>'<option value="'+esc(t.id)+'">'+esc(t.icone+' '+t.nome)+'</option>').join('');
+  abrirModal('<h3>Onde o dinheiro fica</h3>'
+    +'<p class="muted small">Uma pra cada lugar: o banco onde você recebe, o que você usa pra gastar, a corretora.</p>'
+    +'<div class="grid-2">'+campo('cw-icone','Ícone','text','🏦')+campo('cw-nome','Nome (ex.: Nubank)','text','')+'</div>'
+    +'<div class="campo"><label for="cw-tipo">Tipo</label><select id="cw-tipo">'+tipos+'</select></div>'
+    +campo('cw-saldo','Quanto tem aí hoje (R$)','number','')
+    +'<p class="muted small">Esse é o ponto de partida. A partir daqui o app soma o que entrar e subtrai o que sair — <b>do que você registrar</b>. Ele não lê teu banco.</p>'
+    +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+    +'<button class="btn" data-action="carteira-salvar">Criar</button></div>');
+}
+
+function opcoesCarteira(sel,rotuloVazio){
+  return '<option value="">'+esc(rotuloVazio||'— não marcar —')+'</option>'
+    +carteirasAtivas().map(c=>'<option value="'+esc(c.id)+'"'+(sel===c.id?' selected':'')+'>'
+      +esc(c.icone+" "+c.nome)+'</option>').join('');
 }

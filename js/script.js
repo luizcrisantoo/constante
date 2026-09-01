@@ -824,6 +824,7 @@ const ACOES={
     // não pode ver campo a mais.
     const temProj=(typeof projetosAtivos==='function')&&projetosAtivos().length>0;
     const temCart=(typeof usaCartao==='function')&&usaCartao();
+    const temCw=(typeof usaCarteiras==='function')&&usaCarteiras();
     const optCart=temCart?('<option value="">💵 À vista / débito / pix</option>'
       +cartoes().map(c=>'<option value="'+esc(c.id)+'">'+esc(c.icone+' '+c.nome)+'</option>').join('')):'';
     abrirModal('<h3>Registrar gasto'+(dPre!==hojeISO()?' <span class="chip">'+esc(fmtData(dPre))+'</span>':'')+'</h3>'
@@ -834,6 +835,9 @@ const ACOES={
       +(temCart?'<div class="grid-2">'
         +'<div class="campo"><label for="ga-cart">Como pagou</label><select id="ga-cart">'+optCart+'</select></div>'
         +'<div class="campo"><label for="ga-parc">Em quantas vezes</label><input id="ga-parc" type="text" inputmode="numeric" value="1"></div></div>':'')
+      +(temCw?'<div class="campo"><label for="ga-cw">De qual conta saiu</label><select id="ga-cw">'
+        +opcoesCarteira((carteiraPadrao()||{}).id,'— não marcar —')+'</select>'
+        +'<p class="muted small">No cartão de crédito isso é ignorado: o dinheiro sai da conta só quando você paga a fatura.</p></div>':'')
       +'<div class="grid-2">'+campo('ga-desc','Descrição (ex.: uber, cantina)','text','')
       +'<div class="campo"><label for="ga-data">Dia (esqueceu ontem? sem crise)</label><input type="date" id="ga-data" value="'+dPre+'" max="'+hojeISO()+'"></div></div>'
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
@@ -855,7 +859,7 @@ const ACOES={
       const n=addGastoCartao(v,val('ga-cat'),val('ga-desc'),dataFinal,cartSel,val('ga-parc'),val('ga-proj'));
       if(!n){ toast('Não consegui registrar no cartão'); return; }
     } else {
-      addGasto(v,val('ga-cat'),val('ga-desc'),dataFinal,val('ga-proj'));
+      addGasto(v,val('ga-cat'),val('ga-desc'),dataFinal,val('ga-proj'),val('ga-cw'));
     }
     // deixa o dia do lançamento aberto na tela: a pessoa vê onde caiu
     if(UI.tab==='grana'){
@@ -890,11 +894,14 @@ const ACOES={
     abrirModal('<h3>Pagar '+esc(c.nome)+'</h3>'
       +'<p class="muted small">Veio o valor de sempre? Se veio diferente, corrige aqui — vira um gasto de verdade.</p>'
       +campo('cp-valor','Valor pago (R$)','number',String(c.valor||''))
+      +(((typeof usaCarteiras==='function')&&usaCarteiras())
+        ?'<div class="campo"><label for="cp-cw">Saiu de qual conta</label><select id="cp-cw">'
+          +opcoesCarteira((carteiraPadrao()||{}).id,'— não marcar —')+'</select></div>':'')
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
       +'<button class="btn" data-action="conta-pagar-ok" data-id="'+esc(c.id)+'" data-m="'+esc(el.dataset.m||'')+'">Paguei</button></div>');
   },
   'conta-pagar-ok':el=>{
-    const v=pagarConta(el.dataset.id,el.dataset.m,val('cp-valor'));
+    const v=pagarConta(el.dataset.id,el.dataset.m,val('cp-valor'),val('cp-cw'));
     fecharModal(); render();
     toast(v?('✓ Pago — '+fmtBRL(v)+' entrou nos gastos'):'Não consegui registrar');
   },
@@ -907,6 +914,60 @@ const ACOES={
       +'<button class="btn perigo" data-action="conta-del-ok" data-id="'+esc(c.id)+'">Apagar</button></div>');
   },
   'conta-del-ok':el=>{ removerConta(el.dataset.id); fecharModal(); render(); toast('Conta apagada'); },
+
+  // ---- v59: carteiras ----
+  'carteira-add':()=>abrirModalCarteira(),
+  'carteira-salvar':()=>{
+    const nome=val('cw-nome'); if(!nome){ toast('Dá um nome pra conta'); return; }
+    const sal=numeroBR(val('cw-saldo'));
+    if(!isFinite(sal)){ toast('Escreve quanto tem aí hoje — pode ser 0'); return; }
+    addCarteira(nome,val('cw-icone'),val('cw-tipo'),sal);
+    fecharModal(); render();
+    toast('🏦 '+nome+' criada — agora dá pra marcar de onde sai cada gasto');
+  },
+  'carteira-ajustar':el=>{
+    const c=carteiraPorId(el.dataset.id); if(!c) return;
+    abrirModal('<h3>Ajustar '+esc(c.nome)+'</h3>'
+      +'<p class="sec small">O app calculou <b>'+fmtBRL(saldoCarteira(c.id))+'</b> pelo que você registrou. '
+      +'Se o banco mostra outro número, escreve o de verdade aqui — é mais rápido que procurar o gasto que faltou.</p>'
+      +campo('cw-real','Quanto tem de verdade (R$)','number',String(saldoCarteira(c.id)))
+      +'<p class="muted small">Isso não apaga nada do teu histórico: só move o ponto de partida pra bater com a realidade.</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn" data-action="carteira-ajustar-ok" data-id="'+esc(c.id)+'">Ajustar</button></div>');
+  },
+  'carteira-ajustar-ok':el=>{
+    if(!ajustarSaldoCarteira(el.dataset.id,val('cw-real'))){ toast('Escreve só o número, tipo 1240,50'); return; }
+    fecharModal(); render(); toast('✓ Saldo acertado');
+  },
+  'carteira-del':el=>{
+    const c=carteiraPorId(el.dataset.id); if(!c) return;
+    const n=S.gastos.lancamentos.filter(g=>g&&g.carteira===c.id).length
+           +(S.gastos.receitas||[]).filter(r=>r&&r.carteira===c.id).length;
+    abrirModal('<h3>Apagar “'+esc(c.nome)+'”?</h3>'
+      +'<p class="sec small">'+(n?('Os '+n+' lançamentos ligados a ela continuam na Grana — deixam só de estar nessa conta.'):'Nada está ligado a ela.')+'</p>'
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn perigo" data-action="carteira-del-ok" data-id="'+esc(c.id)+'">Apagar</button></div>');
+  },
+  'carteira-del-ok':el=>{ removerCarteira(el.dataset.id); fecharModal(); render(); toast('Conta apagada'); },
+
+  'fatura-pagar':el=>{
+    const c=cartaoPorId(el.dataset.id), mes=el.dataset.m; if(!c) return;
+    const t=totalFatura(c.id,mes);
+    abrirModal('<h3>Pagar a fatura do '+esc(c.nome)+'</h3>'
+      +'<p class="sec small">Fatura de <b>'+esc(fmtMes(mes))+'</b>: '+fmtBRL(t)+'. Agora sim o dinheiro sai da conta.</p>'
+      +campo('fp-valor','Valor pago (R$)','number',String(t))
+      +(((typeof usaCarteiras==='function')&&usaCarteiras())
+        ?'<div class="campo"><label for="fp-cw">Saiu de qual conta</label><select id="fp-cw">'
+          +opcoesCarteira((carteiraPadrao()||{}).id,'— não marcar —')+'</select></div>':'')
+      +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
+      +'<button class="btn" data-action="fatura-pagar-ok" data-id="'+esc(c.id)+'" data-m="'+esc(mes)+'">Paguei</button></div>');
+  },
+  'fatura-pagar-ok':el=>{
+    const v=pagarFatura(el.dataset.id,el.dataset.m,val('fp-valor'),val('fp-cw'));
+    fecharModal(); render();
+    toast(v?('✓ Fatura paga — '+fmtBRL(v)):'Não consegui registrar');
+  },
+  'fatura-desfazer':el=>{ desfazerPagamentoFatura(el.dataset.id,el.dataset.m); render(); toast('Desmarquei a fatura'); },
 
   'cartao-add':()=>abrirModalCartao(),
   'cartao-salvar':()=>{
@@ -936,6 +997,9 @@ const ACOES={
       +'<p class="muted small">Salário, freela, venda, presente — o que entrou. Fica separado dos gastos.</p>'
       +campo('re-valor','Valor (R$)','number','')
       +'<div class="campo"><label for="re-fonte">De onde veio</label><select id="re-fonte">'+fs+'</select></div>'
+      +(((typeof usaCarteiras==='function')&&usaCarteiras())
+        ?'<div class="campo"><label for="re-cw">Caiu em qual conta</label><select id="re-cw">'
+          +opcoesCarteira((carteiraPadrao()||{}).id,'— não marcar —')+'</select></div>':'')
       +'<div class="grid-2">'+campo('re-desc','Descrição (opcional)','text','')
       +'<div class="campo"><label for="re-data">Dia</label><input type="date" id="re-data" value="'+dPre+'" max="'+hojeISO()+'"></div></div>'
       +'<div class="acoes"><button class="btn sec-btn" data-action="fechar-modal">Cancelar</button>'
@@ -950,7 +1014,7 @@ const ACOES={
     }
     const dt=val('re-data');
     const dataFinal=(/^\d{4}-\d{2}-\d{2}$/.test(dt)&&dt<=hojeISO())?dt:hojeISO();
-    addReceita(v,val('re-fonte'),val('re-desc'),dataFinal);
+    addReceita(v,val('re-fonte'),val('re-desc'),dataFinal,val('re-cw'));
     if(UI.tab==='grana'){
       UI.granaMes=(dataFinal.slice(0,7)===hojeISO().slice(0,7))?null:dataFinal.slice(0,7);
     }

@@ -59,6 +59,13 @@ const FONTES_RECEITA = [
 ];
 
 // ---- v57: contas que se repetem todo mês ----
+// ---- v59: onde o dinheiro fica ----
+const TIPOS_CARTEIRA = [
+  {id:'conta',        icone:'🏦', nome:'Conta do banco'},
+  {id:'carteira',     icone:'👛', nome:'Dinheiro / carteira'},
+  {id:'investimento', icone:'📈', nome:'Investimento'}
+];
+
 const MODELOS_CONTA = [
   {icone:'🏠', nome:'Aluguel'},   {icone:'💡', nome:'Luz'},
   {icone:'💧', nome:'Água'},      {icone:'📶', nome:'Internet'},
@@ -155,7 +162,8 @@ function defaultState(){
       receitas:[],             // v56: o que ENTRA. Lista separada de propósito —
                                // gastosDoMes, calendário e projetos só olham lancamentos.
       contas:[],               // v57: contas fixas do mês (aluguel, luz, assinatura)
-      cartoes:[]               // v57: cartões de crédito (fechamento e vencimento)
+      cartoes:[],              // v57: cartões de crédito (fechamento e vencimento)
+      carteiras:[]             // v59: onde o dinheiro fica (banco, carteira, investimento)
 
     },
     estudo: {
@@ -211,6 +219,13 @@ const FRASES = [
 // escreve o BENEFÍCIO, em português de gente, sem jargão técnico.
 // ============================================================
 const NOVIDADES = [
+  { v:59, data:'2026-08-21', destaque:true, titulo:'Contas separadas: onde o dinheiro está', itens:[
+    '🏦 MINHAS CONTAS: dá pra cadastrar cada lugar onde você tem dinheiro — o banco onde recebe, o que você usa pra gastar, a corretora, a carteira. Na hora de lançar gasto ou entrada, você marca de qual conta saiu ou em qual caiu.',
+    '💳 E a fatura do cartão agora tem botão de PAGAR. Faz sentido: compra no cartão não tira dinheiro da conta na hora — tira quando a fatura é paga. Só aí o saldo da conta baixa.',
+    '⚠️ IMPORTANTE, E A GENTE PREFERE FALAR NA CARA: esse saldo é calculado pelo que VOCÊ registra aqui. O app não lê teu banco e não tem como ler. Se esquecer de lançar uma compra, o número vai ficar diferente do extrato.',
+    '🔧 Por isso tem o botão AJUSTAR: quando não bater, você escreve quanto tem de verdade e o app acerta o ponto de partida. Nada do teu histórico é apagado. É pra você corrigir em dois toques em vez de caçar o gasto que faltou.',
+    '💬 Pedido da Thais, que tem dinheiro em três bancos diferentes. Obrigado — e continuem mandando.'
+  ]},
   { v:58, data:'2026-08-20', titulo:'Dá pra alterar o gasto (e o cartão ficou claro)', itens:[
     '✎ ALTERAR GASTO: apareceu um lápis do lado de cada lançamento. Dá pra corrigir valor, categoria, descrição, dia e projeto sem precisar apagar e lançar de novo.',
     '💳 NO CARTÃO, o campo de valor agora diz na sua frente o que vai acontecer: você digita o TOTAL da compra e o app mostra "vira 3x de R$ 400,00, começando na fatura de Setembro". Antes dava pra achar que o campo pedia o valor da parcela.',

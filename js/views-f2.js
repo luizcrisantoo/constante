@@ -157,7 +157,11 @@ function secaoGastos(){
         +'<button class="edit" data-action="gasto-editar" data-id="'+esc(g.id)+'" aria-label="Alterar gasto">✎</button>'
         +'<button class="edit" data-action="gasto-remover" data-id="'+esc(g.id)+'" aria-label="Remover">✕</button></div>';
     });
-    html+='<button class="btn bloco mt" data-action="gasto-add" data-d="'+esc(UI.granaDia)+'">+ Registrar gasto em '+esc(fmtData(UI.granaDia))+'</button>';
+    // com o dia aberto, o botão de entrada também precisa existir — senão, depois de
+    // lançar um gasto o dia abre sozinho e a pessoa perde o caminho de registrar entrada
+    html+='<div class="linha mt" style="gap:0.5rem">'
+      +'<button class="btn" style="flex:1" data-action="gasto-add" data-d="'+esc(UI.granaDia)+'">+ Gasto em '+esc(fmtData(UI.granaDia))+'</button>'
+      +'<button class="btn sec-btn" style="flex:1" data-action="receita-add" data-d="'+esc(UI.granaDia)+'">+ Entrada</button></div>';
   }
 
   if(porCat.length){
